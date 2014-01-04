@@ -36,7 +36,6 @@ netsh_parser:set_arguments({
 			-- TODO: add rule parser
 		"dump",
 		"export" .. file_parser,
-			-- TODO: add rule parser
 		"firewall" .. common_parser,
 			-- TODO: add rule parser
 		"help",
@@ -45,29 +44,68 @@ netsh_parser:set_arguments({
 			-- TODO: add rule parser
 		"monitor" .. arguments({
 			"?",
-			"delete",
+			"delete" .. arguments({
+				"mmsa" .. arguments({"all"}),
+				"qmsa" .. arguments({"all"})}),
 			"dump",
 			"help",
 			"show" .. arguments({
-				"consec",
+				"consec" .. arguments({
+					"rule" .. arguments({"name=", "profile="}, {"verbose"})}),
+					-- TODO: disable quoting in arguments ended with '='
+					-- TODO: profile argument is optional
 				"currentprofile",
-				"firewall",
-				"mainmode",
-				"mmsa",
-				"qmsa"
+				"firewall" .. arguments({
+					"rule" .. arguments({"name=", "dir=", "profile="}, {"verbose"})}),
+					-- TODO: disable quoting in arguments ended with '='
+					-- TODO: profile and dir arguments is optional
+				"mainmode" .. arguments({
+					"rule" .. arguments({"name=", "profile="}, {"verbose"})}),
+					-- TODO: disable quoting in arguments ended with '='
+					-- TODO: profile and dir arguments is optional
+				"mmsa" .. arguments({"all"}),
+				"qmsa" .. arguments({"all"})
 				}),
 			}),
 		"reset" .. arguments({"export" .. file_parser}),
 		"set" .. arguments({
 			-- TODO: rest of commands
 			-- probably need new parser
-			"allprofiles",
+			"allprofiles" .. arguments({
+				"state" .. arguments({"on", "off", "notconfigured"}),
+				"firewallpolicy" .. arguments({
+					"blockinbound",
+					"blockinboundalways",
+					"allowinbound",
+					"notconfigured",
+					"allowoutbound",
+					"blockoutbound"
+					}),
+				"settings" .. arguments({
+					"localfirewallrules",
+					"localconsecrules",
+					"inboundusernotification",
+					"remotemanagement",
+					"unicastresponsetomulticast"},
+					{"enable", "disable", "notconfigured"}
+					),
+				"logging" .. arguments({
+					"allowedconnections" .. arguments({
+						"enable", "disable", "notconfigured"
+						}),
+					"droppedconnections" .. arguments({
+						"enable", "disable", "notconfigured"
+						}),
+					"filename" .. file_parser,
+					"maxfilesize" .. arguments({"notconfigured"})
+				}),
+			}),
 			"currentprofile",
 			"domainprofile",
 			"global",
 			"privateprofile",
 			"publicprofile"
-			}),
+		}),
 		"show".. arguments({
 			-- TODO: rest of commands
 			-- probably need new parser
@@ -103,43 +141,22 @@ netsh_parser:set_arguments({
 	"wfp",
 	"winhttp",
 	"winsock",
-	"wlan",
+	"wlan" .. arguments({
+		"?",
+		"add".. arguments({"filter", 'profile'}),
+		"connect",
+		"delete",
+		"disconnect",
+		"dump",
+		"export",
+		"help",
+		"refresh",
+		"reportissues",
+		"set",
+		"show",
+		"start",
+		"stop"
+		})
 })
 
-
--- net_parser = clink.arg.new_parser()
--- net_parser:disable_file_matching()
--- net_parser:set_flags("/?")
--- net_parser:set_arguments({
--- 	"accounts" .. flags("/forcelogoff:", "/forcelogoff:no", "/domain",
--- 						"/maxpwage:", "/maxpwage:unlimited", "/minpwage:",
--- 						"/minpwlen:","/uniquepw:"),
--- 	"computer" .. arguments({"*" .. flags("/add", "/del")}),
--- 	"config" .. arguments({"server", "workstation"}),
--- 	"continue",
--- 	"file",
--- 	"group",
--- 	"helpmsg",
--- 	"localgroup",
--- 	"pause",
--- 	"session" .. arguments({flags("/delete", "/list")}),
--- 	"share",
--- 	"start",
--- 	"statistics" .. arguments({"server", "workstation"}),
--- 	"stop",
--- 	"time" .. flags("/domain", "/rtsdomain", "/set"),
--- 	"use" .. flags("/user:", "/smartcard", "/savecred", "/delete",
--- 				   "/persistent:yes", "/persistent:no"),
--- 	"user",
--- 	"view" .. flags("/cache", "/all", "/domain")
--- })
-
--- help_parser = clink.arg.new_parser()
--- help_parser:disable_file_matching()
--- help_parser:set_arguments({
--- 	"help" .. arguments(net_parser:flatten_argument(1))
--- })
-
--- clink.arg.register_parser("net", net_parser)
 clink.arg.register_parser("netsh", netsh_parser)
--- clink.arg.register_parser("netsh", netsh_common_parser)
