@@ -1,8 +1,45 @@
+function file_match_generator_impl(text)
+    -- Strip off any path components that may be on text.
+    local prefix = ""
+    local i = text:find("[\\/:][^\\/:]*$")
+    if i then
+        prefix = text:sub(1, i)
+    end
 
--- preamble
--- define support functions
+    local matches = {}
+    local mask = text.."*"
+
+    -- Find matches.
+    for _, dir in ipairs(clink.find_files(mask, true)) do
+        local file = prefix..dir
+        if clink.is_match(text, file) then
+            table.insert(matches, prefix..dir)
+        end
+    end
+
+    return matches
+end
+
+local function file_match_generator(word)
+    local matches = file_match_generator_impl(word)
+
+    -- If there was no matches but text is a dir then use it as the single match.
+    -- Otherwise tell readline that matches are files and it will do magic.
+    if #matches == 0 then
+        if clink.is_dir(rl_state.text) then
+            -- table.insert(matches, rl_state.text)
+        end
+    else
+        clink.matches_are_files()
+    end
+
+    return matches
+end
 
 local function parser( ... )
+
+    local p = clink.arg.new_parser()
+    p:disable_file_matching()
     
     local arguments = {}
     local flags = {}
@@ -14,11 +51,11 @@ local function parser( ... )
             table.insert(arguments, word)
         end
     end
-    
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_arguments(arguments)
+
     p:set_flags(flags)
+    for _, a in ipairs(arguments) do
+        p:add_arguments(a)
+    end
 
     return p
 end
@@ -27,13 +64,13 @@ local function boxes()
     return clink.find_dirs(clink.get_env("userprofile") .. "/.vagrant.d/boxes/*")
 end
 
--- define parsers
-
-local init_parser = parser(boxes(), {}, "--output")
+local function any()
+    return true
+end
 
 local vagrant_parser = parser({
     "box" .. parser({
-        "add" .. parser({}, {},
+        "add" .. parser({}, {file_match_generator},
             "--checksum", 
             "--checksum-type",
             "-c", "--clean",
@@ -50,7 +87,7 @@ local vagrant_parser = parser({
     "destroy" .. parser("-f", "--force"),
     "halt" .. parser("-f", "--force"),
     "help",
-    "init" .. init_parser,
+    "init" .. parser(boxes(), {}, "--output"),
     "package" .. parser("--base", "--output", "--include", "--vagrantfile"),
     "plugin" .. parser({
         "install" .. parser(
