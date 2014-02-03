@@ -74,6 +74,14 @@ local function file_match_generator(word)
     return matches
 end
 
+local function branches()
+    return clink.find_files(".git/refs/heads/*")
+end
+
+local function remotes()
+    return clink.find_dirs(".git/refs/remotes/*")
+end
+
 local function parser( ... )
     
     local arguments = {}
@@ -198,7 +206,7 @@ local git_parser = parser(
         "check-mailmap",
         "check-ref-format",
         "checkout" .. parser(
-            clink.find_files(".git/refs/heads/*"),
+            branches(),
             "-q", "--quiet",
             "-b",
             "-B",
@@ -336,7 +344,30 @@ local git_parser = parser(
         "prune",
         "prune-packed",
         "pull",
-        "push",
+        "push" .. parser(
+            clink.find_dirs(".git/refs/remotes/*"),
+            clink.find_files(".git/refs/heads/*"),
+            "-v", "--verbose",
+            "-q", "--quiet",
+            "--repo",
+            "--all",
+            "--mirror",
+            "--delete",
+            "--tags",
+            "-n", "--dry""-run",
+            "--porcelain",
+            "-f", "--force",
+            "--force""-with""-lease",
+            "--recurse""-submodules",
+            "--thin",
+            "--receive""-pack",
+            "--exec",
+            "-u", "--set""-upstream",
+            "--progress",
+            "--prune",
+            "--no""-verify",
+            "--follow""-tags"
+        )
         "quiltimport",
         "read-tree",
         "rebase",
