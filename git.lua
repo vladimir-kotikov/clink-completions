@@ -97,7 +97,14 @@ local function parser( ... )
     
     local p = clink.arg.new_parser()
     p:disable_file_matching()
-    p:set_arguments(arguments)
+    
+    -- p:set_arguments(arguments)
+
+    p:set_flags(flags)
+    for _, a in ipairs(arguments) do
+        p:add_arguments(a)
+    end
+    
     p:set_flags(flags)
 
     return p
@@ -345,8 +352,8 @@ local git_parser = parser(
         "prune-packed",
         "pull",
         "push" .. parser(
-            clink.find_dirs(".git/refs/remotes/*"),
-            clink.find_files(".git/refs/heads/*"),
+            remotes(),
+            branches(),
             "-v", "--verbose",
             "-q", "--quiet",
             "--repo",
