@@ -119,3 +119,52 @@ local function file_match_generator(word)
 end
 
 -- end preamble
+
+cordova_parser = parser(
+    {
+    -- common commands
+        "create" .. parser(
+                "--copy-from",
+                "--link-to"),
+        "help",
+        "info",
+    -- project-level commands
+        "platform" .. parser(
+            {
+                "add" .. parser(
+                    {
+                        "wp7",
+                        "wp8",
+                        "windows8",
+                        "android",
+                        "blackberry10",
+                        "firefoxos",
+                    }),
+                "remove" .. parser(clink.find_dirs("platforms/*")),
+                "rm" .. parser(clink.find_dirs("platforms/*")),
+                "list", "ls",
+                "update" .. parser(clink.find_dirs("platforms/*")),
+                "check"
+            }),
+        "plugin" .. parser(
+            {
+                "add",
+                "remove" .. parser(clink.find_dirs("plugins/*")),
+                "rm" .. parser(clink.find_dirs("plugins/*")),
+                "list", "ls",
+                "search"
+            }),
+        "prepare",
+        "compile" .. parser(clink.find_dirs("platforms/*")),
+        "build" .. parser(clink.find_dirs("platforms/*")),
+        "run" .. parser(
+            {
+                parser(clink.find_dirs("platforms/*"))
+            },
+            "--debug", "--release",
+            "--device", "--emulator", "--target="),
+        "emulate" .. parser(clink.find_dirs("platforms/*")),
+        "serve",
+    })
+
+clink.arg.register_parser("cordova", cordova_parser)
