@@ -125,7 +125,8 @@ cordova_parser = parser(
     -- common commands
         "create" .. parser(
                 "--copy-from",
-                "--link-to"),
+                "--src="
+                "--link-to="),
         "help",
         "info",
     -- project-level commands
@@ -143,6 +144,7 @@ cordova_parser = parser(
                 "remove" .. parser(clink.find_dirs("platforms/*")),
                 "rm" .. parser(clink.find_dirs("platforms/*")),
                 "list", "ls",
+                "up" .. parser(clink.find_dirs("platforms/*")),
                 "update" .. parser(clink.find_dirs("platforms/*")),
                 "check"
             }),
@@ -154,7 +156,15 @@ cordova_parser = parser(
                 "list", "ls",
                 "search"
             }),
-        "prepare",
+        "prepare" .. parser(
+            {
+                "wp7",
+                "wp8",
+                "windows8",
+                "android",
+                "blackberry10",
+                "firefoxos",
+            }),
         "compile" .. parser(clink.find_dirs("platforms/*")),
         "build" .. parser(clink.find_dirs("platforms/*")),
         "run" .. parser(
