@@ -125,7 +125,7 @@ cordova_parser = parser(
     -- common commands
         "create" .. parser(
                 "--copy-from",
-                "--src="
+                "--src=",
                 "--link-to="),
         "help",
         "info",
@@ -150,6 +150,7 @@ cordova_parser = parser(
             }),
         "plugin" .. parser(
             {
+                -- TODO: Add path parser
                 "add",
                 "remove" .. parser(clink.find_dirs("plugins/*")),
                 "rm" .. parser(clink.find_dirs("plugins/*")),
@@ -168,11 +169,10 @@ cordova_parser = parser(
         "compile" .. parser(clink.find_dirs("platforms/*")),
         "build" .. parser(clink.find_dirs("platforms/*")),
         "run" .. parser(
-            {
-                parser(clink.find_dirs("platforms/*"))
-            },
+            parser(clink.find_dirs("platforms/*"),
             "--debug", "--release",
-            "--device", "--emulator", "--target="),
+            "--device", "--emulator", "--target=")
+        ),
         "emulate" .. parser(clink.find_dirs("platforms/*")),
         "serve",
     })
