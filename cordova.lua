@@ -150,8 +150,7 @@ cordova_parser = parser(
             }),
         "plugin" .. parser(
             {
-                -- TODO: Add path parser
-                "add",
+                "add" .. parser({dir_match_generator}),
                 "remove" .. parser(clink.find_dirs("plugins/*")),
                 "rm" .. parser(clink.find_dirs("plugins/*")),
                 "list", "ls",
