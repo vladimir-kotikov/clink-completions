@@ -130,7 +130,6 @@ local function find_npm_modules(root_dir, recurse)
     end
 end
 
-
 -- end preamble
 
 -- TODO: add support for multiple modules
@@ -174,11 +173,9 @@ npm_parser = parser({
     "help",
     "help-search",
     "home",
-    "i" .. install_parser,
     "info",
     "init",
     "install" .. install_parser,
-    "isntall",
     "issues",
     "la",
     "link",
@@ -202,8 +199,6 @@ npm_parser = parser({
     "rm" .. parser({find_npm_modules()}), -- TODO: add support for multiple modules and -g key
     "root",
     "run-script",
-    "s" .. search_parser,
-    "se" .. search_parser,
     "search" .. search_parser,
     "set",
     "show",
@@ -215,7 +210,6 @@ npm_parser = parser({
     "submodule",
     "tag",
     "test" .. parser({find_npm_modules()}),
-    "tst" .. parser({find_npm_modules()}),
     "un",
     "uninstall" .. parser({find_npm_modules()}), -- TODO: add support for multiple modules and -g key
     "unlink",
