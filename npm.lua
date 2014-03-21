@@ -1,47 +1,5 @@
 -- preamble: common routines
 
-local function flags(...)
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_flags(...)
-    return p
-end
-
-local function arguments(...)
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_arguments(...)
-    return p
-end
-
-local function parser( ... )
-    
-    local arguments = {}
-    local flags = {}
-    
-    for _, word in ipairs({...}) do
-        if type(word) == "string" then
-            table.insert(flags, word)
-        elseif type(word) == "table" then
-            table.insert(arguments, word)
-        end
-    end
-    
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    
-    -- p:set_arguments(arguments)
-
-    p:set_flags(flags)
-    for _, a in ipairs(arguments) do
-        p:add_arguments(a)
-    end
-    
-    p:set_flags(flags)
-
-    return p
-end
-
 function dir_match_generator_impl(text)
     -- Strip off any path components that may be on text.
     local prefix = ""
@@ -130,11 +88,12 @@ local function find_npm_modules(root_dir, recurse)
     end
 end
 
+local parser = clink.arg.new_parser
+
 -- end preamble
 
 -- TODO: add support for multiple modules
-install_parser = parser(
-        {dir_match_generator},
+install_parser = parser({dir_match_generator},
         "--force",
         "-g", "--global",
         "--link",
@@ -221,7 +180,8 @@ npm_parser = parser({
     "version",
     "view",
     "whoami"
-    }, "-h"
+    },
+    "-h"
 )
 
 clink.arg.register_parser("npm", npm_parser)

@@ -82,33 +82,7 @@ local function remotes()
     return clink.find_dirs(".git/refs/remotes/*")
 end
 
-local function parser( ... )
-    
-    local arguments = {}
-    local flags = {}
-    
-    for _, word in ipairs({...}) do
-        if type(word) == "string" then
-            table.insert(flags, word)
-        elseif type(word) == "table" then
-            table.insert(arguments, word)
-        end
-    end
-    
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    
-    -- p:set_arguments(arguments)
-
-    p:set_flags(flags)
-    for _, a in ipairs(arguments) do
-        p:add_arguments(a)
-    end
-    
-    p:set_flags(flags)
-
-    return p
-end
+local parser = clink.arg.new_parser
 
 local git_parser = parser(
     {

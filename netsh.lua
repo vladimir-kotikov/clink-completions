@@ -1,36 +1,21 @@
-local function flags(...)
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_flags(...)
-    return p
-end
+local parser = clink.arg.new_parser
 
-local function arguments(...)
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_arguments(...)
-    return p
-end
+local file_parser = parser()
 
-local file_parser = clink.arg.new_parser()
-
-local common_parser = arguments({
+local common_parser = parser({
 	"?",
-	"add" .. arguments({"rule"}),
-	"delete" .. arguments({"rule"}),
+	"add" .. parser({"rule"}),
+	"delete" .. parser({"rule"}),
 	"dump",
 	"help",
-	"set" .. arguments({"rule"}),
-	"show" .. arguments({"rule"})
+	"set" .. parser({"rule"}),
+	"show" .. parser({"rule"})
 })
 
-local netsh_parser = clink.arg.new_parser()
-netsh_parser:disable_file_matching()
-netsh_parser:set_flags("-a", "-c", "-r", "-u", "-p", "-f" )
-netsh_parser:set_arguments({
-	"add" .. arguments({"helper" .. file_parser}),
+local netsh_parser = parser({
+	"add" .. parser({"helper" .. file_parser}),
 		-- TODO: find .dll files only
-	"advfirewall" .. arguments({
+	"advfirewall" .. parser({
 		"?",
 		"consec" .. common_parser,
 			-- TODO: add rule parser
@@ -42,38 +27,38 @@ netsh_parser:set_arguments({
 		"import" .. file_parser,
 		"mainmode" .. common_parser,
 			-- TODO: add rule parser
-		"monitor" .. arguments({
+		"monitor" .. parser({
 			"?",
-			"delete" .. arguments({
-				"mmsa" .. arguments({"all"}),
-				"qmsa" .. arguments({"all"})}),
+			"delete" .. parser({
+				"mmsa" .. parser({"all"}),
+				"qmsa" .. parser({"all"})}),
 			"dump",
 			"help",
-			"show" .. arguments({
-				"consec" .. arguments({
-					"rule" .. arguments({"name=", "profile="}, {"verbose"})}),
+			"show" .. parser({
+				"consec" .. parser({
+					"rule" .. parser({"name=", "profile="}, {"verbose"})}),
 					-- TODO: disable quoting in arguments ended with '='
 					-- TODO: profile argument is optional
 				"currentprofile",
-				"firewall" .. arguments({
-					"rule" .. arguments({"name=", "dir=", "profile="}, {"verbose"})}),
+				"firewall" .. parser({
+					"rule" .. parser({"name=", "dir=", "profile="}, {"verbose"})}),
 					-- TODO: disable quoting in arguments ended with '='
 					-- TODO: profile and dir arguments is optional
-				"mainmode" .. arguments({
-					"rule" .. arguments({"name=", "profile="}, {"verbose"})}),
+				"mainmode" .. parser({
+					"rule" .. parser({"name=", "profile="}, {"verbose"})}),
 					-- TODO: disable quoting in arguments ended with '='
 					-- TODO: profile and dir arguments is optional
-				"mmsa" .. arguments({"all"}),
-				"qmsa" .. arguments({"all"})
+				"mmsa" .. parser({"all"}),
+				"qmsa" .. parser({"all"})
 				}),
 			}),
-		"reset" .. arguments({"export" .. file_parser}),
-		"set" .. arguments({
+		"reset" .. parser({"export" .. file_parser}),
+		"set" .. parser({
 			-- TODO: rest of commands
 			-- probably need new parser
-			"allprofiles" .. arguments({
-				"state" .. arguments({"on", "off", "notconfigured"}),
-				"firewallpolicy" .. arguments({
+			"allprofiles" .. parser({
+				"state" .. parser({"on", "off", "notconfigured"}),
+				"firewallpolicy" .. parser({
 					"blockinbound",
 					"blockinboundalways",
 					"allowinbound",
@@ -81,7 +66,7 @@ netsh_parser:set_arguments({
 					"allowoutbound",
 					"blockoutbound"
 					}),
-				"settings" .. arguments({
+				"settings" .. parser({
 					"localfirewallrules",
 					"localconsecrules",
 					"inboundusernotification",
@@ -89,15 +74,15 @@ netsh_parser:set_arguments({
 					"unicastresponsetomulticast"},
 					{"enable", "disable", "notconfigured"}
 					),
-				"logging" .. arguments({
-					"allowedconnections" .. arguments({
+				"logging" .. parser({
+					"allowedconnections" .. parser({
 						"enable", "disable", "notconfigured"
 						}),
-					"droppedconnections" .. arguments({
+					"droppedconnections" .. parser({
 						"enable", "disable", "notconfigured"
 						}),
 					"filename" .. file_parser,
-					"maxfilesize" .. arguments({"notconfigured"})
+					"maxfilesize" .. parser({"notconfigured"})
 				}),
 			}),
 			"currentprofile",
@@ -106,7 +91,7 @@ netsh_parser:set_arguments({
 			"privateprofile",
 			"publicprofile"
 		}),
-		"show".. arguments({
+		"show".. parser({
 			-- TODO: rest of commands
 			-- probably need new parser
 			"allprofiles",
@@ -118,7 +103,7 @@ netsh_parser:set_arguments({
 			"store"
 			}),
 		}),
-	"branchcache" .. arguments({"exportkey", "flush", "importkey", "smb"}) ,
+	"branchcache" .. parser({"exportkey", "flush", "importkey", "smb"}) ,
 	"bridge",
 	"dhcp",
 	"dhcpclient",
@@ -141,9 +126,9 @@ netsh_parser:set_arguments({
 	"wfp",
 	"winhttp",
 	"winsock",
-	"wlan" .. arguments({
+	"wlan" .. parser({
 		"?",
-		"add".. arguments({"filter", 'profile'}),
+		"add".. parser({"filter", 'profile'}),
 		"connect",
 		"delete",
 		"disconnect",
@@ -157,6 +142,6 @@ netsh_parser:set_arguments({
 		"start",
 		"stop"
 		})
-})
+},"-a", "-c", "-r", "-u", "-p", "-f")
 
 clink.arg.register_parser("netsh", netsh_parser)

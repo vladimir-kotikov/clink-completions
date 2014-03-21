@@ -36,29 +36,7 @@ local function file_match_generator(word)
     return matches
 end
 
-local function parser( ... )
-
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    
-    local arguments = {}
-    local flags = {}
-    
-    for _, word in ipairs({...}) do
-        if type(word) == "string" then
-            table.insert(flags, word)
-        elseif type(word) == "table" then
-            table.insert(arguments, word)
-        end
-    end
-
-    p:set_flags(flags)
-    for _, a in ipairs(arguments) do
-        p:add_arguments(a)
-    end
-
-    return p
-end
+local parser = clink.arg.new_parser
 
 local function boxes()
     return clink.find_dirs(clink.get_env("userprofile") .. "/.vagrant.d/boxes/*")
@@ -70,9 +48,11 @@ end
 
 local vagrant_parser = parser({
     "box" .. parser({
-        "add" .. parser({}, {file_match_generator},
-            "--checksum", 
-            "--checksum-type",
+        "add" .. parser(
+            {""},
+            {file_match_generator},
+            "--checksum",
+            "--checksum-type",--..parser({"md5", "sha1", "sha256"}),
             "-c", "--clean",
             "-f", "--force",
             "--insecure",
@@ -81,12 +61,14 @@ local vagrant_parser = parser({
             "--provider"
             ),
         "list" .. parser("-i", "--box-info"),
+        "outdated"..parser("--global", "-h", "--help"),
         "remove" .. parser(boxes(), {}),
-        "repackage" .. parser(boxes())
+        "repackage" .. parser(boxes()),
+        "update"
         }),
+    "connect",
     "destroy" .. parser("-f", "--force"),
     "halt" .. parser("-f", "--force"),
-    "help",
     "init" .. parser(boxes(), {}, "--output"),
     "package" .. parser("--base", "--output", "--include", "--vagrantfile"),
     "plugin" .. parser({
@@ -110,6 +92,7 @@ local vagrant_parser = parser({
     "reload" .. parser("--provision-with", "--no-parallel", "--parallel"),
     "resume",
     "ssh" .. parser("-c", "--command", "-p", "--plain") ,
+    "ssh-config",
     "status",
     "suspend",
     "up" .. parser(
@@ -125,3 +108,4 @@ local vagrant_parser = parser({
     }, "-h", "--help", "-v", "--version")
 
 clink.arg.register_parser("vagrant", vagrant_parser)
+clink.arg.register_parser("vagrant", parser({"help"..parser(vagrant_parser:flatten_argument(1))}))

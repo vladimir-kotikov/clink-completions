@@ -1,22 +1,6 @@
-local ea_parser
-local pip_parser
+local parser = clink.arg.new_parser
 
-local function flags(...)
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_flags(...)
-    return p
-end
-
-local function arguments(...)
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_arguments(...)
-    return p
-end
-
-ea_parser = clink.arg.new_parser()
-ea_parser:set_flags(
+local ea_parser = parser(
 	"--verbose",
 	"--quiet", "-q",
 	"--dry-run", "-n",
@@ -47,7 +31,7 @@ ea_parser:set_flags(
 	"--help"
 	)
 
-local pip_flags = flags(
+local pip_flags = parser(
 	"-h", "--help",
 	"-v", "--verbose",
 	"-V", "--version",
@@ -55,20 +39,20 @@ local pip_flags = flags(
 	"--log", "--proxy", "--timeout", "--exists", "--cert"
 )
 
-pip_parser = clink.arg.new_parser()
-pip_parser:set_arguments({
-	"install" .. pip_flags,
-	"uninstall" .. pip_flags,
-	"freeze" .. pip_flags,
-	"list" .. pip_flags,
-	"show" .. pip_flags,
-	"search" .. pip_flags,
-	"wheel" .. pip_flags,
-	"zip" .. pip_flags,
-	"unzip" .. pip_flags,
-	"bundle" .. pip_flags,
-	"help" .. pip_flags
-})
+local pip_parser = parser(
+	{
+		"install" .. pip_flags,
+		"uninstall" .. pip_flags,
+		"freeze" .. pip_flags,
+		"list" .. pip_flags,
+		"show" .. pip_flags,
+		"search" .. pip_flags,
+		"wheel" .. pip_flags,
+		"zip" .. pip_flags,
+		"unzip" .. pip_flags,
+		"bundle" .. pip_flags,
+		"help" .. pip_flags
+	})
 
 clink.arg.register_parser("easy_install", ea_parser)
 clink.arg.register_parser("pip", pip_parser)

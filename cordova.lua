@@ -1,47 +1,5 @@
 -- preamble: common routines
 
-local function flags(...)
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_flags(...)
-    return p
-end
-
-local function arguments(...)
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    p:set_arguments(...)
-    return p
-end
-
-local function parser( ... )
-    
-    local arguments = {}
-    local flags = {}
-    
-    for _, word in ipairs({...}) do
-        if type(word) == "string" then
-            table.insert(flags, word)
-        elseif type(word) == "table" then
-            table.insert(arguments, word)
-        end
-    end
-    
-    local p = clink.arg.new_parser()
-    p:disable_file_matching()
-    
-    -- p:set_arguments(arguments)
-
-    p:set_flags(flags)
-    for _, a in ipairs(arguments) do
-        p:add_arguments(a)
-    end
-    
-    p:set_flags(flags)
-
-    return p
-end
-
 function dir_match_generator_impl(text)
     -- Strip off any path components that may be on text.
     local prefix = ""
@@ -120,50 +78,48 @@ end
 
 -- end preamble
 
+local parser = clink.arg.new_parser
+
 cordova_parser = parser(
     {
     -- common commands
         "create" .. parser(
-                "--copy-from",
-                "--src=",
-                "--link-to="),
+            "--copy-from",
+            "--src=",
+            "--link-to="),
         "help",
         "info",
     -- project-level commands
-        "platform" .. parser(
-            {
-                "add" .. parser(
-                    {
-                        "wp7",
-                        "wp8",
-                        "windows8",
-                        "android",
-                        "blackberry10",
-                        "firefoxos",
-                    }),
-                "remove" .. parser(clink.find_dirs("platforms/*")),
-                "rm" .. parser(clink.find_dirs("platforms/*")),
-                "list", "ls",
-                "up" .. parser(clink.find_dirs("platforms/*")),
-                "update" .. parser(clink.find_dirs("platforms/*")),
-                "check"
-            }),
-        "plugin" .. parser(
-            {
-                "add" .. parser({dir_match_generator}),
-                "remove" .. parser(clink.find_dirs("plugins/*")),
-                "rm" .. parser(clink.find_dirs("plugins/*")),
-                "list", "ls",
-                "search"
-            }),
-        "prepare" .. parser(
-            {
+        "platform" .. parser({
+            "add" .. parser({
                 "wp7",
                 "wp8",
                 "windows8",
                 "android",
                 "blackberry10",
                 "firefoxos",
+            }),
+            "remove" .. parser(clink.find_dirs("platforms/*")),
+            "rm" .. parser(clink.find_dirs("platforms/*")),
+            "list", "ls",
+            "up" .. parser(clink.find_dirs("platforms/*")),
+            "update" .. parser(clink.find_dirs("platforms/*")),
+            "check"
+            }),
+        "plugin" .. parser({
+            "add",-- .. parser({dir_match_generator}),
+            "remove" .. parser(clink.find_dirs("plugins/*")),
+            "rm" .. parser(clink.find_dirs("plugins/*")),
+            "list", "ls",
+            "search"
+        }),
+        "prepare" .. parser({
+            "wp7",
+            "wp8",
+            "windows8",
+            "android",
+            "blackberry10",
+            "firefoxos",
             }),
         "compile" .. parser(clink.find_dirs("platforms/*")),
         "build" .. parser(clink.find_dirs("platforms/*")),
@@ -174,6 +130,7 @@ cordova_parser = parser(
         ),
         "emulate" .. parser(clink.find_dirs("platforms/*")),
         "serve",
-    })
+    }, "-h")
+
 
 clink.arg.register_parser("cordova", cordova_parser)
