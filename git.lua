@@ -187,7 +187,7 @@ local git_parser = parser(
         "check-mailmap",
         "check-ref-format",
         "checkout" .. parser(
-            branches(),
+            {branches},
             "-q", "--quiet",
             "-b",
             "-B",
@@ -326,8 +326,8 @@ local git_parser = parser(
         "prune-packed",
         "pull",
         "push" .. parser(
-            remotes(),
-            branches(),
+            {remotes},
+            {branches},
             "-v", "--verbose",
             "-q", "--quiet",
             "--repo",
@@ -428,3 +428,12 @@ local git_parser = parser(
 )
 
 clink.arg.register_parser("git", git_parser)
+
+function git_prompt_filter()
+    if #(clink.find_dirs(".git/*")) > 0 then
+        clink.prompt.value = color_text("[git]", "black", "white").." "..clink.prompt.value
+    end
+    return false
+end
+
+clink.prompt.register_filter(git_prompt_filter, 50)
