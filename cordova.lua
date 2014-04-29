@@ -1,4 +1,4 @@
--- preamble: common routines
+--preamble: common routines
 
 function dir_match_generator_impl(text)
     -- Strip off any path components that may be on text.
@@ -113,20 +113,13 @@ cordova_parser = parser(
             "list", "ls",
             "search"
         }),
-        "prepare" .. parser({
-            "wp7",
-            "wp8",
-            "windows8",
-            "android",
-            "blackberry10",
-            "firefoxos",
-            }),
+        "prepare" .. parser(clink.find_dirs("platforms/*")),
         "compile" .. parser(clink.find_dirs("platforms/*")),
         "build" .. parser(clink.find_dirs("platforms/*")),
         "run" .. parser(
-            parser(clink.find_dirs("platforms/*"),
+            clink.find_dirs("platforms/*"),
             "--debug", "--release",
-            "--device", "--emulator", "--target=")
+            "--device", "--emulator", "--target="
         ),
         "emulate" .. parser(clink.find_dirs("platforms/*")),
         "serve",
@@ -134,3 +127,4 @@ cordova_parser = parser(
 
 
 clink.arg.register_parser("cordova", cordova_parser)
+clink.arg.register_parser("cordova-dev", cordova_parser)
