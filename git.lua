@@ -430,8 +430,12 @@ local git_parser = parser(
 clink.arg.register_parser("git", git_parser)
 
 function git_prompt_filter()
-    if #(clink.find_dirs(".git/*")) > 0 then
-        clink.prompt.value = color_text("[git]", "black", "white").." "..clink.prompt.value
+    local head = io.open('.git/HEAD')
+    if head ~= nil then
+        h = head:read()
+        local branch = string.match(h, "/([%w-]+)$")
+        clink.prompt.value = color_text("[git:"..branch.."]", "black", "white").." "..clink.prompt.value
+        head:close()
     end
     return false
 end
