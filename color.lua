@@ -18,8 +18,8 @@ function color(fore, back, fbold, bbold)
 
     local forecode = parse_color(fore)
     local backcode = parse_color(back)
-    local fboldcode = bold and 1 or 22 -- some kind of ternary operator
-    local bboldcode = bold and 1 or 22 -- some kind of ternary operator
+    local fboldcode = fbold and 1 or 22 -- some kind of ternary operator
+    local bboldcode = bbold and 1 or 22 -- some kind of ternary operator
 
     return "\x1b[3"..forecode..";"..fboldcode..";".."4"..backcode..";"..bboldcode.."m"
 end
