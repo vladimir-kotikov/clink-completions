@@ -74,12 +74,26 @@ local function file_match_generator(word)
     return matches
 end
 
-local function branches()
-    return clink.find_files(".git/refs/heads/*")
+local function branches(token)
+    local res = {}
+    local branches = clink.find_files(".git/refs/heads/*")
+    for _,branch in ipairs(branches) do
+        if string.match(branch, token) then
+            table.insert(res, branch)
+        end
+    end
+    return res
 end
 
-local function remotes()
-    return clink.find_dirs(".git/refs/remotes/*")
+local function remotes(token)
+    local res = {}
+    local remotes = clink.find_dirs(".git/refs/remotes/*")
+    for _,remote in ipairs(remotes) do
+        if string.match(remote, token) then
+            table.insert(res, remote)
+        end
+    end
+    return res
 end
 
 local parser = clink.arg.new_parser

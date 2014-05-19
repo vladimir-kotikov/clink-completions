@@ -76,16 +76,15 @@ local function file_match_generator(word)
     return matches
 end
 
-local function find_npm_modules(root_dir, recurse)
-    if not root_dir then
-        return clink.find_dirs('node_modules/*')
-    else
-        if not recurse then
-            return clink.find_dirs(root_dir ..'/node_modules/*')
-        else
-            return
+local function modules(token)
+    local res = {}
+    local modules = clink.find_dirs('node_modules/*')
+    for _,module in ipairs(modules) do
+        if string.match(module, token) then
+            table.insert(res, module)
         end
     end
+    return res
 end
 
 local parser = clink.arg.new_parser
@@ -155,7 +154,7 @@ npm_parser = parser({
     "remove",
     "repo",
     "restart",
-    "rm" .. parser({find_npm_modules()}), -- TODO: add support for multiple modules and -g key
+    "rm" .. parser({modules}), -- TODO: add support for multiple modules and -g key
     "root",
     "run-script",
     "search" .. search_parser,
@@ -168,9 +167,9 @@ npm_parser = parser({
     "stop",
     "submodule",
     "tag",
-    "test" .. parser({find_npm_modules()}),
+    "test" .. parser({modules}),
     "un",
-    "uninstall" .. parser({find_npm_modules()}), -- TODO: add support for multiple modules and -g key
+    "uninstall" .. parser({modules}), -- TODO: add support for multiple modules and -g key
     "unlink",
     "unpublish",
     "unstar",

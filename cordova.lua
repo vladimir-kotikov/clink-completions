@@ -76,6 +76,28 @@ local function file_match_generator(word)
     return matches
 end
 
+local function platforms(token)
+    local res = {}
+    local platforms = clink.find_dirs('platforms/*')
+    for _,platform in ipairs(platforms) do
+        if string.match(platform, token) then
+            table.insert(res, platform)
+        end
+    end
+    return res
+end
+
+local function plugins(token)
+    local res = {}
+    local plugins = clink.find_dirs('plugins/*')
+    for _,plugin in ipairs(plugins) do
+        if string.match(plugin, token) then
+            table.insert(res, plugin)
+        end
+    end
+    return res
+end
+
 -- end preamble
 
 local parser = clink.arg.new_parser
@@ -99,29 +121,29 @@ cordova_parser = parser(
                 "blackberry10",
                 "firefoxos",
             }),
-            "remove" .. parser(clink.find_dirs("platforms/*")),
-            "rm" .. parser(clink.find_dirs("platforms/*")),
+            "remove" .. parser({platforms}),
+            "rm" .. parser({platforms}),
             "list", "ls",
-            "up" .. parser(clink.find_dirs("platforms/*")),
-            "update" .. parser(clink.find_dirs("platforms/*")),
+            "up" .. parser({platforms}),
+            "update" .. parser({platforms}),
             "check"
             }),
         "plugin" .. parser({
             "add",-- .. parser({dir_match_generator}),
-            "remove" .. parser(clink.find_dirs("plugins/*")),
-            "rm" .. parser(clink.find_dirs("plugins/*")),
+            "remove" .. parser({plugins}),
+            "rm" .. parser({plugins}),
             "list", "ls",
             "search"
         }),
-        "prepare" .. parser(clink.find_dirs("platforms/*")),
-        "compile" .. parser(clink.find_dirs("platforms/*")),
-        "build" .. parser(clink.find_dirs("platforms/*")),
+        "prepare" .. parser({platforms}),
+        "compile" .. parser({platforms}),
+        "build" .. parser({platforms}),
         "run" .. parser(
-            clink.find_dirs("platforms/*"),
+            {platforms},
             "--debug", "--release",
             "--device", "--emulator", "--target="
         ),
-        "emulate" .. parser(clink.find_dirs("platforms/*")),
+        "emulate" .. parser({platforms}),
         "serve",
     }, "-h")
 
