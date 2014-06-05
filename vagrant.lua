@@ -52,7 +52,7 @@ local vagrant_parser = parser({
             {""},
             {file_match_generator},
             "--checksum",
-            "--checksum-type",--..parser({"md5", "sha1", "sha256"}),
+            "--checksum-type" .. parser({"md5", "sha1", "sha256"}),
             "-c", "--clean",
             "-f", "--force",
             "--insecure",

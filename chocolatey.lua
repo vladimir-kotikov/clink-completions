@@ -16,8 +16,7 @@ local cinst_parser = parser(
 		"-overrideArguments",
 		"-params", "-parameters", "-packageparameters",
 		"-pre", "-prerelease",
-		-- TODO: Try to add parser to source
-		"-source",--..parser({"ruby", "webpi", "cygwin", "python"}),
+		"-source" .. parser({"ruby", "webpi", "cygwin", "python"}),
 		"-version",
 		"-x86", "-forcex86")
 
@@ -26,8 +25,7 @@ local cuninst_parser = parser("-version")
 local cup_parser = parser(
 		{"all"},
 		"-pre", "-prerelease",
-		-- TODO: Try to add parser to source
-		"-source")--..parser({"ruby", "webpi", "cygwin", "python"}),
+		"-source" .. parser({"ruby", "webpi", "cygwin", "python"}))
 
 local csources_parser=parser({
 		"add"..parser("-name", "-source"),
