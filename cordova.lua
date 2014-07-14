@@ -114,12 +114,12 @@ cordova_parser = parser(
     -- project-level commands
         "platform" .. parser({
             "add" .. parser({
-                "wp7",
                 "wp8",
                 "windows8",
                 "android",
                 "blackberry10",
                 "firefoxos",
+                dir_match_generator
             }),
             "remove" .. parser({platforms}),
             "rm" .. parser({platforms}),
