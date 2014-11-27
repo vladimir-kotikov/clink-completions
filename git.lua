@@ -281,7 +281,7 @@ local git_parser = parser(
         "difftool--helper",
         "fast-export",
         "fast-import",
-        "fetch",
+        "fetch" .. parser({remotes}),
         "fetch-pack",
         "filter-branch",
         "fmt-merge-msg",
@@ -366,7 +366,10 @@ local git_parser = parser(
         ),
         "quiltimport",
         "read-tree",
-        "rebase",
+        "rebase" .. parser(
+            "-i", "--interactive",
+            "--onto" .. parser({branches})
+            ),
         "rebase--am",
         "rebase--interactive",
         "rebase--merge",
