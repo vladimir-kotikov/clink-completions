@@ -452,7 +452,9 @@ function git_prompt_filter()
     if head ~= nil then
         h = head:read()
         local branch = string.match(h, "/([%w-]+)$")
-        clink.prompt.value = color_text("["..branch.."]", "black", "white").." "..clink.prompt.value
+        if (branch) then
+            clink.prompt.value = color_text("["..branch.."]", "black", "white").." "..clink.prompt.value
+        end
         head:close()
     end
     return false
