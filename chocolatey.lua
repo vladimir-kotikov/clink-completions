@@ -1,5 +1,17 @@
 local parser = clink.arg.new_parser
 
+local function packages(token)
+    local packagesDir = clink.get_env("chocolateyinstall")..'\\lib'
+    local packages = clink.find_dirs(packagesDir.."/*")
+    local res = {}
+    for _,package in ipairs(packages) do
+        if string.match(package:lower(), token:lower()) then
+            table.insert(res, package)
+        end
+    end
+    return res
+end
+
 local clist_parser = parser(
 		"-all", "-allversions",
 		"-lo", "-localonly",
@@ -20,7 +32,7 @@ local cinst_parser = parser(
 		"-version",
 		"-x86", "-forcex86")
 
-local cuninst_parser = parser("-version")
+local cuninst_parser = parser({packages}, "-version")
 
 local cup_parser = parser(
 		{"all"},
