@@ -44,7 +44,8 @@ local function branches(token)
     local res = {}
     local branches = clink.find_files(".git/refs/heads/*")
     for _,branch in ipairs(branches) do
-        if string.match(branch, token) then
+        local start = branch:find(token, 1, true)
+        if start and start == 1 then
             table.insert(res, branch)
         end
     end
@@ -55,10 +56,36 @@ local function remotes(token)
     local res = {}
     local remotes = clink.find_dirs(".git/refs/remotes/*")
     for _,remote in ipairs(remotes) do
-        if string.match(remote, token) then
+        local start = remote:find(token, 1, true)
+        if start and start == 1 then
             table.insert(res, remote)
         end
     end
+    return res
+end
+
+local function checkout_spec_generator(token)
+
+    local res = {}
+    local res_filter = {}
+
+    local b = branches(token)
+    local f = file_match_generator(token)
+
+    for _,v in ipairs(b) do
+        table.insert(res, v)
+        table.insert(res_filter, '*' .. v)
+    end
+
+    for _,v in ipairs(f) do
+        table.insert(res, v)
+        table.insert(res_filter, v)
+    end
+
+    clink.match_display_filter = function (matches)
+        return res_filter
+    end
+
     return res
 end
 
@@ -167,8 +194,7 @@ local git_parser = parser(
         "check-ignore",
         "check-mailmap",
         "check-ref-format",
-        "checkout" .. parser(
-            {branches},
+        "checkout" .. parser({checkout_spec_generator},
             "-q", "--quiet",
             "-b",
             "-B",
