@@ -23,15 +23,17 @@ local repos = {
 
 local coho_parser = parser(
     {
-        "repo-clone" .. parser({""},
-            "-r" .. parser({"repos", "tools"}),
-            "--r" .. parser({"repos", "tools"})
+        "repo-clone" .. parser(
+            "-r" .. parser(repos),
+            "--chdir", "--no-chdir",
+            "--depth"
         ),
         "repo-update" .. parser(
-            "--chdir",
+            "--chdir", "--no-chdir",
             "-b", "--branch",
             "-r", "--repo",
             "--fetch",
+            "--depth",
             "-h", "--help"
         ),
         "repo-reset" .. parser(
@@ -65,6 +67,7 @@ local coho_parser = parser(
         "for-each"
     },
     "--chdir",
+    "--no-chdir",
     "-h"
     )
 
