@@ -1,35 +1,43 @@
 -- preamble: common routines
 
-function file_match_generator_impl(text)
-    -- Strip off any path components that may be on text.
-    local prefix = ""
-    local i = text:find("[\\/:][^\\/:]*$")
+local function basename(path)
+    local prefix = path
+    local i = path:find("[\\/:][^\\/:]*$")
     if i then
-        prefix = text:sub(1, i)
+        prefix = path:sub(i + 1)
     end
+    return prefix
+end
+
+local function pathname(path)
+    local prefix = ""
+    local i = path:find("[\\/:][^\\/:]*$")
+    if i then
+        prefix = path:sub(1, i)
+    end
+    return prefix
+end
+
+local function files(word)
+
+    local prefix = pathname(word)
 
     local matches = {}
-    local mask = text.."*"
+    local mask = word.."*"
 
     -- Find matches.
     for _, dir in ipairs(clink.find_files(mask, true)) do
         local file = prefix..dir
-        if clink.is_match(text, file) then
+        if clink.is_match(word, file) then
             table.insert(matches, prefix..dir)
         end
     end
 
-    return matches
-end
-
-local function file_match_generator(word)
-    local matches = file_match_generator_impl(word)
-
     -- If there was no matches but text is a dir then use it as the single match.
     -- Otherwise tell readline that matches are files and it will do magic.
     if #matches == 0 then
-        if clink.is_dir(rl_state.text) then
-            -- table.insert(matches, rl_state.text)
+        if clink.is_dir(rl_state.word) then
+            table.insert(matches, rl_state.text)
         end
     else
         clink.matches_are_files()
@@ -69,17 +77,21 @@ local function checkout_spec_generator(token)
     local res = {}
     local res_filter = {}
 
-    local b = branches(token)
-    local f = file_match_generator(token)
-
-    for _,v in ipairs(b) do
-        table.insert(res, v)
-        table.insert(res_filter, '*' .. v)
+    for _,branch in ipairs(branches(token)) do
+        table.insert(res, branch)
+        table.insert(res_filter, '*' .. branch)
     end
 
-    for _,v in ipairs(f) do
-        table.insert(res, v)
-        table.insert(res_filter, v)
+    for _,file in ipairs(files(token)) do
+        table.insert(res, file)
+        -- TODO: lines, inserted here contains all path, not only last segmentP
+
+        local prefix = basename(file)
+        if clink.is_dir(file) then
+            prefix = prefix..'\\'
+        end
+
+        table.insert(res_filter, prefix)
     end
 
     clink.match_display_filter = function (matches)
@@ -93,7 +105,7 @@ local parser = clink.arg.new_parser
 
 local git_parser = parser(
     {
-        "add" .. parser({file_match_generator},
+        "add" .. parser({files},
             "-n", "--dry-run",
             "-v", "--verbose",
             "-f", "--force",
@@ -112,7 +124,7 @@ local git_parser = parser(
             ),
         "add--interactive",
         "am",
-        "annotate" .. parser({file_match_generator},
+        "annotate" .. parser({files},
             "-b",
             "--root",
             "--show-stats",
