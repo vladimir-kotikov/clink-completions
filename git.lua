@@ -49,6 +49,9 @@ end
 -- end preamble
 
 local function chdir_to_root()	
+	-- This is ugly, but need to stop recursing. There must be a better way.
+	if clink.get_cwd() == "C:\\" then return end
+	
 	if (next(clink.find_dirs(".git")) == nil) then
 		clink.chdir("..")
 		return chdir_to_root()
