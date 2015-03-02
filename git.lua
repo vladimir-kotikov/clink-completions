@@ -50,9 +50,40 @@ local function isRoot(dir)
     local dir = dir or clink.get_cwd()
 end
 
-local function get_git_dir()
-    if #clink.find_dirs('.git') > 0 then
-        return ''
+-- Resolves closest .git directory location.
+-- Navigates subsequently up one level and tries to find .git directory
+-- Returns path to .git directory or nil if such dir not found
+local function get_git_dir(path)
+
+    -- Navigates up one level
+    local function up_one_level(path)
+        if path == nil then path = '.' end
+        if path == '.' then path = clink.get_cwd() end
+        return pathname(path)
+    end
+
+    -- Checks if provided directory contains git directory
+    local function has_git_dir(path)
+        if path == nil then path = '.' end
+        local found_dirs = clink.find_dirs(path..'/.git')
+        if #found_dirs > 0 then return true end
+        return false
+    end
+
+    -- Set default path to current directory
+    if path == nil then path = '.' end
+
+    -- If we're already have .git directory here, then return current path
+    if has_git_dir(path) then
+        return path..'/.git'
+    else
+        -- Otherwise go up one level and make a recursive call
+        local parent_path = up_one_level(path)
+        if parent_path == path then
+            return nil
+        else
+            return get_git_dir(parent_path)
+        end
     end
 end
 
@@ -60,25 +91,41 @@ end
 
 local function branches(token)
     local res = {}
-    local branches = clink.find_files(".git/refs/heads/*")
+
+    -- Try to resolve .git directory location
+    local git_dir = get_git_dir()
+
+    if git_dir == nil then return res end
+    
+    -- If we're found it, then scan it for branches available
+    local branches = clink.find_files(git_dir .. "/refs/heads/*")
     for _,branch in ipairs(branches) do
         local start = branch:find(token, 1, true)
         if start and start == 1 then
             table.insert(res, branch)
         end
     end
+
     return res
 end
 
 local function remotes(token)
     local res = {}
-    local remotes = clink.find_dirs(".git/refs/remotes/*")
+
+    -- Try to resolve .git directory location
+    local git_dir = get_git_dir()
+
+    if git_dir == nil then return res end
+
+    -- If we're found it, then scan it for branches available
+    local remotes = clink.find_dirs(git_dir.."/refs/remotes/*")
     for _,remote in ipairs(remotes) do
         local start = remote:find(token, 1, true)
         if start and start == 1 then
             table.insert(res, remote)
         end
     end
+
     return res
 end
 
