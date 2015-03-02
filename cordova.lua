@@ -4,7 +4,7 @@ local function platforms(token)
     local res = {}
     local platforms = clink.find_dirs('platforms/*')
     for _,platform in ipairs(platforms) do
-        if string.match(platform, token) then
+        if platform:find("%.+$") == nil and platform:match(token) then
             table.insert(res, platform)
         end
     end
@@ -15,7 +15,7 @@ local function plugins(token)
     local res = {}
     local plugins = clink.find_dirs('plugins/*')
     for _,plugin in ipairs(plugins) do
-        if string.match(plugin, token) then
+        if plugin:find("%.+$") == nil and plugin:match(token) then
             table.insert(res, plugin)
         end
     end
@@ -33,7 +33,7 @@ local platform_add_parser = parser({
     "blackberry10",
     "firefoxos",
     dir_match_generator
-})
+}):loop(1)
 
 local plugin_add_parser = parser({dir_match_generator,
     "org.apache.cordova.battery-status",
@@ -53,33 +53,29 @@ local plugin_add_parser = parser({dir_match_generator,
     "org.apache.cordova.network-information",
     "org.apache.cordova.splashscreen",
     "org.apache.cordova.vibration"
-})
+}):loop(1)
 
-local platform_rm_parser = parser({platforms})
-local plugin_rm_parser = parser({plugins}, "-f", "--force")
+local platform_rm_parser = parser({platforms}):loop(1)
+local plugin_rm_parser = parser({plugins}, "-f", "--force"):loop(1)
 
-platform_add_parser:loop(1)
-plugin_add_parser:loop(1)
-platform_rm_parser:loop(1)
-plugin_rm_parser:loop(1)
-
-cordova_parser = parser(
+local cordova_parser = parser(
     {
     -- common commands
         "create" .. parser(
             "--copy-from",
-            "--src" .. parser(),
-            "--link-to="),
+            "--src" .. parser({dir_match_generator}),
+            "--link-to=" .. parser({dir_match_generator})
+        ),
         "help",
         "info",
     -- project-level commands
         "platform" .. parser({
             "add" .. platform_add_parser,
             "remove" .. platform_rm_parser,
-            "rm" .. parser({platforms}),
+            "rm" .. platform_rm_parser,
             "list", "ls",
-            "up" .. parser({platforms}),
-            "update" .. parser({platforms}),
+            "up" .. parser({platforms}):loop(1),
+            "update" .. parser({platforms}):loop(1),
             "check"
             }),
         "plugin" .. parser({
@@ -89,15 +85,17 @@ cordova_parser = parser(
             "list", "ls",
             "search"
         }),
-        "prepare" .. parser({platforms}),
-        "compile" .. parser({platforms}),
-        "build" .. parser({platforms}),
-        "run" .. parser(
-            {platforms},
+        "prepare" .. parser({platforms}):loop(1),
+        "compile" .. parser({platforms},
+            "--debug", "--release",
+            "--device", "--emulator", "--target="):loop(1),
+        "build" .. parser({platforms},
+            "--debug", "--release",
+            "--device", "--emulator", "--target="):loop(1),
+        "run" .. parser({platforms},
             "--nobuild",
             "--debug", "--release",
-            "--device", "--emulator", "--target="
-        ),
+            "--device", "--emulator", "--target="),
         "emulate" .. parser({platforms}),
         "serve",
     }, "-h", "-d")
