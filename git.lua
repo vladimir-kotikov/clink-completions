@@ -46,6 +46,16 @@ local function files(word)
     return matches
 end
 
+local function isRoot(dir)
+    local dir = dir or clink.get_cwd()
+end
+
+local function get_git_dir()
+    if #clink.find_dirs('.git') > 0 then
+        return ''
+    end
+end
+
 -- end preamble
 
 local function branches(token)
