@@ -48,9 +48,24 @@ end
 
 -- end preamble
 
+local function chdir_to_root()	
+	-- This is ugly, but need to stop recursing. There must be a better way.
+	if clink.get_cwd() == "C:\\" then return end
+	
+	if (next(clink.find_dirs(".git")) == nil) then
+		clink.chdir("..")
+		return chdir_to_root()
+	end
+end
+
 local function branches(token)
-    local res = {}
-    local branches = clink.find_files(".git/refs/heads/*")
+    local res = {}	
+	
+	local cwd = clink.get_cwd()	
+	chdir_to_root()	
+    local branches = clink.find_files(".git/refs/heads/*")	
+	clink.chdir(cwd)
+	
     for _,branch in ipairs(branches) do
         local start = branch:find(token, 1, true)
         if start and start == 1 then
@@ -62,7 +77,12 @@ end
 
 local function remotes(token)
     local res = {}
+	
+	local cwd = clink.get_cwd()	
+	chdir_to_root()	
     local remotes = clink.find_dirs(".git/refs/remotes/*")
+	clink.chdir(cwd)	
+	
     for _,remote in ipairs(remotes) do
         local start = remote:find(token, 1, true)
         if start and start == 1 then
@@ -72,8 +92,7 @@ local function remotes(token)
     return res
 end
 
-local function checkout_spec_generator(token)
-
+local function checkout_spec_generator(token)	
     local res = {}
     local res_filter = {}
 
@@ -85,8 +104,9 @@ local function checkout_spec_generator(token)
     for _,file in ipairs(files(token)) do
         table.insert(res, file)
         -- TODO: lines, inserted here contains all path, not only last segmentP
-
+		
         local prefix = basename(file)
+		
         if clink.is_dir(file) then
             prefix = prefix..'\\'
         end
