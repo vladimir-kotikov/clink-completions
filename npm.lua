@@ -1,41 +1,7 @@
 -- preamble: common routines
 
-function file_match_generator_impl(text)
-    -- Strip off any path components that may be on text.
-    local prefix = ""
-    local i = text:find("[\\/:][^\\/:]*$")
-    if i then
-        prefix = text:sub(1, i)
-    end
-
-    local matches = {}
-    local mask = text.."*"
-
-    -- Find matches.
-    for _, dir in ipairs(clink.find_files(mask, true)) do
-        local file = prefix..dir
-        if clink.is_match(text, file) then
-            table.insert(matches, prefix..dir)
-        end
-    end
-
-    return matches
-end
-
-local function file_match_generator(word)
-    local matches = file_match_generator_impl(word)
-
-    -- If there was no matches but text is a dir then use it as the single match.
-    -- Otherwise tell readline that matches are files and it will do magic.
-    if #matches == 0 then
-        if clink.is_dir(rl_state.text) then
-            -- table.insert(matches, rl_state.text)
-        end
-    else
-        clink.matches_are_files()
-    end
-
-    return matches
+function trim(s)
+  return s:match "^%s*(.-)%s*$"
 end
 
 local function modules(token)
@@ -49,12 +15,57 @@ local function modules(token)
     return res
 end
 
+-- Reads package.json in current directory and extracts all "script" commands defined 
+local function scripts(token)
+
+    local matches = {}
+    local match_filters = {}
+
+    -- Read package.json first
+    local package_json = io.open('package.json')
+    -- If there is no such file, then close handle and return
+    if package_json == nil then
+        package_json:close()
+        return matches
+    end
+    
+    -- Read the whole file contents
+    local package_contents = package_json:read("*a")
+    
+    -- First, gind all "scripts" elements in package file
+    -- This is necessary since package.json can contain multiple sections
+    -- And we'll need to merge them first
+    local scripts_sections = {}
+    for section in package_contents:gmatch('"scripts"%s*:%s*{(.-)}') do
+        table.insert(scripts_sections, trim(section))
+    end
+
+    -- Then merge "scripts" sections found and try to find
+    -- <script_name>: <script_command> pairs
+    local scripts = table.concat(scripts_sections, ",\n")
+    for script_name, script_command in scripts:gmatch('"(.-)"%s*:%s*(".-")') do
+        table.insert(matches, script_name)
+        -- This line adds match filter for each command, since we want to
+        -- see not only command name, but command content as well
+        -- TODO: check how this will looks when command is too long
+        -- TODO: add coloring
+        table.insert(match_filters, script_name.." -> "..script_command)
+    end
+
+    -- Finally close the handle
+    package_json:close()
+    -- And register match filters and return the matches collection
+    clink.match_display_filter = function (matches)
+        return match_filters
+    end
+    return matches
+end
+
 local parser = clink.arg.new_parser
 
 -- end preamble
 
--- TODO: add support for multiple modules
-install_parser = parser({dir_match_generator},
+local install_parser = parser({dir_match_generator},
         "--force",
         "-g", "--global",
         "--link",
@@ -65,11 +76,13 @@ install_parser = parser({dir_match_generator},
         "--production",
         "--save", "--save-dev", "--save-optional",
         "--tag"
-        )
+        ):loop(1)
 
-search_parser = parser("--long")
+local search_parser = parser("--long")
 
-npm_parser = parser({
+local script_parser = parser({scripts})
+
+local npm_parser = parser({
     "add-user",
     "adduser",
     "apihelp",
@@ -116,9 +129,10 @@ npm_parser = parser({
     "remove",
     "repo",
     "restart",
-    "rm" .. parser({modules}), -- TODO: add support for multiple modules and -g key
+    "rm" .. parser({modules}, "-g", "--global"):loop(1), -- TODO: list only global modules with -g
     "root",
-    "run-script",
+    "run"..script_parser,
+    "run-script"..script_parser,
     "search" .. search_parser,
     "set",
     "show",
@@ -129,9 +143,9 @@ npm_parser = parser({
     "stop",
     "submodule",
     "tag",
-    "test" .. parser({modules}),
+    "test",
     "un",
-    "uninstall" .. parser({modules}), -- TODO: add support for multiple modules and -g key
+    "uninstall" .. parser({modules}, "-g", "--global"):loop(1), -- TODO: list only global modules with -g
     "unlink",
     "unpublish",
     "unstar",
@@ -144,3 +158,5 @@ npm_parser = parser({
     },
     "-h"
 )
+
+clink.arg.register_parser("npm", npm_parser)
