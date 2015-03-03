@@ -1,4 +1,4 @@
-clink.arg.register_parser("npm", npm_parser)
+
 function npm_prompt_filter()
     local package = io.open('package.json')
     if package ~= nil then
