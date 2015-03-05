@@ -13,7 +13,7 @@ local function pathname(path)
     local prefix = ""
     local i = path:find("[\\/:][^\\/:]*$")
     if i then
-        prefix = path:sub(1, i)
+        prefix = path:sub(1, i-1)
     end
     return prefix
 end
