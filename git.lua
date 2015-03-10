@@ -160,6 +160,34 @@ end
 
 local parser = clink.arg.new_parser
 
+local merge_recursive_options = parser({
+    "ours",
+    "theirs",
+    "renormalize",
+    "no-renormalize",
+    "diff-algorithm="..parser({
+        "patience",
+        "minimal",
+        "histogram",
+        "myers"
+    }),
+    "patience",
+    "ignore-space-change",
+    "ignore-all-space",
+    "ignore-space-at-eol",
+    "rename-threshold=",
+    -- "subtree="..parser(),
+    "subtree"
+})
+
+local merge_strategies = parser({
+    "resolve",
+    "recursive",
+    "ours",
+    "octopus",
+    "subtree"
+})
+
 local git_parser = parser(
     {
         "add" .. parser({files},
@@ -373,7 +401,25 @@ local git_parser = parser(
         "ls-tree",
         "mailinfo",
         "mailsplit",
-        "merge",
+        "merge" .. parser({branches},
+            "--commit", "--no-commit",
+            "--edit", "-e", "--no-edit",
+            "--ff", "--no-ff", "--ff-only",
+            "--log", "--no-log",
+            "--stat", "-n", "--no-stat",
+            "--squash", "--no-squash",
+            "-s" .. merge_strategies,
+            -- "--strategy=" .. merge_strategies,
+            "-X" .. merge_recursive_options,
+            -- "--strategy-option=" .. merge_recursive_options,
+            "--verify-signatures", "--no-verify-signatures",
+            "-q", "--quiet", "-v", "--verbose",
+            "--progress", "--no-progress",
+            "-S", "--gpg-sign",
+            "-m",
+            "--rerere-autoupdate", "--no-rerere-autoupdate",
+            "--abort"
+        ),
         "merge-base",
         "merge-file",
         "merge-index",
