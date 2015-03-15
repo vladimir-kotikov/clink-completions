@@ -46,13 +46,12 @@ local function files(word)
     return matches
 end
 
-local function isRoot(dir)
-    local dir = dir or clink.get_cwd()
-end
-
--- Resolves closest .git directory location.
--- Navigates subsequently up one level and tries to find .git directory
--- Returns path to .git directory or nil if such dir not found
+---
+ -- Resolves closest .git directory location.
+ -- Navigates subsequently up one level and tries to find .git directory
+ -- @param  {string} path Path to directory will be checked. If not provided
+ --                       current directory will be used
+ -- @return {string} Path to .git directory or nil if such dir not found
 local function get_git_dir(path)
 
     -- Navigates up one level
@@ -606,3 +605,55 @@ local git_parser = parser(
 )
 
 clink.arg.register_parser("git", git_parser)
+
+---
+ -- Find out current branch
+ -- @return {false|git branch name}
+---
+local function get_git_branch()
+    for line in io.popen("git branch 2>nul"):lines() do
+        local m = line:match("%* (.+)$")
+        if m then
+            return m
+        end
+    end
+
+    return false
+end
+
+---
+ -- Get the status of working dir
+ -- @return {bool}
+---
+local function get_git_status()
+    return os.execute("git diff --quiet --ignore-submodules HEAD 2>nul")
+end
+
+local function git_prompt_filter()
+
+    -- Colors for git status
+    local colors = {
+        clean = "\x1b[1;37;40m",
+        dirty = "\x1b[31;1m",
+    }
+
+    local branch = get_git_branch()
+    if branch then
+        -- Has branch => therefore it is a git folder, now figure out status
+        if get_git_status() then
+            color = colors.clean
+        else
+            color = colors.dirty
+        end
+
+        clink.prompt.value = string.gsub(clink.prompt.value, "{git}", color.."("..branch..")")
+        clink.prompt.value = string.gsub(clink.prompt.value, "{hg}", "")
+        return true
+    end
+
+    -- No git present or not in git file
+    clink.prompt.value = string.gsub(clink.prompt.value, "{git}", "")
+    return false
+end
+
+clink.prompt.register_filter(git_prompt_filter, 50)
