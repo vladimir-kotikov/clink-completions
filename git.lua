@@ -46,13 +46,12 @@ local function files(word)
     return matches
 end
 
-local function isRoot(dir)
-    local dir = dir or clink.get_cwd()
-end
-
--- Resolves closest .git directory location.
--- Navigates subsequently up one level and tries to find .git directory
--- Returns path to .git directory or nil if such dir not found
+---
+ -- Resolves closest .git directory location.
+ -- Navigates subsequently up one level and tries to find .git directory
+ -- @param  {string} path Path to directory will be checked. If not provided
+ --                       current directory will be used
+ -- @return {string} Path to .git directory or nil if such dir not found
 local function get_git_dir(path)
 
     -- Navigates up one level
@@ -159,6 +158,34 @@ local function checkout_spec_generator(token)
 end
 
 local parser = clink.arg.new_parser
+
+local merge_recursive_options = parser({
+    "ours",
+    "theirs",
+    "renormalize",
+    "no-renormalize",
+    "diff-algorithm="..parser({
+        "patience",
+        "minimal",
+        "histogram",
+        "myers"
+    }),
+    "patience",
+    "ignore-space-change",
+    "ignore-all-space",
+    "ignore-space-at-eol",
+    "rename-threshold=",
+    -- "subtree="..parser(),
+    "subtree"
+})
+
+local merge_strategies = parser({
+    "resolve",
+    "recursive",
+    "ours",
+    "octopus",
+    "subtree"
+})
 
 local git_parser = parser(
     {
@@ -373,7 +400,25 @@ local git_parser = parser(
         "ls-tree",
         "mailinfo",
         "mailsplit",
-        "merge",
+        "merge" .. parser({branches},
+            "--commit", "--no-commit",
+            "--edit", "-e", "--no-edit",
+            "--ff", "--no-ff", "--ff-only",
+            "--log", "--no-log",
+            "--stat", "-n", "--no-stat",
+            "--squash", "--no-squash",
+            "-s" .. merge_strategies,
+            -- "--strategy=" .. merge_strategies,
+            "-X" .. merge_recursive_options,
+            -- "--strategy-option=" .. merge_recursive_options,
+            "--verify-signatures", "--no-verify-signatures",
+            "-q", "--quiet", "-v", "--verbose",
+            "--progress", "--no-progress",
+            "-S", "--gpg-sign",
+            "-m",
+            "--rerere-autoupdate", "--no-rerere-autoupdate",
+            "--abort"
+        ),
         "merge-base",
         "merge-file",
         "merge-index",
@@ -453,9 +498,36 @@ local git_parser = parser(
         ),
         "quiltimport",
         "read-tree",
-        "rebase" .. parser(
+        "rebase" .. parser({branches}, {branches},
             "-i", "--interactive",
-            "--onto" .. parser({branches})
+            "--onto" .. parser({branches}),
+            "--continue",
+            "--abort",
+            "--keep-empty",
+            "--skip",
+            "--edit-todo",
+            "-m", "--merge",
+            "-s" .. merge_strategies,
+            -- "--strategy=<strategy>",
+            "-X" .. merge_recursive_options,
+            -- "--strategy-option=<strategy-option>",
+            "-S", "--gpg-sign",
+            "-q", "--quiet",
+            "-v", "--verbose",
+            "--stat", "-n", "--no-stat",
+            "--no-verify", "--verify",
+            "-C",
+            "-f", "--force-rebase",
+            "--fork-point", "--no-fork-point",
+            "--ignore-whitespace", "--whitespace",
+            "--committer-date-is-author-date", "--ignore-date",
+            "-i", "--interactive",
+            "-p", "--preserve-merges",
+            "-x", "--exec",
+            "--root",
+            "--autosquash", "--no-autosquash",
+            "--autostash", "--no-autostash",
+            "--no-ff"
             ),
         "rebase--am",
         "rebase--interactive",
@@ -533,3 +605,55 @@ local git_parser = parser(
 )
 
 clink.arg.register_parser("git", git_parser)
+
+---
+ -- Find out current branch
+ -- @return {false|git branch name}
+---
+local function get_git_branch()
+    for line in io.popen("git branch 2>nul"):lines() do
+        local m = line:match("%* (.+)$")
+        if m then
+            return m
+        end
+    end
+
+    return false
+end
+
+---
+ -- Get the status of working dir
+ -- @return {bool}
+---
+local function get_git_status()
+    return os.execute("git diff --quiet --ignore-submodules HEAD 2>nul")
+end
+
+local function git_prompt_filter()
+
+    -- Colors for git status
+    local colors = {
+        clean = "\x1b[1;37;40m",
+        dirty = "\x1b[31;1m",
+    }
+
+    local branch = get_git_branch()
+    if branch then
+        -- Has branch => therefore it is a git folder, now figure out status
+        if get_git_status() then
+            color = colors.clean
+        else
+            color = colors.dirty
+        end
+
+        clink.prompt.value = string.gsub(clink.prompt.value, "{git}", color.."("..branch..")")
+        clink.prompt.value = string.gsub(clink.prompt.value, "{hg}", "")
+        return true
+    end
+
+    -- No git present or not in git file
+    clink.prompt.value = string.gsub(clink.prompt.value, "{git}", "")
+    return false
+end
+
+clink.prompt.register_filter(git_prompt_filter, 50)
