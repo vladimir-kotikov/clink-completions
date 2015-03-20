@@ -18,6 +18,10 @@ local function pathname(path)
     return prefix
 end
 
+local function is_metadir(dirname)
+    return dirname == '.' or dirname == '..'
+end
+
 local function files(word)
 
     local prefix = pathname(word)
@@ -100,7 +104,7 @@ local function branches(token)
     local branches = clink.find_files(git_dir .. "/refs/heads/*")
     for _,branch in ipairs(branches) do
         local start = branch:find(token, 1, true)
-        if start and start == 1 then
+        if not is_metadir(branch) and start and start == 1 then
             table.insert(res, branch)
         end
     end
@@ -120,7 +124,7 @@ local function remotes(token)
     local remotes = clink.find_dirs(git_dir.."/refs/remotes/*")
     for _,remote in ipairs(remotes) do
         local start = remote:find(token, 1, true)
-        if start and start == 1 then
+        if not is_metadir(remote) and start and start == 1 then
             table.insert(res, remote)
         end
     end
