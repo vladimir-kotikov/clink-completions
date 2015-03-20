@@ -132,27 +132,6 @@ local function remotes(token)
     return res
 end
 
--- TODO: 
-local function remote_groups(token)
-    -- local res = {}
-
-    -- -- Try to resolve .git directory location
-    -- local git_dir = get_git_dir()
-
-    -- if git_dir == nil then return res end
-
-    -- -- If we're found it, then scan it for branches available
-    -- local remotes = clink.find_dirs(git_dir.."/refs/remotes/*")
-    -- for _,remote in ipairs(remotes) do
-    --     local start = remote:find(token, 1, true)
-    --     if not is_metadir(remote) and start and start == 1 then
-    --         table.insert(res, remote)
-    --     end
-    -- end
-
-    -- return res
-end
-
 local function checkout_spec_generator(token)
 
     local res = {}
@@ -556,7 +535,30 @@ local git_parser = parser(
             ),
         "receive-pack",
         "reflog",
-        "remote",
+        "remote"..parser({
+            "add" ..parser(
+                "-t"..parser({branches}),
+                "-m",
+                "-f",
+                "--mirror",
+                "--tags", "--no-tags"
+            ),
+            "rename"..parser({remotes}),
+            "remove"..parser({remotes}),
+            "rm"..parser({remotes}),
+            "set-head"..parser({remotes}, {branches},
+                "-a", "--auto",
+                "-d", "--delete"
+            ),
+            "set-branches"..parser("--add", {remotes}, {branches}),
+            "set-url"..parser(
+                "--add"..parser("--push", {remotes}),
+                "--delete"..parser("--push", {remotes})
+            ),
+            "show"..parser("-n", {remotes}),
+            "prune"..parser("-n", "--dry-run", {remotes}),
+            "update"..parser("-p", "--prune")
+            }, "-v", "--verbose"),
         "remote-ext",
         "remote-fd",
         "remote-ftp",
