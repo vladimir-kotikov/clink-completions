@@ -1,7 +1,7 @@
 clink-completions
 =================
 
-Completion files to clink util
+Completion files to [clink](https://github.com/mridgers/clink) util
 
 Notes
 =====
