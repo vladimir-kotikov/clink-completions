@@ -1,19 +1,19 @@
-function color(fore, back, fbold, bbold)
+local function color(fore, back, fbold, bbold)
 
-    local colors = {"black", "red", "green", "yellow",
+    local color_codes = {"black", "red", "green", "yellow",
                     "blue", "magenta", "cyan", "white"}
 
-    local function parse_color(color)
-        if type(color) == "number" and 0 <= color <= 9 then
-            return color
-        elseif type(color) == "string" then
-            for code, name in pairs(colors) do
-                if color == name then
-                    return code-1
+    local function parse_color(color_code)
+        if type(color_code) == "number" and 0 <= color_code <= 9 then
+            return color_code
+        elseif type(color_code) == "string" then
+            for code, name in pairs(color_codes) do
+                if color_code == name then
+                    return code - 1
                 end
             end
         end
-        return 9 -- default color
+        return 9 -- default color_code
     end
 
     local forecode = parse_color(fore)
