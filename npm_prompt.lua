@@ -6,8 +6,8 @@ function npm_prompt_filter()
         package:close()
         local package_name = string.match(package_info, '"name"%s*:%s*"(%g-)"')
         local package_version = string.match(package_info, '"version"%s*:%s*"(.-)"')
-        clink.prompt.value = color_text("["..package_name.."@"..package_version.."]", "black", "green").." "..clink.prompt.value
-        clink.prompt.value:gsub('{git}', '{git} '..package_string)
+        local package_string = color_text("("..package_name.."@"..package_version..")", "yellow")
+        clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
     end
     return false
 end
