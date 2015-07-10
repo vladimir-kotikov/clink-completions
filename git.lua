@@ -132,12 +132,49 @@ local function remotes(token)
     return res
 end
 
+local function local_or_remote_branches(token)
+    local res = {}
+
+    -- Try to resolve .git directory location
+    local git_dir = get_git_dir()
+
+    if git_dir == nil then return res end
+
+    -- If we're found it, then scan it for branches available
+    res = branches(token)
+
+    local remotes = clink.find_dirs(git_dir.."/refs/remotes/*")
+    for _,remote in ipairs(remotes) do
+        local start = remote:find(token, 1, true)
+        if not start then
+            local s, e = token:find("/", 1, true)
+            if s then
+                start = remote:find(token:sub(1, s-1))
+            end
+        end
+        if not is_metadir(remote) and start and start == 1 then
+            local refs = clink.find_files(git_dir .. "/refs/remotes/" .. remote .. "/*")
+            for _,ref in ipairs(refs) do
+                if not is_metadir(ref) and ref ~= 'HEAD' then
+                    local concat = remote .. "/".. ref
+                    local start = concat:find(token, 1, true)
+                    if start and start == 1 then
+                       table.insert(res, concat)
+                    end
+                end
+            end
+        end
+    end
+
+    return res
+end
+
 local function checkout_spec_generator(token)
 
     local res = {}
     local res_filter = {}
 
-    for _,branch in ipairs(branches(token)) do
+    for _,branch in ipairs(local_or_remote_branches(token)) do
         table.insert(res, branch)
         table.insert(res_filter, '*' .. branch)
     end
@@ -365,7 +402,7 @@ local git_parser = parser(
         "credential-wincred",
         "daemon",
         "describe",
-        "diff",
+        "diff" .. parser({local_or_remote_branches}),
         "diff-files",
         "diff-index",
         "diff-tree",
@@ -502,7 +539,7 @@ local git_parser = parser(
         ),
         "quiltimport",
         "read-tree",
-        "rebase" .. parser({branches}, {branches},
+        "rebase" .. parser({local_or_remote_branches}, {branches},
             "-i", "--interactive",
             "--onto" .. parser({branches}),
             "--continue",
@@ -605,7 +642,7 @@ local git_parser = parser(
 				"--rewrite-uuid", "--username", "--prefix"..parser({"origin"}), "--ignore-paths",
 				"--include-paths", "--no-minimize-url", "--preserve-empty-dirs",
 				"--placeholder-filename"),
-				"rebase"..parser({branches}),
+				"rebase"..parser({local_or_remote_branches}, {branches}),
 			"dcommit"..parser("--no-rebase", "--commit-url", "--mergeinfo", "--interactive"), 
 			"branch"..parser("-m","--message","-t", "--tags", "-d", "--destination", "--username", "--commit-url", "--parents"),
 			"log"..parser("-r", "--revision", "-v", "--verbose", "--limit", "--incremental", "--show-commit", "--oneline"),
