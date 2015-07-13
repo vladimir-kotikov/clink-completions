@@ -112,6 +112,30 @@ local function branches(token)
     return res
 end
 
+local function alias(token)
+    local res = {}
+
+    -- Try to resolve .git directory location
+    local git_dir = get_git_dir()
+
+    if git_dir == nil then return res end
+
+    f = assert (io.popen ("git config --get-regexp alias"))
+
+    for line in f:lines() do
+        local s, e = line:find(" ", 1, true)
+        local alias = line:sub(7, s - 1)
+        local start = alias:find(token, 1, true)
+        if start and start == 1 then
+            table.insert(res, alias)
+        end
+    end
+
+    f:close()
+
+    return res
+end
+
 local function remotes(token)
     local res = {}
 
@@ -230,6 +254,7 @@ local merge_strategies = parser({
 
 local git_parser = parser(
     {
+        {alias},
         "add" .. parser({files},
             "-n", "--dry-run",
             "-v", "--verbose",
