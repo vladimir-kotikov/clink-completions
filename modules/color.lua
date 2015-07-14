@@ -1,0 +1,26 @@
+local exports = {}
+
+exports.BLACK   = 0
+exports.RED     = 1
+exports.GREEN   = 2
+exports.YELLOW  = 3
+exports.BLUE    = 4
+exports.MAGENTA = 5
+exports.CYAN    = 6
+exports.WHITE   = 7
+exports.DEFAULT = 9
+exports.BOLD    = 1
+
+exports.set_color = function (fore, back, bold)
+    fore = fore or exports.DEFAULT
+    back = back or exports.DEFAULT
+    bold = bold and exports.BOLD or 22
+
+    return "\x1b[3"..fore..";"..bold..";".."4"..back.."m"
+end
+
+exports.color_text = function (text, fore, back, bold)
+    return exports.set_color(fore, back, bold)..text..exports.set_color()
+end
+
+return exports
