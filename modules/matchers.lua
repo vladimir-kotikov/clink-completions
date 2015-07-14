@@ -1,6 +1,7 @@
 
 local exports = {}
 
+local path = require('path')
 local filter = require('funclib').filter
 
 exports.dirs = function(word)
@@ -38,10 +39,11 @@ exports.files = function (word)
     return matches
 end
 
-exports.create_dirs_matcher = function (dir_pattern)
+exports.create_dirs_matcher = function (dir_pattern, ignore_dotfiles)
     return function (token)
         return filter(clink.find_dirs(dir_pattern), function(dir)
-            return not string.match(dir, '^%.%.?$') and clink.is_match(token, dir)
+            if ignore_dotfiles and path.is_metadir(dir) then return false end
+            return clink.is_match(token, dir)
         end )
     end
 end

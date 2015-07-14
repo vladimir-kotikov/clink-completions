@@ -1,19 +1,12 @@
 -- preamble: common routines
 
+local matchers = require('matchers')
+
 function trim(s)
   return s:match "^%s*(.-)%s*$"
 end
 
-local function modules(token)
-    local res = {}
-    local modules = clink.find_dirs('node_modules/*')
-    for _,module in ipairs(modules) do
-        if string.match(module, token) then
-            table.insert(res, module)
-        end
-    end
-    return res
-end
+local modules = matchers.create_dirs_matcher('node_modules/*')
 
 -- Reads package.json in current directory and extracts all "script" commands defined 
 local function scripts(token)
@@ -65,7 +58,7 @@ local parser = clink.arg.new_parser
 
 -- end preamble
 
-local install_parser = parser({dir_match_generator},
+local install_parser = parser({matchers.dirs},
         "--force",
         "-g", "--global",
         "--link",
@@ -77,6 +70,9 @@ local install_parser = parser({dir_match_generator},
         "--save", "--save-dev", "--save-optional",
         "--tag"
         ):loop(1)
+
+-- TODO: list only global modules with -g
+local remove_parser = parser({modules}, "-g", "--global"):loop(1)
 
 local search_parser = parser("--long")
 
@@ -126,10 +122,10 @@ local npm_parser = parser({
     "r",
     "rb",
     "rebuild",
-    "remove",
+    "rm" .. remove_parser,
+    "remove" .. remove_parser,
     "repo",
     "restart",
-    "rm" .. parser({modules}, "-g", "--global"):loop(1), -- TODO: list only global modules with -g
     "root",
     "run"..script_parser,
     "run-script"..script_parser,
@@ -145,7 +141,7 @@ local npm_parser = parser({
     "tag",
     "test",
     "un",
-    "uninstall" .. parser({modules}, "-g", "--global"):loop(1), -- TODO: list only global modules with -g
+    "uninstall" .. remove_parser,
     "unlink",
     "unpublish",
     "unstar",

@@ -1,18 +1,11 @@
+local matchers = require('matchers')
 local parser = clink.arg.new_parser
 
-local function boxes()
-    return clink.find_dirs(clink.get_env("userprofile") .. "/.vagrant.d/boxes/*")
-end
-
-local function any()
-    return true
-end
+local boxes = matchers.create_dirs_matcher(clink.get_env("userprofile") .. "/.vagrant.d/boxes/*")
 
 local vagrant_parser = parser({
     "box" .. parser({
         "add" .. parser(
-            {""},
-            {file_match_generator},
             "--checksum",
             "--checksum-type" .. parser({"md5", "sha1", "sha256"}),
             "-c", "--clean",
@@ -24,8 +17,8 @@ local vagrant_parser = parser({
             ),
         "list" .. parser("-i", "--box-info"),
         "outdated"..parser("--global", "-h", "--help"),
-        "remove" .. parser(boxes(), {}),
-        "repackage" .. parser(boxes()),
+        "remove" .. parser({boxes}),
+        "repackage" .. parser({boxes}),
         "update"
         }),
     "connect",

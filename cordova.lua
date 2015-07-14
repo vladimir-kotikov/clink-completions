@@ -1,26 +1,9 @@
 --preamble: common routines
 
-local function platforms(token)
-    local res = {}
-    local platforms = clink.find_dirs('platforms/*')
-    for _,platform in ipairs(platforms) do
-        if platform:find("%.+$") == nil and platform:match(token) then
-            table.insert(res, platform)
-        end
-    end
-    return res
-end
+local matchers = require('matchers')
 
-local function plugins(token)
-    local res = {}
-    local plugins = clink.find_dirs('plugins/*')
-    for _,plugin in ipairs(plugins) do
-        if plugin:find("%.+$") == nil and plugin:match(token) then
-            table.insert(res, plugin)
-        end
-    end
-    return res
-end
+local platforms = matchers.create_dirs_matcher('platforms/*', --[[ignore_dotfiles=]] true)
+local plugins = matchers.create_dirs_matcher('plugins/*')
 
 -- end preamble
 
@@ -32,10 +15,10 @@ local platform_add_parser = parser({
     "android",
     "blackberry10",
     "firefoxos",
-    dir_match_generator
+    matchers.dirs
 }, "--usegit", "--save", "--link"):loop(1)
 
-local plugin_add_parser = parser({dir_match_generator,
+local plugin_add_parser = parser({matchers.dirs,
         "org.apache.cordova.battery-status", "cordova-plugin-battery-status",
         "org.apache.cordova.camera", "cordova-plugin-camera",
         "org.apache.cordova.contacts", "cordova-plugin-contacts",
@@ -54,7 +37,7 @@ local plugin_add_parser = parser({dir_match_generator,
         "org.apache.cordova.splashscreen", "cordova-plugin-splashscreen",
         "org.apache.cordova.vibration", "cordova-plugin-vibration"
     },
-    "--searchpath" ..parser({dir_match_generator}),
+    "--searchpath" ..parser({matchers.dirs}),
     "--noregistry",
     "--link",
     "--save",

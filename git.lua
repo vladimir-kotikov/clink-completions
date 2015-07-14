@@ -1,54 +1,7 @@
 -- preamble: common routines
 
-local function basename(path)
-    local prefix = path
-    local i = path:find("[\\/:][^\\/:]*$")
-    if i then
-        prefix = path:sub(i + 1)
-    end
-    return prefix
-end
-
-local function pathname(path)
-    local prefix = ""
-    local i = path:find("[\\/:][^\\/:]*$")
-    if i then
-        prefix = path:sub(1, i-1)
-    end
-    return prefix
-end
-
-local function is_metadir(dirname)
-    return dirname == '.' or dirname == '..'
-end
-
-local function files(word)
-
-    local prefix = pathname(word)
-
-    local matches = {}
-    local mask = word.."*"
-
-    -- Find matches.
-    for _, dir in ipairs(clink.find_files(mask, true)) do
-        local file = prefix..dir
-        if clink.is_match(word, file) then
-            table.insert(matches, prefix..dir)
-        end
-    end
-
-    -- If there was no matches but text is a dir then use it as the single match.
-    -- Otherwise tell readline that matches are files and it will do magic.
-    if #matches == 0 then
-        if clink.is_dir(rl_state.word) then
-            table.insert(matches, rl_state.text)
-        end
-    else
-        clink.matches_are_files()
-    end
-
-    return matches
-end
+local path = require('path')
+local matchers = require('matchers')
 
 ---
  -- Resolves closest .git directory location.
@@ -62,7 +15,7 @@ local function get_git_dir(path)
     local function up_one_level(path)
         if path == nil then path = '.' end
         if path == '.' then path = clink.get_cwd() end
-        return pathname(path)
+        return path.pathname(path)
     end
 
     -- Checks if provided directory contains git directory
@@ -92,24 +45,12 @@ end
 
 -- end preamble
 
-local function branches(token)
-    local res = {}
-
-    -- Try to resolve .git directory location
+local branches = function (token)
     local git_dir = get_git_dir()
+    if not git_dir then return {} end
 
-    if git_dir == nil then return res end
-    
-    -- If we're found it, then scan it for branches available
-    local branches = clink.find_files(git_dir .. "/refs/heads/*")
-    for _,branch in ipairs(branches) do
-        local start = branch:find(token, 1, true)
-        if not is_metadir(branch) and start and start == 1 then
-            table.insert(res, branch)
-        end
-    end
-
-    return res
+    local branches_matcher = matchers.create_file_matcher(git_dir .. "/refs/heads/*")
+    return branches_matcher(token)
 end
 
 local function alias(token)
@@ -137,23 +78,11 @@ local function alias(token)
 end
 
 local function remotes(token)
-    local res = {}
-
-    -- Try to resolve .git directory location
     local git_dir = get_git_dir()
+    if not git_dir then return {} end
 
-    if git_dir == nil then return res end
-
-    -- If we're found it, then scan it for branches available
-    local remotes = clink.find_dirs(git_dir.."/refs/remotes/*")
-    for _,remote in ipairs(remotes) do
-        local start = remote:find(token, 1, true)
-        if not is_metadir(remote) and start and start == 1 then
-            table.insert(res, remote)
-        end
-    end
-
-    return res
+    local branches_matcher = matchers.create_dirs_matcher(git_dir.."/refs/remotes/*")
+    return branches_matcher(token)
 end
 
 local function local_or_remote_branches(token)
@@ -176,10 +105,10 @@ local function local_or_remote_branches(token)
                 start = remote:find(token:sub(1, s-1))
             end
         end
-        if not is_metadir(remote) and start and start == 1 then
+        if not path.is_metadir(remote) and start and start == 1 then
             local refs = clink.find_files(git_dir .. "/refs/remotes/" .. remote .. "/*")
             for _,ref in ipairs(refs) do
-                if not is_metadir(ref) and ref ~= 'HEAD' then
+                if not path.is_metadir(ref) and ref ~= 'HEAD' then
                     local concat = remote .. "/".. ref
                     local start = concat:find(token, 1, true)
                     if start and start == 1 then
@@ -207,7 +136,7 @@ local function checkout_spec_generator(token)
         table.insert(res, file)
         -- TODO: lines, inserted here contains all path, not only last segmentP
 
-        local prefix = basename(file)
+        local prefix = path.basename(file)
         if clink.is_dir(file) then
             prefix = prefix..'\\'
         end

@@ -1,16 +1,7 @@
-local parser = clink.arg.new_parser
+local matchers = require('matchers')
 
-local function packages(token)
-    local packagesDir = clink.get_env("chocolateyinstall")..'\\lib'
-    local packages = clink.find_dirs(packagesDir.."/*")
-    local res = {}
-    for _,package in ipairs(packages) do
-        if string.match(package:lower(), token:lower()) then
-            table.insert(res, package)
-        end
-    end
-    return res
-end
+local parser = clink.arg.new_parser
+local packages = matchers.create_dirs_matcher(clink.get_env('chocolateyinstall')..'/lib/*')
 
 local clist_parser = parser(
         "-all", "-allversions",
@@ -46,7 +37,7 @@ local csources_parser=parser({
         "list",
         "remove"})
 
-local cver_parser=parser("-source", "-pre", "-prerelease", "-lo", "-localonly")
+local cver_parser = parser("-source", "-pre", "-prerelease", "-lo", "-localonly")
 
 local chocolatey_parser = parser({
     "install"..cinst_parser,
