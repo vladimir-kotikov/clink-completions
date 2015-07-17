@@ -6,13 +6,17 @@ function trim(s)
   return s:match "^%s*(.-)%s*$"
 end
 
-local modules = matchers.create_dirs_matcher('node_modules/*')
+function get_npm_cache_location()
+    return trim(io.popen("npm config get cache"):read())
+end
+
+local modules = matchers.create_dirs_matcher('node_modules/*', --[[ignore_dotfiles =]]true)
+local cached_modules = matchers.create_dirs_matcher(get_npm_cache_location()..'/*', --[[ignore_dotfiles =]]true)
 
 -- Reads package.json in current directory and extracts all "script" commands defined 
 local function scripts(token)
 
     local matches = {}
-    local match_filters = {}
 
     -- Read package.json first
     local package_json = io.open('package.json')
@@ -24,7 +28,8 @@ local function scripts(token)
     
     -- Read the whole file contents
     local package_contents = package_json:read("*a")
-    
+    package_json:close()
+
     -- First, gind all "scripts" elements in package file
     -- This is necessary since package.json can contain multiple sections
     -- And we'll need to merge them first
@@ -36,21 +41,10 @@ local function scripts(token)
     -- Then merge "scripts" sections found and try to find
     -- <script_name>: <script_command> pairs
     local scripts = table.concat(scripts_sections, ",\n")
-    for script_name, script_command in scripts:gmatch('"(.-)"%s*:%s*(".-")') do
+    for script_name in scripts:gmatch('"(.-)"%s*:%s*(".-")') do
         table.insert(matches, script_name)
-        -- This line adds match filter for each command, since we want to
-        -- see not only command name, but command content as well
-        -- TODO: check how this will looks when command is too long
-        -- TODO: add coloring
-        table.insert(match_filters, script_name.." -> "..script_command)
     end
 
-    -- Finally close the handle
-    package_json:close()
-    -- And register match filters and return the matches collection
-    clink.match_display_filter = function (matches)
-        return match_filters
-    end
     return matches
 end
 
@@ -86,7 +80,11 @@ local npm_parser = parser({
     "bin",
     "bugs",
     "c",
-    "cache",
+    "cache"..parser({
+        "add"..parser({matchers.dirs}),
+        "clean"..parser({cached_modules}),
+        "ls"
+        }),
     "completion",
     "config",
     "ddp",
@@ -145,8 +143,8 @@ local npm_parser = parser({
     "unlink",
     "unpublish",
     "unstar",
-    "up",
-    "update",
+    "up"..parser({modules}),
+    "update"..parser({modules}),
     "v",
     "version",
     "view",

@@ -4,6 +4,8 @@ local exports = {}
 local path = require('path')
 local filter = require('funclib').filter
 
+-- TODO: add explicit implementation, since
+-- dir_match_generator is package-local by default
 exports.dirs = function(word)
     return dir_match_generator(word)
 end
