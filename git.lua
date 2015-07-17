@@ -9,38 +9,22 @@ local matchers = require('matchers')
  -- @param  {string} path Path to directory will be checked. If not provided
  --                       current directory will be used
  -- @return {string} Path to .git directory or nil if such dir not found
-local function get_git_dir(path)
-
-    -- Navigates up one level
-    local function up_one_level(path)
-        if path == nil then path = '.' end
-        if path == '.' then path = clink.get_cwd() end
-        return path.pathname(path)
-    end
+local function get_git_dir(start_dir)
 
     -- Checks if provided directory contains git directory
-    local function has_git_dir(path)
-        if path == nil then path = '.' end
-        local found_dirs = clink.find_dirs(path..'/.git')
-        if #found_dirs > 0 then return true end
-        return false
+    local function has_git_dir(dir)
+        return #clink.find_dirs(dir..'/.git') > 0
     end
 
     -- Set default path to current directory
-    if path == nil then path = '.' end
+    if not start_dir or start_dir == '.' then start_dir = clink.get_cwd() end
 
     -- If we're already have .git directory here, then return current path
-    if has_git_dir(path) then
-        return path..'/.git'
-    else
-        -- Otherwise go up one level and make a recursive call
-        local parent_path = up_one_level(path)
-        if parent_path == path then
-            return nil
-        else
-            return get_git_dir(parent_path)
-        end
-    end
+    if has_git_dir(start_dir) then return start_dir..'/.git' end
+
+    -- Otherwise go up one level and make a recursive call
+    local parent_path =  path.pathname(start_dir)
+    if parent_path ~= start_dir then return get_git_dir(parent_path) end
 end
 
 -- end preamble
@@ -86,15 +70,12 @@ local function remotes(token)
 end
 
 local function local_or_remote_branches(token)
-    local res = {}
-
     -- Try to resolve .git directory location
     local git_dir = get_git_dir()
-
-    if git_dir == nil then return res end
+    if not git_dir then return {} end
 
     -- If we're found it, then scan it for branches available
-    res = branches(token)
+    local res = branches(token)
 
     local remotes = clink.find_dirs(git_dir.."/refs/remotes/*")
     for _,remote in ipairs(remotes) do
@@ -123,6 +104,11 @@ local function local_or_remote_branches(token)
 end
 
 local function checkout_spec_generator(token)
+
+    --TODO: rework this:
+    --  there is still dot/double dot in the completions list
+    --  there it no asterisks in front of some branches
+    --  there is no big difference between branches and files/directories
 
     local res = {}
     local res_filter = {}
@@ -563,7 +549,13 @@ local git_parser = parser(
         "repo-config",
         "request-pull",
         "rerere",
-        "reset",
+        "reset"..parser(
+        -- TODO: Add commit/tree/branch completions
+            "-q",
+            "-p", "--patch",
+            "--soft", "--mixed", "--hard",
+            "--merge", "--keep"
+            ),
         "rev-list",
         "rev-parse",
         "revert",
