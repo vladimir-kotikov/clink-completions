@@ -64,7 +64,8 @@ local coho_parser = parser(
         "list-pulls",
         "last-week",
         "shortlog",
-        "for-each"
+        "for-each",
+        "npm-link"
     },
     "--chdir",
     "--no-chdir",
