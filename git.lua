@@ -2,6 +2,7 @@
 
 local path = require('path')
 local matchers = require('matchers')
+local funclib = require('funclib')
 
 ---
  -- Resolves closest .git directory location.
@@ -33,8 +34,10 @@ local branches = function (token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    local branches_matcher = matchers.create_files_matcher(git_dir .. "/refs/heads/*")
-    return branches_matcher(token)
+    return funclib.filter (
+        path.list_files(git_dir..'/refs/heads', '/*', --[[recursive=]]true, --[[reverse_separator=]]true),
+        function(path) return clink.is_match(token, path) end
+    )
 end
 
 local function alias(token)

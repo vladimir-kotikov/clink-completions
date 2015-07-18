@@ -34,6 +34,8 @@ end
 exports.concat = function (tbl1, tbl2)
     tbl1 = tbl1 or {}
     tbl2 = tbl2 or {}
+    if type(tbl1) ~= "table" then tbl1 = {tbl1} end
+    if type(tbl2) ~= "table" then tbl2 = {tbl2} end
     local ret = tbl1
     for _,v in ipairs(tbl2) do
         table.insert(ret, v)
