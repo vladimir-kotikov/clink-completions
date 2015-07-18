@@ -140,6 +140,54 @@ local function checkout_spec_generator(token)
     return res
 end
 
+local stashes = function(token)
+
+    local git_dir = get_git_dir()
+    if not git_dir then return {} end
+
+    local stash_file = io.open(git_dir..'/logs/refs/stash')
+    -- if there is no stash file, return empty list
+    if stash_file == nil then return {} end
+
+    local stashes = {}
+    -- make a dictionary of stash time and stash comment to
+    -- be able to sort stashes by date/time created
+    for stash in stash_file:lines() do
+        local stash_time, stash_name = stash:match('(%d%d%d%d%d%d%d%d%d%d) %+%d%d%d%d%s+(.*)')
+        if (stash_name and stash_name) then
+            stashes[stash_time] = stash_name
+        end
+    end
+
+    stash_file:close()
+
+    -- get times for available stashes into separate table and sort it
+    -- from newest to oldest. This is required because of stash@{0}
+    -- represents _latest_ stash, not the last one in file
+    local stash_times = {}
+    for k in pairs(stashes) do
+        table.insert(stash_times, k)
+    end
+
+    table.sort(stash_times, function (a, b)
+        return a > b
+    end)
+
+    -- generate matches and match filter table
+    local ret = {}
+    local ret_filter = {}
+    for i,v in ipairs(stash_times) do
+        table.insert(ret, "stash@{"..i.."}")
+        table.insert(ret_filter, "stash@{"..(i-1).."}    "..stashes[v])
+    end
+
+    clink.match_display_filter = function (matches)
+        return ret_filter
+    end
+
+    return ret
+end
+
 local parser = clink.arg.new_parser
 
 local merge_recursive_options = parser({
@@ -574,7 +622,22 @@ local git_parser = parser(
         "show-index",
         "show-ref",
         "stage",
-        "stash",
+        "stash"..parser({
+            "list", -- TODO: The command takes options applicable to the git log command to control what is shown and how
+            "show"..parser({stashes}),
+            "drop"..parser({stashes}, "-q", "--quiet"),
+            "pop"..parser({stashes}, "--index", "-q", "--quiet"),
+            "apply"..parser({stashes}, "--index", "-q", "--quiet"),
+            "branch"..parser({branches}, {stashes}),
+            "save"..parser(
+                "-p", "--patch",
+                "-k", "--no-keep-index", "--keep-index",
+                "-q", "--quiet",
+                "-u", "--include-untracked",
+                "-a", "--all"
+                ),
+            "clear"
+            }),
         "status",
         "stripspace",
         "submodule",
