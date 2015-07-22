@@ -33,7 +33,7 @@ local branches = function (token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    local branches_matcher = matchers.create_file_matcher(git_dir .. "/refs/heads/*")
+    local branches_matcher = matchers.create_files_matcher(git_dir .. "/refs/heads/*")
     return branches_matcher(token)
 end
 
@@ -118,7 +118,7 @@ local function checkout_spec_generator(token)
         table.insert(res_filter, '*' .. branch)
     end
 
-    for _,file in ipairs(files(token)) do
+    for _,file in ipairs(matchers.files(token)) do
         table.insert(res, file)
         -- TODO: lines, inserted here contains all path, not only last segmentP
 
