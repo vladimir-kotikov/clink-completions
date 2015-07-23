@@ -65,7 +65,8 @@ local coho_parser = parser(
         "last-week",
         "shortlog",
         "for-each",
-        "npm-link"
+        "npm-link",
+        "merge-pr"..parser("--pr")
     },
     "--chdir",
     "--no-chdir",
