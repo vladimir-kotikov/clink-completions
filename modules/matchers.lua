@@ -41,10 +41,10 @@ exports.files = function (word)
     return matches
 end
 
-exports.create_dirs_matcher = function (dir_pattern, ignore_dotfiles)
+exports.create_dirs_matcher = function (dir_pattern, show_dotfiles)
     return function (token)
         return filter(clink.find_dirs(dir_pattern), function(dir)
-            if ignore_dotfiles and path.is_metadir(dir) then return false end
+            if path.is_metadir(dir) and (not show_dotfiles) then return false end
             return clink.is_match(token, dir)
         end )
     end

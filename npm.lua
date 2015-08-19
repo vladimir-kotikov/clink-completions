@@ -10,8 +10,8 @@ function get_npm_cache_location()
     return trim(io.popen("npm config get cache"):read())
 end
 
-local modules = matchers.create_dirs_matcher('node_modules/*', --[[ignore_dotfiles =]]true)
-local cached_modules = matchers.create_dirs_matcher(get_npm_cache_location()..'/*', --[[ignore_dotfiles =]]true)
+local modules = matchers.create_dirs_matcher('node_modules/*')
+local cached_modules = matchers.create_dirs_matcher(get_npm_cache_location()..'/*')
 
 -- Reads package.json in current directory and extracts all "script" commands defined 
 local function scripts(token)

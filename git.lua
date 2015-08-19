@@ -68,7 +68,7 @@ local function remotes(token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    local branches_matcher = matchers.create_dirs_matcher(git_dir.."/refs/remotes/*", --[[ignore_dotfiles=]]true)
+    local branches_matcher = matchers.create_dirs_matcher(git_dir.."/refs/remotes/*")
     return branches_matcher(token)
 end
 

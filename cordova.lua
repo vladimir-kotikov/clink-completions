@@ -2,7 +2,7 @@
 
 local matchers = require('matchers')
 
-local platforms = matchers.create_dirs_matcher('platforms/*', --[[ignore_dotfiles=]] true)
+local platforms = matchers.create_dirs_matcher('platforms/*')
 local plugins = matchers.create_dirs_matcher('plugins/*')
 
 -- end preamble
