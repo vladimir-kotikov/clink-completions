@@ -7,7 +7,10 @@ function trim(s)
 end
 
 function get_npm_cache_location()
-    return trim(io.popen("npm config get cache"):read())
+    local proc = io.popen("npm config get cache 2>nul")
+    if not proc then return "" end
+
+    return proc:read() or ""
 end
 
 local modules = matchers.create_dirs_matcher('node_modules/*')
