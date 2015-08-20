@@ -1,58 +1,110 @@
-local matchers = require('matchers')
+local filter = require('funclib').filter
+local map = require('funclib').map
+local path = require('path')
+
+local packages = function (token)
+    local result = filter(clink.find_dirs(clink.get_env('chocolateyinstall')..'/lib/*'), function(dir)
+        if path.is_metadir(dir) then return false end
+        return clink.is_match(token, dir)
+    end )
+
+    return map(result, function (dir)
+        local package_name = dir:match("^(%w*)%.")
+        return package_name or dir
+    end)
+end
 
 local parser = clink.arg.new_parser
-local packages = matchers.create_dirs_matcher(clink.get_env('chocolateyinstall')..'/lib/*')
 
 local clist_parser = parser(
-        "-all", "-allversions",
-        "-lo", "-localonly",
-        "-pre", "-prerelease",
-        "-source")
+    "-a", "--all", "--allversions", "--all-versions",
+    "-i", "--includeprograms", "--include-programs",
+    "-l", "--lo", "--localonly", "--local-only",
+    "-s", "--source".. parser({"windowsfeatures", "webpi"}),
+    "-u", "--user",
+    "-p", "--password")
 
 local cinst_parser = parser(
-        -- TODO: Path to packages config.
-        -- See https://github.com/chocolatey/chocolatey/wiki/CommandsInstall#packagesconfig---v09813
-        {"all", "packages.config"},
-        "-ia", "-installArgs", "-installArguments",
-        "-ignoreDependencies",
-        "-notSilent",
-        "-overrideArguments",
-        "-params", "-parameters", "-packageparameters",
-        "-pre", "-prerelease",
-        "-source" .. parser({"ruby", "webpi", "cygwin", "python"}),
-        "-version",
-        "-x86", "-forcex86")
+    -- TODO: Path to packages config.
+    -- See https://github.com/chocolatey/choco/wiki/CommandsInstall
+    {"all", "packages.config"},
+    "--ia", "--installargs", "--installarguments", "--install-arguments",
+    "-i", "--ignoredependencies", "--ignore-dependencies",
+    "-x", "--forcedependencies", "--force-dependencies",
+    "-m", "--sxs", "--sidebyside", "--side-by-side",
+    "--allowmultiple", "--allow-multiple", "--allowmultipleversions", "--allow-multiple-versions",
+    "-n", "--skippowershell", "--skip-powershell",
+    "--notsilent", "--not-silent",
+    "-o", "--override", "--overrideargs", "--overridearguments", "--override-arguments",
+    "--params", "--parameters", "--pkgparameters", "--packageparameters", "--package-parameters",
+    "--pre", "--prerelease",
+    "-s" .. parser({"ruby", "webpi", "cygwin", "windowsfeatures", "python"}),
+    "--source" .. parser({"ruby", "webpi", "cygwin", "windowsfeatures", "python"}),
+    "--version",
+    "--x86", "--forcex86",
+    "-u", "--user",
+    "-p", "--password")
 
-local cuninst_parser = parser({packages}, "-version")
+local cuninst_parser = parser({packages},
+    "-a", "--all", "--allversions", "--all-versions",
+    "-x", "--forcedependencies", "--force-dependencies",
+    "--ia", "--installargs", "--installarguments", "--install-arguments",
+    "-n", "--skippowershell", "--skip-powershell",
+    "--notsilent", "--not-silent",
+    "-o", "--override", "--overrideargs", "--overridearguments", "--override-arguments",
+    "--params", "--parameters", "--pkgparameters", "--packageparameters", "--package-parameters",
+    "--version")
 
 local cup_parser = parser(
-        {"all"},
-        "-pre", "-prerelease",
-        "-source" .. parser({"ruby", "webpi", "cygwin", "python"}))
+    --TODO: complete locally installed packages
+    {packages, "all"},
+    "--ia", "--installargs", "--installarguments", "--install-arguments",
+    "-i", "--ignoredependencies", "--ignore-dependencies",
+    "-m", "--sxs", "--sidebyside", "--side-by-side",
+    "--allowmultiple", "--allow-multiple", "--allowmultipleversions", "--allow-multiple-versions",
+    "-n", "--skippowershell", "--skip-powershell",
+    "--notsilent", "--not-silent",
+    "-o", "--override", "--overrideargs", "--overridearguments", "--override-arguments",
+    "--params", "--parameters", "--pkgparameters", "--packageparameters", "--package-parameters",
+    "--pre", "--prerelease",
+    "-s" .. parser({"ruby", "webpi", "cygwin", "windowsfeatures", "python"}),
+    "--source" .. parser({"ruby", "webpi", "cygwin", "windowsfeatures", "python"}),
+    "--version",
+    "--x86", "--forcex86",
+    "-u", "--user",
+    "-p", "--password"):loop(1)
 
-local csources_parser=parser({
-        "add"..parser("-name", "-source"),
-        "disable",
-        "enable",
-        "list",
-        "remove"})
-
-local cver_parser = parser("-source", "-pre", "-prerelease", "-lo", "-localonly")
+local sources_parser = parser({
+    "add"..parser(
+        "-n", "--name",
+        "-u", "--user",
+        "-p", "--password",
+        "-s", "-source"),
+    "disable"..parser("-n", "--name"),
+    "enable"..parser("-n", "--name"),
+    "list",
+    "remove"..parser("-n", "--name")})
 
 local chocolatey_parser = parser({
+    --TODO: https://github.com/chocolatey/choco/wiki/CommandsReference
+        -- Default Options and Switches
+        -- new - generates files necessary for a Chocolatey package
+        -- pack - packages up a nuspec to a compiled nupkg
+        -- push - pushes a compiled nupkg
+    "apikey"..parser("-s", "--source", "-k", "--key", "--apikey", "--api-key"),
+    "setapikey"..parser("-s", "--source", "-k", "--key", "--apikey", "--api-key"),
     "install"..cinst_parser,
-    "installmissing",
-    "update"..cup_parser,
     "list"..clist_parser,
+    "outdated"..parser(
+        "-s", "--source",
+        "-u", "--user",
+        "-p", "--password"),
+    "pin"..parser({"add", "remove", "list"}, "-n", "--name", "--version"),
+    "source"..sources_parser,
+    "sources"..sources_parser,
     "search"..clist_parser,
-    "sources"..csources_parser,
-    "help",
-    "version"..cver_parser,
-    "gem"..parser("-version"),
-    "python"..parser("-version"),
-    "webpi",
-    "windowsfeatures",
-    "uninstall"
+    "upgrade"..cup_parser,
+    "uninstall"..cuninst_parser
     }, "/?")
 
 clink.arg.register_parser("choco", chocolatey_parser)
@@ -61,5 +113,3 @@ clink.arg.register_parser("cinst", cinst_parser)
 clink.arg.register_parser("clist", clist_parser)
 clink.arg.register_parser("cuninst", cuninst_parser)
 clink.arg.register_parser("cup", cup_parser)
-clink.arg.register_parser("csources", csources_parser)
-clink.arg.register_parser("cver", cver_parser)
