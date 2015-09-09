@@ -93,6 +93,11 @@ local chocolatey_parser = parser({
         -- push - pushes a compiled nupkg
     "apikey"..parser("-s", "--source", "-k", "--key", "--apikey", "--api-key"),
     "setapikey"..parser("-s", "--source", "-k", "--key", "--apikey", "--api-key"),
+    "feature"..parser({
+        "list",
+        "disable"..parser("-n", "--name"),
+        "enable"..parser("-n", "--name")
+    }),
     "install"..cinst_parser,
     "list"..clist_parser,
     "outdated"..parser(
