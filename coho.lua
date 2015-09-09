@@ -25,13 +25,15 @@ local coho_parser = parser(
     {
         "repo-clone" .. parser(
             "-r" .. parser(repos),
+            "--repo" .. parser(repos),
             "--chdir", "--no-chdir",
             "--depth"
         ),
         "repo-update" .. parser(
             "--chdir", "--no-chdir",
             "-b", "--branch",
-            "-r", "--repo",
+            "-r" .. parser(repos),
+            "--repo" .. parser(repos),
             "--fetch",
             "--depth",
             "-h", "--help"
@@ -39,13 +41,15 @@ local coho_parser = parser(
         "repo-reset" .. parser(
             "--chdir",
             "-b", "--branch",
-            "-r", "--repo",
+            "-r" .. parser(repos),
+            "--repo" .. parser(repos),
             "-h", "--help"
         ),
         "repo-status" .. parser(
             "--chdir",
             "-b", "--branch",
-            "-r", "--repo",
+            "-r" .. parser(repos),
+            "--repo" .. parser(repos),
             "--branch2",
             "--diff",
             "-h", "--help"
