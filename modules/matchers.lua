@@ -2,12 +2,31 @@
 local exports = {}
 
 local path = require('path')
-local filter = require('funclib').filter
+local w = require('tables').wrap
 
--- TODO: add explicit implementation, since
--- dir_match_generator is package-local by default
 exports.dirs = function(word)
-    return dir_match_generator(word)
+    -- Strip off any path components that may be on text.
+    local prefix = word:find("[\\/:][^\\/:]*$") and word:sub(1, i) or ""
+    local include_dots = word:find("%.+$") ~= nil
+
+    -- Find matches.
+    local matches = w(clink.find_dirs(word.."*", true))
+    :filter(function (dir)
+        return clink.is_match(word, prefix..dir) and
+            (include_dots or path.is_real_dir(dir))
+    end)
+    :map(function(dir)
+        return prefix..dir
+    end)
+
+    -- If there was no matches but word is a dir then use it as the single match.
+    -- Otherwise tell readline that matches are files and it will do magic.
+    if #matches == 0 and clink.is_dir(rl_state.text) then
+        return {rl_state.text}
+    end
+
+    clink.matches_are_files()
+    return matches
 end
 
 exports.files = function (word)
@@ -20,18 +39,14 @@ exports.files = function (word)
 
     local include_dots = word:find("%.+$") ~= nil
 
-    local matches = {}
-    local mask = word.."*"
-
     -- Find matches.
-    for _, dir in ipairs(clink.find_files(mask, true)) do
-        local file = prefix..dir
-        if include_dots or (dir ~= "." and dir ~= "..") then
-            if clink.is_match(word, file) then
-                table.insert(matches, file)
-            end
-        end
-    end
+    local matches = w(clink.find_files(word.."*", true))
+    :filter(function (file)
+        return clink.is_match(word, prefix..file)
+    end)
+    :map(function(file)
+        return prefix..file
+    end)
 
     -- Tell readline that matches are files and it will do magic.
     if #matches ~= 0 then
@@ -43,16 +58,17 @@ end
 
 exports.create_dirs_matcher = function (dir_pattern, show_dotfiles)
     return function (token)
-        return filter(clink.find_dirs(dir_pattern), function(dir)
-            if path.is_metadir(dir) and (not show_dotfiles) then return false end
-            return clink.is_match(token, dir)
+        return w(clink.find_dirs(dir_pattern))
+        :filter(function(dir)
+            return clink.is_match(token, dir) and (path.is_metadir(dir) or show_dotfiles)
         end )
     end
 end
 
 exports.create_files_matcher = function (file_pattern)
     return function (token)
-        return filter(clink.find_files(file_pattern), function(file)
+        return w(clink.find_files(file_pattern))
+        :filter(function(file)
             return clink.is_match(token, file)
         end )
     end
