@@ -25,12 +25,13 @@ end
 exports.wrap = function (tbl)
     assert(type(tbl) == "table")
 
-    local mt = getmetatable(tbl)
-    mt.filter = wrap_filter
-    mt.map = wrap_map
-    mt.reduce = wrap_reduce
-    mt.concat = wrap_concat
-    mt.keys = function (tbl)
+    local mt = getmetatable(tbl) or {}
+    mt.__index = mt.__index or {}
+    mt.__index.filter = wrap_filter
+    mt.__index.map = wrap_map
+    mt.__index.reduce = wrap_reduce
+    mt.__index.concat = wrap_concat
+    mt.__index.keys = function (tbl)
         local res = {}
         for k,_ in pairs(tbl) do
             table.insert(k)
