@@ -22,8 +22,16 @@ local wrap_concat = function (tbl, ...)
     return exports.wrap(concat(tbl, ...))
 end
 
+local wrap_print = function (tbl)
+    return exports.wrap(filter(tbl, function (item)
+        print(item)
+        return true
+    end))
+end
+
 exports.wrap = function (tbl)
-    assert(type(tbl) == "table")
+    if tbl == nil then tbl = {} end
+    if type(tbl) ~= "table" then tbl = {tbl} end
 
     local mt = getmetatable(tbl) or {}
     mt.__index = mt.__index or {}
@@ -31,6 +39,7 @@ exports.wrap = function (tbl)
     mt.__index.map = wrap_map
     mt.__index.reduce = wrap_reduce
     mt.__index.concat = wrap_concat
+    mt.__index.print = wrap_print
     mt.__index.keys = function (tbl)
         local res = {}
         for k,_ in pairs(tbl) do

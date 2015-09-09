@@ -2,7 +2,8 @@
 
 local path = require('path')
 local matchers = require('matchers')
-local funclib = require('funclib')
+local w = require('tables').wrap
+local parser = clink.arg.new_parser
 
 ---
  -- Resolves closest .git directory location.
@@ -34,10 +35,11 @@ local branches = function (token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    return funclib.filter (
-        path.list_files(git_dir..'/refs/heads', '/*', --[[recursive=]]true, --[[reverse_separator=]]true),
-        function(path) return clink.is_match(token, path) end
-    )
+    return w(path.list_files(git_dir..'/refs/heads', '/*',
+        --[[recursive=]]true, --[[reverse_separator=]]true))
+    :filter(function(path)
+        return clink.is_match(token, path)
+    end)
 end
 
 local function alias(token)
@@ -68,8 +70,20 @@ local function remotes(token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    local branches_matcher = matchers.create_dirs_matcher(git_dir.."/refs/remotes/*")
-    return branches_matcher(token)
+    local git_config = io.open(git_dir..'/config')
+    -- if there is no gitconfig file (WAT?!), return empty list
+    if git_config == nil then return {} end
+
+    local remotes = w()
+    for line in git_config:lines() do
+        local remote = line:match('%[remote "(.*)"%]')
+        if (remote) then
+            table.insert(remotes, remote)
+        end
+    end
+
+    git_config:close()
+    return remotes
 end
 
 local function local_or_remote_branches(token)
@@ -77,67 +91,85 @@ local function local_or_remote_branches(token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    -- If we're found it, then scan it for branches available
-    local res = branches(token)
-
-    local remotes = clink.find_dirs(git_dir.."/refs/remotes/*")
-    for _,remote in ipairs(remotes) do
-        local start = remote:find(token, 1, true)
-        if not start then
-            local s, e = token:find("/", 1, true)
-            if s then
-                start = remote:find(token:sub(1, s-1))
-            end
-        end
-        if not path.is_metadir(remote) and start and start == 1 then
-            local refs = clink.find_files(git_dir .. "/refs/remotes/" .. remote .. "/*")
-            for _,ref in ipairs(refs) do
-                if not path.is_metadir(ref) and ref ~= 'HEAD' then
-                    local concat = remote .. "/".. ref
-                    local start = concat:find(token, 1, true)
-                    if start and start == 1 then
-                       table.insert(res, concat)
-                    end
-                end
-            end
-        end
-    end
-
-    return res
+    return w(path.list_files(git_dir..'/refs/remotes', '/*',
+        --[[recursive=]]true, --[[reverse_separator=]]true))
+    :concat(branches(token))
+    :filter(function(path)
+        return clink.is_match(token, path)
+    end)
 end
 
 local function checkout_spec_generator(token)
+    local branches = local_or_remote_branches(token)
+    local files = matchers.files(token)
 
-    --TODO: rework this:
-    --  there is still dot/double dot in the completions list
-    --  there it no asterisks in front of some branches
-    --  there is no big difference between branches and files/directories
+    if #branches == 0 then return files end
 
-    local res = {}
-    local res_filter = {}
-
-    for _,branch in ipairs(local_or_remote_branches(token)) do
-        table.insert(res, branch)
-        table.insert(res_filter, '*' .. branch)
+    -- if there is any refspec that matches token then:
+    --   * disable readline's filename completion, otherwise we'll get a list of these specs
+    --     threaten as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
+    --   * create display filter for completion table to append path separator to each directory entry
+    --     since it is not added automatically by readline (see previous point)
+    clink.matches_are_files(0)
+    clink.match_display_filter = function (matches)
+        return files:map(function(file)
+            return clink.is_dir(file) and file..'\\' or file
+        end)
+        :concat(branches)
     end
 
-    for _,file in ipairs(matchers.files(token)) do
-        table.insert(res, file)
-        -- TODO: lines, inserted here contains all path, not only last segmentP
+    return files:concat(branches)
+end
 
-        local prefix = path.basename(file)
-        if clink.is_dir(file) then
-            prefix = prefix..'\\'
+local function push_branch_spec(token)
+    local git_dir = get_git_dir()
+    if not git_dir then return {} end
+
+    local plus_prefix = token:sub(0, 1) == '+'
+    -- cut out leading '+' symbol as it is a part of branch spec
+    local branch_spec = plus_prefix and token:sub(2) or token
+    -- check if there a local/remote branch separator
+    local s, e = branch_spec:find(':')
+
+    -- starting from here we have 2 options:
+    -- * if there is no branch separator complete word with local branches
+    if not s then
+        local b = branches(branch_spec)
+
+        -- setup display filter to prevent display '+' symbol in completion list
+        clink.match_display_filter = function ()
+            return b
         end
 
-        table.insert(res_filter, prefix)
-    end
+        return b:map(function(branch)
+            -- append '+' to results if it was specified
+            return plus_prefix and '+'..branch or branch
+        end)
+    else
+    -- * if there is ':' separator then we need to complete remote branch
+        local local_branch_spec = branch_spec:sub(1, s - 1)
+        local remote_branch_spec = branch_spec:sub(e + 1)
 
-    clink.match_display_filter = function (matches)
-        return res_filter
-    end
+        -- TODO: show remote branches only for remote that has been specified as previous argument
+        local b = w(clink.find_dirs(git_dir..'/refs/remotes/*'))
+        :filter(function(remote) return path.is_real_dir(remote) end)
+        :reduce({}, function(result, remote)
+            return w(path.list_files(git_dir..'/refs/remotes/'..remote, '/*', --[[recursive=]]true, --[[reverse_separator=]]true))
+            :filter(function(path)
+                return clink.is_match(remote_branch_spec, path)
+            end)
+            :concat(result)
+        end)
 
-    return res
+        -- setup display filter to prevent display '+' symbol in completion list
+        clink.match_display_filter = function ()
+            return b
+        end
+
+        return b:map(function(branch)
+            return (plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch
+        end)
+    end
 end
 
 local stashes = function(token)
@@ -188,7 +220,45 @@ local stashes = function(token)
     return ret
 end
 
-local parser = clink.arg.new_parser
+local color_opts = parser({"true", "false", "always"})
+
+local git_options = {
+    "core.editor",
+    "core.pager",
+    "core.excludesfile",
+    "core.autocrlf"..parser({"true", "false", "input"}),
+    "core.whitespace"..parser({
+        "cr-at-eol",
+        "-cr-at-eol",
+        "indent-with-non-tab",
+        "-indent-with-non-tab",
+        "space-before-tab",
+        "-space-before-tab",
+        "trailing-space",
+        "-trailing-space"
+    }),
+    "commit.template",
+    "color.ui"..color_opts, "color.*"..color_opts, "color.branch"..color_opts,
+    "color.diff"..color_opts, "color.interactive"..color_opts, "color.status"..color_opts,
+    "help.autocorrect",
+    "merge.tool", "mergetool.*.cmd", "mergetool.trustExitCode"..parser({"true", "false"}), "diff.external",
+    "user.signingkey",
+}
+
+local config_parser = parser(
+    "--system", "--global", "--local", "--file"..parser({matchers.files}),
+    "--int", "--bool", "--path",
+    "-z", "--null",
+    "--add",
+    "--replace-all",
+    "--get", "--get-all", "--get-regexp", "--get-urlmatch",
+    "--unset", "--unset-all",
+    "--rename-section", "--remove-section",
+    "-l", "--list",
+    "--get-color", "--get-colorbool",
+    "-e", "--edit",
+    {git_options}
+)
 
 local merge_recursive_options = parser({
     "ours",
@@ -386,7 +456,7 @@ local git_parser = parser(
             "--"
         ),
         "commit-tree",
-        "config",
+        "config"..config_parser,
         "count-objects",
         "credential",
         "credential-store",
@@ -478,7 +548,7 @@ local git_parser = parser(
         "prune",
         "prune-packed",
         "pull" .. parser(
-            {remotes}, {branches}, 
+            {remotes}, {branches},
             "-q", "--quiet",
             "-v", "--verbose",
             "--recurse-submodules", --[no-]recurse-submodules[=yes|on-demand|no]
@@ -506,7 +576,7 @@ local git_parser = parser(
         ),
         "push" .. parser(
             {remotes},
-            {branches},
+            {push_branch_spec},
             "-v", "--verbose",
             "-q", "--quiet",
             "--repo",
@@ -655,7 +725,7 @@ local git_parser = parser(
 				"--include-paths", "--no-minimize-url", "--preserve-empty-dirs",
 				"--placeholder-filename"),
 				"rebase"..parser({local_or_remote_branches}, {branches}),
-			"dcommit"..parser("--no-rebase", "--commit-url", "--mergeinfo", "--interactive"), 
+			"dcommit"..parser("--no-rebase", "--commit-url", "--mergeinfo", "--interactive"),
 			"branch"..parser("-m","--message","-t", "--tags", "-d", "--destination", "--username", "--commit-url", "--parents"),
 			"log"..parser("-r", "--revision", "-v", "--verbose", "--limit", "--incremental", "--show-commit", "--oneline"),
 			"find-rev"..parser("--before", "--after"),

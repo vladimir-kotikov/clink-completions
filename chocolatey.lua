@@ -1,14 +1,12 @@
-local filter = require('funclib').filter
-local map = require('funclib').map
+local w = require('tables').wrap
 local path = require('path')
 
 local packages = function (token)
-    local result = filter(clink.find_dirs(clink.get_env('chocolateyinstall')..'/lib/*'), function(dir)
-        if path.is_metadir(dir) then return false end
-        return clink.is_match(token, dir)
-    end )
-
-    return map(result, function (dir)
+    return w(clink.find_dirs(clink.get_env('chocolateyinstall')..'/lib/*'))
+    :filter(function(dir)
+        return path.is_real_dir(dir) and clink.is_match(token, dir)
+    end)
+    :map(function (dir)
         local package_name = dir:match("^(%w*)%.")
         return package_name or dir
     end)
@@ -93,6 +91,11 @@ local chocolatey_parser = parser({
         -- push - pushes a compiled nupkg
     "apikey"..parser("-s", "--source", "-k", "--key", "--apikey", "--api-key"),
     "setapikey"..parser("-s", "--source", "-k", "--key", "--apikey", "--api-key"),
+    "feature"..parser({
+        "list",
+        "disable"..parser("-n", "--name"),
+        "enable"..parser("-n", "--name")
+    }),
     "install"..cinst_parser,
     "list"..clist_parser,
     "outdated"..parser(
