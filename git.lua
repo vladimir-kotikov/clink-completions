@@ -3,6 +3,7 @@
 local path = require('path')
 local matchers = require('matchers')
 local funclib = require('funclib')
+local parser = clink.arg.new_parser
 
 ---
  -- Resolves closest .git directory location.
@@ -188,7 +189,45 @@ local stashes = function(token)
     return ret
 end
 
-local parser = clink.arg.new_parser
+local color_opts = parser({"true", "false", "always"})
+
+local git_options = {
+    "core.editor",
+    "core.pager",
+    "core.excludesfile",
+    "core.autocrlf"..parser({"true", "false", "input"}),
+    "core.whitespace"..parser({
+        "cr-at-eol",
+        "-cr-at-eol",
+        "indent-with-non-tab",
+        "-indent-with-non-tab",
+        "space-before-tab",
+        "-space-before-tab",
+        "trailing-space",
+        "-trailing-space"
+    }),
+    "commit.template",
+    "color.ui"..color_opts, "color.*"..color_opts, "color.branch"..color_opts,
+    "color.diff"..color_opts, "color.interactive"..color_opts, "color.status"..color_opts,
+    "help.autocorrect",
+    "merge.tool", "mergetool.*.cmd", "mergetool.trustExitCode"..parser({"true", "false"}), "diff.external",
+    "user.signingkey",
+}
+
+local config_parser = parser(
+    "--system", "--global", "--local", "--file"..parser({matchers.files}),
+    "--int", "--bool", "--path",
+    "-z", "--null",
+    "--add",
+    "--replace-all",
+    "--get", "--get-all", "--get-regexp", "--get-urlmatch",
+    "--unset", "--unset-all",
+    "--rename-section", "--remove-section",
+    "-l", "--list",
+    "--get-color", "--get-colorbool",
+    "-e", "--edit",
+    {git_options}
+)
 
 local merge_recursive_options = parser({
     "ours",
@@ -386,7 +425,7 @@ local git_parser = parser(
             "--"
         ),
         "commit-tree",
-        "config",
+        "config"..config_parser,
         "count-objects",
         "credential",
         "credential-store",
