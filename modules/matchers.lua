@@ -6,7 +6,11 @@ local w = require('tables').wrap
 
 exports.dirs = function(word)
     -- Strip off any path components that may be on text.
-    local prefix = word:find("[\\/:][^\\/:]*$") and word:sub(1, i) or ""
+    local prefix = ""
+    local i = word:find("[\\/:][^\\/:]*$")
+    if i then
+        prefix = word:sub(1, i)
+    end
     local include_dots = word:find("%.+$") ~= nil
 
     -- Find matches.
@@ -60,7 +64,7 @@ exports.create_dirs_matcher = function (dir_pattern, show_dotfiles)
     return function (token)
         return w(clink.find_dirs(dir_pattern))
         :filter(function(dir)
-            return clink.is_match(token, dir) and (path.is_metadir(dir) or show_dotfiles)
+            return clink.is_match(token, dir) and (path.is_real_dir(dir) or show_dotfiles)
         end )
     end
 end
