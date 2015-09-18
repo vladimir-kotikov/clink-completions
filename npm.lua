@@ -119,7 +119,10 @@ local npm_parser = parser({
     "pack",
     "prefix",
     "prune",
-    "publish",
+    "publish"..parser(
+        "--tag",
+        "--access"..parser({"public", "restricted"})
+    ),
     "r",
     "rb",
     "rebuild",
