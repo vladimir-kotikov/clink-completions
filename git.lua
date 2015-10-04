@@ -2,7 +2,7 @@
 
 local path = require('path')
 local matchers = require('matchers')
-local funclib = require('funclib')
+local w = require('tables').wrap
 local parser = clink.arg.new_parser
 
 ---
@@ -35,10 +35,10 @@ local branches = function (token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    return funclib.filter (
-        path.list_files(git_dir..'/refs/heads', '/*', --[[recursive=]]true, --[[reverse_separator=]]true),
-        function(path) return clink.is_match(token, path) end
-    )
+    return w(path.list_files(git_dir..'/refs/heads', '/*', --[[recursive=]]true, --[[reverse_separator=]]true))
+    :filter(function(path)
+        return clink.is_match(token, path)
+    end)
 end
 
 local function alias(token)
@@ -78,33 +78,21 @@ local function local_or_remote_branches(token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    -- If we're found it, then scan it for branches available
-    local res = branches(token)
-
-    local remotes = clink.find_dirs(git_dir.."/refs/remotes/*")
-    for _,remote in ipairs(remotes) do
-        local start = remote:find(token, 1, true)
-        if not start then
-            local s, e = token:find("/", 1, true)
-            if s then
-                start = remote:find(token:sub(1, s-1))
-            end
-        end
-        if not path.is_metadir(remote) and start and start == 1 then
-            local refs = clink.find_files(git_dir .. "/refs/remotes/" .. remote .. "/*")
-            for _,ref in ipairs(refs) do
-                if not path.is_metadir(ref) and ref ~= 'HEAD' then
-                    local concat = remote .. "/".. ref
-                    local start = concat:find(token, 1, true)
-                    if start and start == 1 then
-                       table.insert(res, concat)
-                    end
-                end
-            end
-        end
-    end
-
-    return res
+    -- find all remotes and filter out fake . and .. items
+    return w(clink.find_dirs(git_dir.."/refs/remotes/*"))
+    :filter(function (remote) return path.is_real_dir(remote) end)
+    -- do a reduce against list of remotes, passing list of local branches as accumulator
+    :reduce(branches(token), function(result, remote)
+        -- list all fetched branches for this remote filtering out fake . and .. entries
+        return w(clink.find_files(git_dir .. "/refs/remotes/" .. remote .. "/*"))
+        :filter(function (branch) return path.is_real_dir(branch) end)
+        -- construct refspec from remote and branch name and append it to accumulator
+        :map(function (branch) return remote..'/'..branch end)
+        :concat(result)
+    end)
+    :filter(function(result)
+        return clink.is_match(token, result)
+    end)
 end
 
 local function checkout_spec_generator(token)
