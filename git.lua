@@ -106,6 +106,57 @@ local function checkout_spec_generator(token)
     return files:concat(branches)
 end
 
+local function push_branch_spec(token)
+    local git_dir = get_git_dir()
+    if not git_dir then return {} end
+
+    local plus_prefix = token:sub(0, 1) == '+'
+    -- cut out leading '+' symbol as it is a part of branch spec
+    local branch_spec = plus_prefix and token:sub(2) or token
+    -- check if there a local/remote branch separator
+    local s, e = branch_spec:find(':')
+
+    -- starting from here we have 2 options:
+    -- * if there is no branch separator complete word with local branches
+    if not s then
+        local b = branches(branch_spec)
+        
+        -- setup display filter to prevent display '+' symbol in completion list
+        clink.match_display_filter = function ()
+            return b
+        end
+
+        return b:map(function(branch)
+            -- append '+' to results if it was specified
+            return plus_prefix and '+'..branch or branch
+        end)
+    else
+    -- * if there is ':' separator then we need to complete remote branch
+        local local_branch_spec = branch_spec:sub(1, s - 1)
+        local remote_branch_spec = branch_spec:sub(e + 1)
+
+        -- TODO: show remote branches only for remote that has been specified as previous argument
+        local b = w(clink.find_dirs(git_dir..'/refs/remotes/*'))
+        :filter(function(remote) return path.is_real_dir(remote) end)
+        :reduce({}, function(result, remote)
+            return w(path.list_files(git_dir..'/refs/remotes/'..remote, '/*', --[[recursive=]]true, --[[reverse_separator=]]true))
+            :filter(function(path)
+                return clink.is_match(remote_branch_spec, path)
+            end)
+            :concat(result)
+        end)
+
+        -- setup display filter to prevent display '+' symbol in completion list
+        clink.match_display_filter = function ()
+            return b
+        end
+
+        return b:map(function(branch)
+            return (plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch
+        end)
+    end
+end
+
 local stashes = function(token)
 
     local git_dir = get_git_dir()
@@ -510,7 +561,7 @@ local git_parser = parser(
         ),
         "push" .. parser(
             {remotes},
-            {branches},
+            {push_branch_spec},
             "-v", "--verbose",
             "-q", "--quiet",
             "--repo",
