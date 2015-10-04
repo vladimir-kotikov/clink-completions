@@ -78,55 +78,32 @@ local function local_or_remote_branches(token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    -- find all remotes and filter out fake . and .. items
-    return w(clink.find_dirs(git_dir.."/refs/remotes/*"))
-    :filter(function (remote) return path.is_real_dir(remote) end)
-    -- do a reduce against list of remotes, passing list of local branches as accumulator
-    :reduce(branches(token), function(result, remote)
-        -- list all fetched branches for this remote filtering out fake . and .. entries
-        return w(clink.find_files(git_dir .. "/refs/remotes/" .. remote .. "/*"))
-        :filter(function (branch) return path.is_real_dir(branch) end)
-        -- construct refspec from remote and branch name and append it to accumulator
-        :map(function (branch) return remote..'/'..branch end)
-        :concat(result)
-    end)
-    :filter(function(result)
-        return clink.is_match(token, result)
+    return w(path.list_files(git_dir..'/refs/remotes', '/*', --[[recursive=]]true, --[[reverse_separator=]]true))
+    :filter(function(path)
+        return clink.is_match(token, path)
     end)
 end
 
 local function checkout_spec_generator(token)
+    local branches = local_or_remote_branches(token)
+    local files = matchers.files(token)
+    
+    if #branches == 0 then return files end
 
-    --TODO: rework this:
-    --  there is still dot/double dot in the completions list
-    --  there it no asterisks in front of some branches
-    --  there is no big difference between branches and files/directories
-
-    local res = {}
-    local res_filter = {}
-
-    for _,branch in ipairs(local_or_remote_branches(token)) do
-        table.insert(res, branch)
-        table.insert(res_filter, '*' .. branch)
-    end
-
-    for _,file in ipairs(matchers.files(token)) do
-        table.insert(res, file)
-        -- TODO: lines, inserted here contains all path, not only last segmentP
-
-        local prefix = path.basename(file)
-        if clink.is_dir(file) then
-            prefix = prefix..'\\'
-        end
-
-        table.insert(res_filter, prefix)
-    end
-
+    -- if there is any refspec that matches token then:
+    --   * disable readline's filename completion, otherwise we'll get a list of these specs
+    --     threaten as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
+    --   * create display filter for completion table to append path separator to each directory entry
+    --     since it is not added automatically by readline (see previous point)
+    clink.matches_are_files(0)
     clink.match_display_filter = function (matches)
-        return res_filter
+        return files:map(function(file)
+            return clink.is_dir(file) and file..'\\' or file
+        end)
+        :concat(branches)
     end
-
-    return res
+    
+    return files:concat(branches)
 end
 
 local stashes = function(token)
