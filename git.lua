@@ -35,7 +35,8 @@ local branches = function (token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    return w(path.list_files(git_dir..'/refs/heads', '/*', --[[recursive=]]true, --[[reverse_separator=]]true))
+    return w(path.list_files(git_dir..'/refs/heads', '/*',
+        --[[recursive=]]true, --[[reverse_separator=]]true))
     :filter(function(path)
         return clink.is_match(token, path)
     end)
@@ -78,7 +79,9 @@ local function local_or_remote_branches(token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    return w(path.list_files(git_dir..'/refs/remotes', '/*', --[[recursive=]]true, --[[reverse_separator=]]true))
+    return w(path.list_files(git_dir..'/refs/remotes', '/*',
+        --[[recursive=]]true, --[[reverse_separator=]]true))
+    :concat(branches(token))
     :filter(function(path)
         return clink.is_match(token, path)
     end)
@@ -87,7 +90,7 @@ end
 local function checkout_spec_generator(token)
     local branches = local_or_remote_branches(token)
     local files = matchers.files(token)
-    
+
     if #branches == 0 then return files end
 
     -- if there is any refspec that matches token then:
@@ -102,7 +105,7 @@ local function checkout_spec_generator(token)
         end)
         :concat(branches)
     end
-    
+
     return files:concat(branches)
 end
 
@@ -120,7 +123,7 @@ local function push_branch_spec(token)
     -- * if there is no branch separator complete word with local branches
     if not s then
         local b = branches(branch_spec)
-        
+
         -- setup display filter to prevent display '+' symbol in completion list
         clink.match_display_filter = function ()
             return b
@@ -533,7 +536,7 @@ local git_parser = parser(
         "prune",
         "prune-packed",
         "pull" .. parser(
-            {remotes}, {branches}, 
+            {remotes}, {branches},
             "-q", "--quiet",
             "-v", "--verbose",
             "--recurse-submodules", --[no-]recurse-submodules[=yes|on-demand|no]
@@ -710,7 +713,7 @@ local git_parser = parser(
 				"--include-paths", "--no-minimize-url", "--preserve-empty-dirs",
 				"--placeholder-filename"),
 				"rebase"..parser({local_or_remote_branches}, {branches}),
-			"dcommit"..parser("--no-rebase", "--commit-url", "--mergeinfo", "--interactive"), 
+			"dcommit"..parser("--no-rebase", "--commit-url", "--mergeinfo", "--interactive"),
 			"branch"..parser("-m","--message","-t", "--tags", "-d", "--destination", "--username", "--commit-url", "--parents"),
 			"log"..parser("-r", "--revision", "-v", "--verbose", "--limit", "--incremental", "--show-commit", "--oneline"),
 			"find-rev"..parser("--before", "--after"),
