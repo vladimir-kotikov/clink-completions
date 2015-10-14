@@ -6,15 +6,31 @@ function trim(s)
   return s:match "^%s*(.-)%s*$"
 end
 
-function get_npm_cache_location()
-    local proc = io.popen("npm config get cache 2>nul")
+---
+ -- Queries config options value using 'npm config' call
+ -- @param  {string}  config_entry  Config option name
+ -- @return {string}  Config value for specific option or
+ --   empty string in case of any error
+---
+local function get_npm_config_value (config_entry)
+    assert(config_entry and type(config_entry) == "string" and #config_entry > 0,
+        "get_npm_config_value: config_entry param should be non-empty string")
+
+    local proc = io.popen("npm config get "..config_entry.." 2>nul")
     if not proc then return "" end
 
-    return proc:read() or ""
+    local value = proc:read()
+    proc:close()
+
+    return value or nil
 end
 
+local npm_cache = get_npm_config_value("cache")
+local npm_globals = get_npm_config_value("prefix")
+
 local modules = matchers.create_dirs_matcher('node_modules/*')
-local cached_modules = matchers.create_dirs_matcher(get_npm_cache_location()..'/*')
+local cached_modules = npm_cache and matchers.create_dirs_matcher(npm_cache..'/*') or {}
+local global_modules = npm_globals and matchers.create_dirs_matcher(npm_globals..'/node_modules/*') or {}
 
 -- Reads package.json in current directory and extracts all "script" commands defined 
 local function scripts(token)
@@ -108,10 +124,10 @@ local npm_parser = parser({
     "install" .. install_parser,
     "issues",
     "la",
-    "link",
+    "link"..parser({matchers.files, global_modules}),
     "list",
     "ll",
-    "ln",
+    "ln"..parser({matchers.files, global_modules}),
     "login",
     "ls",
     "outdated",
