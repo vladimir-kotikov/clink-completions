@@ -58,9 +58,14 @@ local function scripts(token)
         table.insert(scripts_sections, trim(section))
     end
 
-    -- Then merge "scripts" sections found and try to find
+    -- Then merge "scripts" sections and try to find
     -- <script_name>: <script_command> pairs
     local scripts = table.concat(scripts_sections, ",\n")
+        -- encode escaped quotes, so they won't affect further parsing
+        :gsub("\\(.)", function (x)
+            return string.format("\\%03d", string.byte(x))
+        end)
+
     for script_name in scripts:gmatch('"(.-)"%s*:%s*(".-")') do
         table.insert(matches, script_name)
     end
