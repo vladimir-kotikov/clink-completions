@@ -1,3 +1,4 @@
 .history
 *.sublime-*
 settings
+/luacov.stats.out

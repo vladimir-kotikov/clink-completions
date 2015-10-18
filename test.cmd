@@ -1,0 +1,1 @@
+@tsc -f spec\funclib.spec.lua
