@@ -12,6 +12,10 @@ exports.DEFAULT = 9
 exports.BOLD    = 1
 
 exports.set_color = function (fore, back, bold)
+    local err_message = "All arguments must be either nil or numbers between 0-9"
+    assert(fore == nil or (type(fore) == "number" and fore >= 0 and fore <=9), err_message)
+    assert(back == nil or (type(back) == "number" and back >= 0 and back <=9), err_message)
+
     fore = fore or exports.DEFAULT
     back = back or exports.DEFAULT
     bold = bold and exports.BOLD or 22

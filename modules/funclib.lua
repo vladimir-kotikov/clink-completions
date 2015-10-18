@@ -32,7 +32,13 @@ end
  --
  -- @return a new table with values produced by 'map_func'.
 exports.map = function (tbl, map_func)
-    if not tbl then return {} end
+    assert(tbl == nil or type(tbl) == "table",
+        "First argument must be either table or nil")
+    
+    assert(map_func == nil or type(map_func) == "function",
+        "Second argument must be either function or nil")
+
+    if tbl == nil then return {} end
     if not map_func then return tbl end
     local ret = {}
     for _,v in ipairs(tbl) do
@@ -55,12 +61,14 @@ end
  --
  -- @return a resultant accumulator value.
 exports.reduce = function (accum, tbl, func)
+    assert(type(func) == "function",
+        "Third argument must be a function")
+
     if not tbl then return accum end
-    local ret = accum
     for _,v in ipairs(tbl) do
-        ret = func(ret, v)
+        accum = func(accum, v)
     end
-    return ret
+    return accum
 end
 
 --- Concatenates any number of input values into one table. If input parameter is
@@ -70,8 +78,12 @@ end
  -- 
  -- @return a result of concatenation. The result is always a table.
 exports.concat = function (...)
+    local input = {...}
     local ret = {}
-    for _,arg in ipairs({...}) do
+    local i = 1
+
+    while i <= #input do
+        local arg = input[i]
         if type(arg) == 'table' then
             for _,v in ipairs(arg) do
                 table.insert(ret, v)
@@ -79,6 +91,7 @@ exports.concat = function (...)
         elseif arg ~= nil then
             table.insert(ret, arg)
         end
+        i = i + 1
     end
 
     return ret
