@@ -291,7 +291,7 @@ local merge_strategies = parser({
 local git_parser = parser(
     {
         {alias},
-        "add" .. parser({files},
+        "add" .. parser({matchers.files},
             "-n", "--dry-run",
             "-v", "--verbose",
             "-f", "--force",
@@ -310,7 +310,7 @@ local git_parser = parser(
             ),
         "add--interactive",
         "am",
-        "annotate" .. parser({files},
+        "annotate" .. parser({matchers.files},
             "-b",
             "--root",
             "--show-stats",
