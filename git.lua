@@ -50,7 +50,8 @@ local function alias(token)
 
     if git_dir == nil then return res end
 
-    f = assert (io.popen ("git config --get-regexp alias"))
+    f = io.popen("git config --get-regexp alias 2>nul")
+    if f == nil then return {} end
 
     for line in f:lines() do
         local s, e = line:find(" ", 1, true)
