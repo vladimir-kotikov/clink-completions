@@ -242,7 +242,7 @@ local git_options = {
     "color.diff"..color_opts, "color.interactive"..color_opts, "color.status"..color_opts,
     "help.autocorrect",
     "merge.tool", "mergetool.*.cmd", "mergetool.trustExitCode"..parser({"true", "false"}), "diff.external",
-    "user.signingkey",
+    "user.name", "user.email", "user.signingkey",
 }
 
 local config_parser = parser(
