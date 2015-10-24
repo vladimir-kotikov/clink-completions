@@ -87,6 +87,25 @@ local function remotes(token)
     return remotes
 end
 
+local function list_packed_refs(git_dir)
+    local git_dir = git_dir or get_git_dir()
+    if not git_dir then return {} end
+
+    local packed_refs_file = io.open(git_dir..'/packed-refs')
+    if packed_refs_file == nil then return {} end
+
+    local result = {}
+    for line in packed_refs_file:lines() do
+        -- SHA is 40 char length + 1 char for space
+        if #line > 41 then
+            local match = line:sub(41):match('refs/remotes/(.*)')
+            if match then table.insert(result, match) end
+        end
+    end
+
+    return result
+end
+
 local function local_or_remote_branches(token)
     -- Try to resolve .git directory location
     local git_dir = get_git_dir()
@@ -94,7 +113,9 @@ local function local_or_remote_branches(token)
 
     return w(path.list_files(git_dir..'/refs/remotes', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
-    :concat(branches(token))
+    :concat(path.list_files(git_dir..'/refs/heads', '/*',
+        --[[recursive=]]true, --[[reverse_separator=]]true))
+    :concat(list_packed_refs(git_dir))
     :filter(function(path)
         return clink.is_match(token, path)
     end)
