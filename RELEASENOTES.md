@@ -4,6 +4,7 @@
 
 Minor bugfix release for 0.2.0. This release mostly fixes various bugs, found after 0.2.0 is out.
 
+  * `1cea322` [npm] Fix npm prompt failure when parsing malformed package.json
   * `cfaf17d` [git] Remove ugly error message when trying to complete git aliases without git in PATH
   * `d2ac838` [git] Fixes broken 'git add'. This closes #34
   * `e09a9b0` [git] Adds user.name and user.email to known options
