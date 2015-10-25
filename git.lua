@@ -29,14 +29,73 @@ local function get_git_dir(start_dir)
     if parent_path ~= start_dir then return get_git_dir(parent_path) end
 end
 
--- end preamble
+---
+ -- Lists remote branches based on packed-refs file from git directory
+ -- @param string [git_dir]  Directory where to search file for
+ -- @return table  List of remote branches
+local function list_packed_refs(git_dir)
+    local git_dir = git_dir or get_git_dir()
+    if not git_dir then return {} end
+
+    local packed_refs_file = io.open(git_dir..'/packed-refs')
+    if packed_refs_file == nil then return {} end
+
+    local result = {}
+    for line in packed_refs_file:lines() do
+        -- SHA is 40 char length + 1 char for space
+        if #line > 41 then
+            local match = line:sub(41):match('refs/remotes/(.*)')
+            if match then table.insert(result, match) end
+        end
+    end
+
+    return result
+end
+
+local function list_remote_branches(git_dir)
+    local git_dir = git_dir or get_git_dir()
+    if not git_dir then return {} end
+
+    return w(path.list_files(git_dir..'/refs/remotes', '/*',
+        --[[recursive=]]true, --[[reverse_separator=]]true))
+    :concat(list_packed_refs(git_dir))
+    :sort():dedupe()
+end
+
+---
+ -- Lists local branches for git repo in git_dir directory.
+ --
+ -- @param string [git_dir]  Git directory, where to search for remote branches
+ -- @param bool   [predict_local_names=false]  Specified, whether this function
+ --   will also add 'virtual' local branches to output list. 'virtual' means
+ --   that these branches doesn't exist locally but could be checked out from
+ --   corresponding remote branches.
+ --
+ -- @return table  List of branches.
+local function list_local_branches(git_dir, predict_local_names)
+    local git_dir = git_dir or get_git_dir()
+    if not git_dir then return {} end
+
+    local result = w(path.list_files(git_dir..'/refs/heads', '/*',
+        --[[recursive=]]true, --[[reverse_separator=]]true))
+
+    if (predict_local_names) then
+        local predicted = list_remote_branches(git_dir)
+        :map(function (remote_branch)
+            return remote_branch:match('.-/(.+)')
+        end):filter()
+
+        result = result:concat(predicted):sort()
+    end
+
+    return result
+end
 
 local branches = function (token)
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    return w(path.list_files(git_dir..'/refs/heads', '/*',
-        --[[recursive=]]true, --[[reverse_separator=]]true))
+    return list_local_branches(git_dir)
     :filter(function(path)
         return clink.is_match(token, path)
     end)
@@ -87,43 +146,23 @@ local function remotes(token)
     return remotes
 end
 
-local function list_packed_refs(git_dir)
-    local git_dir = git_dir or get_git_dir()
-    if not git_dir then return {} end
-
-    local packed_refs_file = io.open(git_dir..'/packed-refs')
-    if packed_refs_file == nil then return {} end
-
-    local result = {}
-    for line in packed_refs_file:lines() do
-        -- SHA is 40 char length + 1 char for space
-        if #line > 41 then
-            local match = line:sub(41):match('refs/remotes/(.*)')
-            if match then table.insert(result, match) end
-        end
-    end
-
-    return result
-end
-
 local function local_or_remote_branches(token)
     -- Try to resolve .git directory location
     local git_dir = get_git_dir()
     if not git_dir then return {} end
 
-    return w(path.list_files(git_dir..'/refs/remotes', '/*',
-        --[[recursive=]]true, --[[reverse_separator=]]true))
-    :concat(path.list_files(git_dir..'/refs/heads', '/*',
-        --[[recursive=]]true, --[[reverse_separator=]]true))
-    :concat(list_packed_refs(git_dir))
+    return list_local_branches(git_dir)
+    :concat(list_remote_branches(git_dir))
     :filter(function(path)
         return clink.is_match(token, path)
     end)
 end
 
 local function checkout_spec_generator(token)
-    local branches = local_or_remote_branches(token)
     local files = matchers.files(token)
+    local branches = list_local_branches(git_dir, --[[predict_local_names=]]true)
+        :concat(list_remote_branches(git_dir))
+        :filter(function(path) return clink.is_match(token, path) end)
 
     if #branches == 0 then return files end
 

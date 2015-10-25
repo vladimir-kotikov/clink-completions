@@ -47,6 +47,20 @@ exports.wrap = function (tbl)
         end
         return exports.wrap(res)
     end
+    mt.__index.sort = function (tbl)
+        table.sort(tbl)
+        return tbl
+    end
+    mt.__index.dedupe = function (tbl)
+        local res, hash = {}, {}
+        for _,v in ipairs(tbl) do
+            if not hash[v] then
+                hash[v] = true
+                table.insert(res, v)
+            end
+        end
+        return exports.wrap(res)
+    end
 
     return setmetatable(tbl, mt)
 end
