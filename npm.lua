@@ -26,12 +26,37 @@ local function get_npm_config_value (config_entry)
     return value or nil
 end
 
-local npm_cache = get_npm_config_value("cache")
-local npm_globals = get_npm_config_value("prefix")
-
 local modules = matchers.create_dirs_matcher('node_modules/*')
-local cached_modules = npm_cache and matchers.create_dirs_matcher(npm_cache..'/*') or {}
-local global_modules = npm_globals and matchers.create_dirs_matcher(npm_globals..'/node_modules/*') or {}
+
+local cache_location = nil
+local cached_modules_matcher = nil
+local function cached_modules(token)
+    -- If we already have matcher then just return it
+    if cached_modules_matcher then return cached_modules_matcher(token) end
+
+    -- otherwise try to get cache location and return empty table if failed
+    cache_location = cache_location or get_npm_config_value("cache")
+    if not cache_location then return {} end
+
+    -- Create a new matcher, save it in module's variable for further usage and return it
+    cached_modules_matcher = matchers.create_dirs_matcher(cache_location..'/*')
+    return cached_modules_matcher(token)
+end
+
+local globals_location = nil
+local global_modules_matcher = nil
+local function global_modules(token)
+    -- If we already have matcher then just return it
+    if global_modules_matcher then return global_modules_matcher(token) end
+
+    -- otherwise try to get cache location and return empty table if failed
+    globals_location = globals_location or get_npm_config_value("prefix")
+    if not globals_location then return {} end
+
+    -- Create a new matcher, save it in module's variable for further usage and return it
+    global_modules_matcher = matchers.create_dirs_matcher(globals_location..'/node_modules/*')
+    return global_modules_matcher(token)
+end
 
 -- Reads package.json in current directory and extracts all "script" commands defined
 local function scripts(token)
