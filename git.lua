@@ -49,6 +49,7 @@ local function list_packed_refs(git_dir)
         end
     end
 
+    packed_refs_file:close()
     return result
 end
 
