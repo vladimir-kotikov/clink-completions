@@ -717,7 +717,7 @@ local git_parser = parser(
             ),
             "show"..parser("-n", {remotes}),
             "prune"..parser("-n", "--dry-run", {remotes}),
-            "update"..parser("-p", "--prune")
+            "update"..parser({remotes}, "-p", "--prune")
             }, "-v", "--verbose"),
         "remote-ext",
         "remote-fd",
