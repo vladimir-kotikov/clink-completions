@@ -289,6 +289,7 @@ local git_options = {
     "core.pager",
     "core.excludesfile",
     "core.autocrlf"..parser({"true", "false", "input"}),
+    "core.trustctime"..parser({"true", "false"}),
     "core.whitespace"..parser({
         "cr-at-eol",
         "-cr-at-eol",
