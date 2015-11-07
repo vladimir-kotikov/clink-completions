@@ -67,27 +67,13 @@ end
  -- Lists local branches for git repo in git_dir directory.
  --
  -- @param string [git_dir]  Git directory, where to search for remote branches
- -- @param bool   [predict_local_names=false]  Specified, whether this function
- --   will also add 'virtual' local branches to output list. 'virtual' means
- --   that these branches doesn't exist locally but could be checked out from
- --   corresponding remote branches.
- --
  -- @return table  List of branches.
-local function list_local_branches(git_dir, predict_local_names)
+local function list_local_branches(git_dir)
     local git_dir = git_dir or get_git_dir()
     if not git_dir then return {} end
 
     local result = w(path.list_files(git_dir..'/refs/heads', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
-
-    if (predict_local_names) then
-        local predicted = list_remote_branches(git_dir)
-        :map(function (remote_branch)
-            return remote_branch:match('.-/(.+)')
-        end):filter()
-
-        result = result:concat(predicted):sort()
-    end
 
     return result
 end
@@ -161,11 +147,30 @@ end
 
 local function checkout_spec_generator(token)
     local files = matchers.files(token)
-    local branches = list_local_branches(git_dir, --[[predict_local_names=]]true)
-        :concat(list_remote_branches(git_dir))
-        :filter(function(path) return clink.is_match(token, path) end)
+        :filter(function(file)
+            return path.is_real_dir(file)
+        end)
 
-    if #branches == 0 then return files end
+    local git_dir = get_git_dir()
+
+    local local_branches = branches(token)
+    local remote_branches = list_remote_branches(git_dir)
+        :filter(function(path)
+            return clink.is_match(token, path)
+        end)
+
+    local predicted_branches = list_remote_branches(git_dir)
+        :map(function (remote_branch)
+            return remote_branch:match('.-/(.+)')
+        end)
+        :filter(function(branch)
+            return branch
+                and clink.is_match(token, branch)
+                -- Filter out those predictions which are already exists as local branches
+                and not local_branches:contains(branch)
+        end)
+
+    if (#local_branches + #remote_branches + #predicted_branches) == 0 then return files end
 
     -- if there is any refspec that matches token then:
     --   * disable readline's filename completion, otherwise we'll get a list of these specs
@@ -177,10 +182,15 @@ local function checkout_spec_generator(token)
         return files:map(function(file)
             return clink.is_dir(file) and file..'\\' or file
         end)
-        :concat(branches)
+        :concat(local_branches)
+        :concat(predicted_branches:map(function(branch) return '*'..branch end))
+        :concat(remote_branches)
     end
 
-    return files:concat(branches)
+    return files
+        :concat(local_branches)
+        :concat(predicted_branches)
+        :concat(remote_branches)
 end
 
 local function push_branch_spec(token)

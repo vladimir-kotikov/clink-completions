@@ -61,6 +61,13 @@ exports.wrap = function (tbl)
         end
         return exports.wrap(res)
     end
+    mt.__index.contains = function (tbl, value)
+        local res, hash = {}, {}
+        for _,v in ipairs(tbl) do
+            if v == value then return true, _ end
+        end
+        return false
+    end
 
     return setmetatable(tbl, mt)
 end

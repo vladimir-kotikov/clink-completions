@@ -53,7 +53,8 @@ exports.pathname = function (path)
 end
 
 exports.is_metadir = function (dirname)
-    return dirname == '.' or dirname == '..'
+    return exports.basename(dirname) == '.'
+        or exports.basename(dirname) == '..'
 end
 
 exports.is_real_dir = function (dirname)
