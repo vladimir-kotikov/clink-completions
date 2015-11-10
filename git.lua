@@ -34,13 +34,13 @@ end
  -- @param string [git_dir]  Directory where to search file for
  -- @return table  List of remote branches
 local function list_packed_refs(git_dir)
+    local result = w()
     local git_dir = git_dir or get_git_dir()
-    if not git_dir then return {} end
+    if not git_dir then return result end
 
     local packed_refs_file = io.open(git_dir..'/packed-refs')
     if packed_refs_file == nil then return {} end
 
-    local result = {}
     for line in packed_refs_file:lines() do
         -- SHA is 40 char length + 1 char for space
         if #line > 41 then
@@ -55,7 +55,7 @@ end
 
 local function list_remote_branches(git_dir)
     local git_dir = git_dir or get_git_dir()
-    if not git_dir then return {} end
+    if not git_dir then return w() end
 
     return w(path.list_files(git_dir..'/refs/remotes', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
@@ -70,7 +70,7 @@ end
  -- @return table  List of branches.
 local function list_local_branches(git_dir)
     local git_dir = git_dir or get_git_dir()
-    if not git_dir then return {} end
+    if not git_dir then return w() end
 
     local result = w(path.list_files(git_dir..'/refs/heads', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
@@ -80,7 +80,7 @@ end
 
 local branches = function (token)
     local git_dir = get_git_dir()
-    if not git_dir then return {} end
+    if not git_dir then return w() end
 
     return list_local_branches(git_dir)
     :filter(function(path)
@@ -89,7 +89,7 @@ local branches = function (token)
 end
 
 local function alias(token)
-    local res = {}
+    local res = w()
 
     -- Try to resolve .git directory location
     local git_dir = get_git_dir()
@@ -114,14 +114,14 @@ local function alias(token)
 end
 
 local function remotes(token)
+    local remotes = w()
     local git_dir = get_git_dir()
-    if not git_dir then return {} end
+    if not git_dir then return remotes end
 
     local git_config = io.open(git_dir..'/config')
     -- if there is no gitconfig file (WAT?!), return empty list
-    if git_config == nil then return {} end
+    if git_config == nil then return remotes end
 
-    local remotes = w()
     for line in git_config:lines() do
         local remote = line:match('%[remote "(.*)"%]')
         if (remote) then
@@ -136,7 +136,7 @@ end
 local function local_or_remote_branches(token)
     -- Try to resolve .git directory location
     local git_dir = get_git_dir()
-    if not git_dir then return {} end
+    if not git_dir then return w() end
 
     return list_local_branches(git_dir)
     :concat(list_remote_branches(git_dir))
@@ -195,7 +195,7 @@ end
 
 local function push_branch_spec(token)
     local git_dir = get_git_dir()
-    if not git_dir then return {} end
+    if not git_dir then return w() end
 
     local plus_prefix = token:sub(0, 1) == '+'
     -- cut out leading '+' symbol as it is a part of branch spec
@@ -247,11 +247,11 @@ end
 local stashes = function(token)
 
     local git_dir = get_git_dir()
-    if not git_dir then return {} end
+    if not git_dir then return w() end
 
     local stash_file = io.open(git_dir..'/logs/refs/stash')
     -- if there is no stash file, return empty list
-    if stash_file == nil then return {} end
+    if stash_file == nil then return w() end
 
     local stashes = {}
     -- make a dictionary of stash time and stash comment to
