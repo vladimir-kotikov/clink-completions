@@ -1,5 +1,19 @@
 # Release Notes
 
+## 0.2.2 (Dec 10, 2015)
+
+Another bugfix release. Multiple small fixes for git inclded.
+
+  * `83ef129` [git] Fixes failure when trying to complete git commmands outside of repo
+  * `7f4c223` [git] add merge strategies and options parsers to pull/rebase/checkout  
+  * `faf92f2` [git] Distinguish real and suggestes branch names
+  * `ad24a7f` [git] Adds "core.trustctime" to available options 
+  * `e6921a3` [npm] Query npm config lazily (only when required by completions)
+  * `03bec42` [git] Adds completions for `git remote update`
+  * `2ea5f33` [git] Close packed-refs after reading
+  * `e92d5a2` [git] Complete non-checked local branches based on remote ones.
+  * `a68ed47` [git] List remote branches based on packed-refs file.
+
 ## 0.2.1 (Oct 21, 2015)
 
 Minor bugfix release for 0.2.0. This release mostly fixes various bugs, found after 0.2.0 is out.
