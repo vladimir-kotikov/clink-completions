@@ -7,7 +7,7 @@ local packages = function (token)
         return path.is_real_dir(dir) and clink.is_match(token, dir)
     end)
     :map(function (dir)
-        local package_name = dir:match("^(%w*)%.")
+        local package_name = dir:match("^(%w%.*)%.")
         return package_name or dir
     end)
 end
