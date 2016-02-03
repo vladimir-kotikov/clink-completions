@@ -5,7 +5,6 @@ local parser = clink.arg.new_parser
 local function list_ssh_hosts()
     local hosts = {}
     local ssh_config = io.open(clink.get_env("userprofile") .. "/.ssh/config")
-
     if ssh_config then
         local line = ssh_config:read("*line")
         while line do
@@ -17,9 +16,8 @@ local function list_ssh_hosts()
             end
             line = ssh_config:read("*line")
         end
-        ssh_config:close()
     end
-
+    ssh_config:close()
     local result = w(hosts)
     return result
 end
