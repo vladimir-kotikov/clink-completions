@@ -158,7 +158,13 @@ local npm_parser = parser({
     "ln"..parser({matchers.files, global_modules}),
     "login",
     "ls",
-    "outdated",
+    "outdated"..parser(
+        "--json",
+        "--long",
+        "--parseable",
+        "--global",
+        "--depth"
+    ),
     "owner",
     "pack",
     "prefix",
