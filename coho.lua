@@ -11,7 +11,7 @@ local repos = {
     "plugin-dialogs", "plugin-file-transfer", "plugin-file", "plugin-geolocation",
     "plugin-globalization", "plugin-inappbrowser", "plugin-media",
     "plugin-media-capture", "plugin-network-information", "plugin-splashscreen",
-    "plugin-vibration", "plugin-statusbar", "cordova-plugins",
+    "plugin-vibration", "plugin-statusbar", "cordova-plugins", "cordova-plugin-wkwebview-engine",
     --tools
     "docs", "mobile-spec", "js","app-hello-world", "cli", "plugman", "lib", "common",
     "coho", "medic", "app-harness", "labs", "registry-web", "registry",
@@ -62,9 +62,9 @@ local coho_parser = parser(
         "audit-license-headers",
         "check-license",
         "create-archive"..parser(
-            '-r'..parser(repos),
-            '--repo'..parser(repos),
-            '--dest'
+            "-r" .. parser(repos):loop(1),
+            "--repo" .. parser(repos):loop(1),
+            "--dest"
         ),
         "verify-archive",
         "print-tags"..parser(
@@ -75,7 +75,7 @@ local coho_parser = parser(
         "verify-tags",
         "list-release-urls",
         "nightly",
-        "npm-publish-tag",
+        "npm-publish",
         "update-release-notes",
         "npm-unpublish-nightly",
         -- other commands
