@@ -3,6 +3,7 @@
 local path = require('path')
 local matchers = require('matchers')
 local w = require('tables').wrap
+local is_fuzzy_match = require('fuzzy').is_fuzzy_match
 local parser = clink.arg.new_parser
 
 ---
@@ -106,7 +107,10 @@ local branches = function (token)
 
     return list_local_branches(git_dir)
     :filter(function(path)
-        return clink.is_match(token, path)
+        local res = is_fuzzy_match(token, path)
+        print(res)
+        return res
+        -- return is_fuzzy_match(token, path)
     end)
 end
 
