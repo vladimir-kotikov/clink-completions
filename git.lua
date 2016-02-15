@@ -15,18 +15,30 @@ local function get_git_dir(start_dir)
 
     -- Checks if provided directory contains git directory
     local function has_git_dir(dir)
-        return #clink.find_dirs(dir..'/.git') > 0
+        return #clink.find_dirs(dir..'/.git') > 0 and dir..'/.git'
+    end
+
+    local function has_git_file(dir)
+        local gitfile = io.open(dir..'/.git')
+        if not gitfile then return false end
+
+        local git_dir = gitfile:read():match('gitdir: (.*)')
+        gitfile:close()
+
+        return git_dir and dir..'/'..git_dir
     end
 
     -- Set default path to current directory
     if not start_dir or start_dir == '.' then start_dir = clink.get_cwd() end
 
-    -- If we're already have .git directory here, then return current path
-    if has_git_dir(start_dir) then return start_dir..'/.git' end
-
-    -- Otherwise go up one level and make a recursive call
-    local parent_path =  path.pathname(start_dir)
-    if parent_path ~= start_dir then return get_git_dir(parent_path) end
+    -- Calculate parent path now otherwise we won't be
+    -- able to do that inside of logical operator
+    local parent_path = path.pathname(start_dir)
+    
+    return has_git_dir(start_dir)
+        or has_git_file(start_dir)
+        -- Otherwise go up one level and make a recursive call
+        or (parent_path ~= start_dir and get_git_dir(parent_path) or nil)
 end
 
 ---
@@ -785,7 +797,16 @@ local git_parser = parser(
             }),
         "status",
         "stripspace",
-        "submodule",
+        "submodule"..parser({
+            "add",
+            "init",
+            "deinit",
+            "foreach",
+            "status"..parser("--cached", "--recursive"),
+            "summary",
+            "sync",
+            "update"
+        }, '--quiet'),
         "subtree",
         "svn"..parser({
 		    "init"..parser("-T", "--trunk", "-t", "--tags", "-b", "--branches", "-s", "--stdlayout",
