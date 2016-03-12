@@ -1,3 +1,5 @@
 .history
 *.sublime-*
 settings
+clink.log
+clink_inputrc

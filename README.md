@@ -27,3 +27,15 @@ Requirements
 ============
 
 These completions requires clink@0.4.3 or higher version
+
+Installation
+============
+
+Clone git into your clink settings directory
+
+    cd %LOCALAPPDATA%\clink
+    REM If it's the first time you're doing this, you'll need to call
+    REM git init
+    REM but the script doesn't so you don't accidently lose your changes.
+    git remote add origin https://github.com/vladimir-kotikov/clink-completions.git
+    git pull
