@@ -34,7 +34,7 @@ local function get_git_dir(start_dir)
     -- Calculate parent path now otherwise we won't be
     -- able to do that inside of logical operator
     local parent_path = path.pathname(start_dir)
-    
+
     return has_git_dir(start_dir)
         or has_git_file(start_dir)
         -- Otherwise go up one level and make a recursive call
@@ -458,9 +458,9 @@ local git_parser = parser(
             "--contains" ,
             "--abbrev",
             "-a", "--all",
-            "-d" .. parser({branches}),
-            "--delete" .. parser({branches}),
-            "-D" .. parser({branches}),
+            "-d" .. parser({branches}):loop(1),
+            "--delete" .. parser({branches}):loop(1),
+            "-D" .. parser({branches}):loop(1),
             "-m", "--move",
             "-M",
             "--list",
