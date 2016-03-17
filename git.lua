@@ -1,55 +1,10 @@
 -- preamble: common routines
 
 local path = require('path')
+local git = require('gitutil')
 local matchers = require('matchers')
 local w = require('tables').wrap
 local parser = clink.arg.new_parser
-
----
- -- Resolves closest .git directory location.
- -- Navigates subsequently up one level and tries to find .git directory
- -- @param  {string} path Path to directory will be checked. If not provided
- --                       current directory will be used
- -- @return {string} Path to .git directory or nil if such dir not found
-local function get_git_dir(start_dir)
-
-    ---
-     -- Checks if provided directory contains git directory
-     -- @param {String} dir Directory where `.git` might be found
-     -- @returns {String|Boolean} Returns concatenated parameter and
-     --   .git directory path if it was found, false otherwise
-    local function has_git_dir(dir)
-        return #clink.find_dirs(dir..'/.git') > 0 and dir..'/.git'
-    end
-
-    ---
-     --  Checks if provided directory contains .git file that contains
-     --   relative path to submodule.
-     -- @param {String} dir Directory where `.git` might be found
-     -- @returns {String|Boolean} Returns concatenated parameter and
-     --   resolved submodule directory path if it was found, false otherwise
-    local function has_git_file(dir)
-        local gitfile = io.open(dir..'/.git')
-        if not gitfile then return false end
-
-        local git_dir = gitfile:read():match('gitdir: (.*)')
-        gitfile:close()
-
-        return git_dir and dir..'/'..git_dir
-    end
-
-    -- Set default path to current directory
-    if not start_dir or start_dir == '.' then start_dir = clink.get_cwd() end
-
-    -- Calculate parent path now otherwise we won't be
-    -- able to do that inside of logical operator
-    local parent_path = path.pathname(start_dir)
-
-    return has_git_dir(start_dir)
-        or has_git_file(start_dir)
-        -- Otherwise go up one level and make a recursive call
-        or (parent_path ~= start_dir and get_git_dir(parent_path) or nil)
-end
 
 ---
  -- Lists remote branches based on packed-refs file from git directory
@@ -57,7 +12,7 @@ end
  -- @return table  List of remote branches
 local function list_packed_refs(git_dir)
     local result = w()
-    local git_dir = git_dir or get_git_dir()
+    local git_dir = git_dir or git.get_git_dir()
     if not git_dir then return result end
 
     local packed_refs_file = io.open(git_dir..'/packed-refs')
@@ -76,7 +31,7 @@ local function list_packed_refs(git_dir)
 end
 
 local function list_remote_branches(git_dir)
-    local git_dir = git_dir or get_git_dir()
+    local git_dir = git_dir or git.get_git_dir()
     if not git_dir then return w() end
 
     return w(path.list_files(git_dir..'/refs/remotes', '/*',
@@ -91,7 +46,7 @@ end
  -- @param string [git_dir]  Git directory, where to search for remote branches
  -- @return table  List of branches.
 local function list_local_branches(git_dir)
-    local git_dir = git_dir or get_git_dir()
+    local git_dir = git_dir or git.get_git_dir()
     if not git_dir then return w() end
 
     local result = w(path.list_files(git_dir..'/refs/heads', '/*',
@@ -101,7 +56,7 @@ local function list_local_branches(git_dir)
 end
 
 local branches = function (token)
-    local git_dir = get_git_dir()
+    local git_dir = git.get_git_dir()
     if not git_dir then return w() end
 
     return list_local_branches(git_dir)
@@ -114,7 +69,7 @@ local function alias(token)
     local res = w()
 
     -- Try to resolve .git directory location
-    local git_dir = get_git_dir()
+    local git_dir = git.get_git_dir()
 
     if git_dir == nil then return res end
 
@@ -137,7 +92,7 @@ end
 
 local function remotes(token)
     local remotes = w()
-    local git_dir = get_git_dir()
+    local git_dir = git.get_git_dir()
     if not git_dir then return remotes end
 
     local git_config = io.open(git_dir..'/config')
@@ -157,7 +112,7 @@ end
 
 local function local_or_remote_branches(token)
     -- Try to resolve .git directory location
-    local git_dir = get_git_dir()
+    local git_dir = git.get_git_dir()
     if not git_dir then return w() end
 
     return list_local_branches(git_dir)
@@ -173,7 +128,7 @@ local function checkout_spec_generator(token)
             return path.is_real_dir(file)
         end)
 
-    local git_dir = get_git_dir()
+    local git_dir = git.get_git_dir()
 
     local local_branches = branches(token)
     local remote_branches = list_remote_branches(git_dir)
@@ -216,7 +171,7 @@ local function checkout_spec_generator(token)
 end
 
 local function push_branch_spec(token)
-    local git_dir = get_git_dir()
+    local git_dir = git.get_git_dir()
     if not git_dir then return w() end
 
     local plus_prefix = token:sub(0, 1) == '+'
@@ -268,7 +223,7 @@ end
 
 local stashes = function(token)
 
-    local git_dir = get_git_dir()
+    local git_dir = git.get_git_dir()
     if not git_dir then return w() end
 
     local stash_file = io.open(git_dir..'/logs/refs/stash')
