@@ -556,7 +556,9 @@ local git_parser = parser(
         "difftool--helper",
         "fast-export",
         "fast-import",
-        "fetch" .. parser({remotes}),
+        "fetch" .. parser({remotes},
+            "--tags"
+        ),
         "fetch-pack",
         "filter-branch",
         "fmt-merge-msg",
