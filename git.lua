@@ -13,11 +13,21 @@ local parser = clink.arg.new_parser
  -- @return {string} Path to .git directory or nil if such dir not found
 local function get_git_dir(start_dir)
 
-    -- Checks if provided directory contains git directory
+    ---
+     -- Checks if provided directory contains git directory
+     -- @param {String} dir Directory where `.git` might be found
+     -- @returns {String|Boolean} Returns concatenated parameter and
+     --   .git directory path if it was found, false otherwise
     local function has_git_dir(dir)
         return #clink.find_dirs(dir..'/.git') > 0 and dir..'/.git'
     end
 
+    ---
+     --  Checks if provided directory contains .git file that contains
+     --   relative path to submodule.
+     -- @param {String} dir Directory where `.git` might be found
+     -- @returns {String|Boolean} Returns concatenated parameter and
+     --   resolved submodule directory path if it was found, false otherwise
     local function has_git_file(dir)
         local gitfile = io.open(dir..'/.git')
         if not gitfile then return false end
@@ -811,35 +821,35 @@ local git_parser = parser(
         }, '--quiet'),
         "subtree",
         "svn"..parser({
-		    "init"..parser("-T", "--trunk", "-t", "--tags", "-b", "--branches", "-s", "--stdlayout",
-				"--no-metadata", "--use-svm-props", "--use-svnsync-props", "--rewrite-root",
-				"--rewrite-uuid", "--username", "--prefix"..parser({"origin"}), "--ignore-paths",
-				"--include-paths", "--no-minimize-url"),
-				"fetch"..parser({remotes}, "--localtime", "--parent", "--ignore-paths", "--include-paths",
-				"--log-window-size"),
-				"clone"..parser("-T", "--trunk", "-t", "--tags", "-b", "--branches", "-s", "--stdlayout",
-				"--no-metadata", "--use-svm-props", "--use-svnsync-props", "--rewrite-root",
-				"--rewrite-uuid", "--username", "--prefix"..parser({"origin"}), "--ignore-paths",
-				"--include-paths", "--no-minimize-url", "--preserve-empty-dirs",
-				"--placeholder-filename"),
-				"rebase"..parser({local_or_remote_branches}, {branches}),
-			"dcommit"..parser("--no-rebase", "--commit-url", "--mergeinfo", "--interactive"),
-			"branch"..parser("-m","--message","-t", "--tags", "-d", "--destination", "--username", "--commit-url", "--parents"),
-			"log"..parser("-r", "--revision", "-v", "--verbose", "--limit", "--incremental", "--show-commit", "--oneline"),
-			"find-rev"..parser("--before", "--after"),
-			"reset"..parser("-r", "--revision", "-p", "--parent"),
-			"tag",
-			"blame",
-			"set-tree",
-			"create-ignore",
-			"show-ignore",
-			"mkdirs",
-			"commit-diff",
-			"info",
-			"proplist",
-			"propget",
-			"show-externals",
-			"gc"
+            "init"..parser("-T", "--trunk", "-t", "--tags", "-b", "--branches", "-s", "--stdlayout",
+                "--no-metadata", "--use-svm-props", "--use-svnsync-props", "--rewrite-root",
+                "--rewrite-uuid", "--username", "--prefix"..parser({"origin"}), "--ignore-paths",
+                "--include-paths", "--no-minimize-url"),
+                "fetch"..parser({remotes}, "--localtime", "--parent", "--ignore-paths", "--include-paths",
+                "--log-window-size"),
+                "clone"..parser("-T", "--trunk", "-t", "--tags", "-b", "--branches", "-s", "--stdlayout",
+                "--no-metadata", "--use-svm-props", "--use-svnsync-props", "--rewrite-root",
+                "--rewrite-uuid", "--username", "--prefix"..parser({"origin"}), "--ignore-paths",
+                "--include-paths", "--no-minimize-url", "--preserve-empty-dirs",
+                "--placeholder-filename"),
+                "rebase"..parser({local_or_remote_branches}, {branches}),
+            "dcommit"..parser("--no-rebase", "--commit-url", "--mergeinfo", "--interactive"),
+            "branch"..parser("-m","--message","-t", "--tags", "-d", "--destination", "--username", "--commit-url", "--parents"),
+            "log"..parser("-r", "--revision", "-v", "--verbose", "--limit", "--incremental", "--show-commit", "--oneline"),
+            "find-rev"..parser("--before", "--after"),
+            "reset"..parser("-r", "--revision", "-p", "--parent"),
+            "tag",
+            "blame",
+            "set-tree",
+            "create-ignore",
+            "show-ignore",
+            "mkdirs",
+            "commit-diff",
+            "info",
+            "proplist",
+            "propget",
+            "show-externals",
+            "gc"
         }),
         "symbolic-ref",
         "tag",
