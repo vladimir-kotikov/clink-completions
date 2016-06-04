@@ -1,6 +1,8 @@
 -- preamble: common routines
 
+local JSON = require("JSON")
 local color = require('color')
+local w = require('tables').wrap
 local matchers = require('matchers')
 
 function trim(s)
@@ -61,8 +63,6 @@ end
 -- Reads package.json in current directory and extracts all "script" commands defined
 local function scripts(token)
 
-    local matches = {}
-
     -- Read package.json first
     local package_json = io.open('package.json')
     -- If there is no such file, then close handle and return
@@ -72,27 +72,8 @@ local function scripts(token)
     local package_contents = package_json:read("*a")
     package_json:close()
 
-    -- First, gind all "scripts" elements in package file
-    -- This is necessary since package.json can contain multiple sections
-    -- And we'll need to merge them first
-    local scripts_sections = {}
-    for section in package_contents:gmatch('"scripts"%s*:%s*{(.-)}') do
-        table.insert(scripts_sections, trim(section))
-    end
-
-    -- Then merge "scripts" sections and try to find
-    -- <script_name>: <script_command> pairs
-    local scripts = table.concat(scripts_sections, ",\n")
-        -- encode escaped quotes, so they won't affect further parsing
-        :gsub("\\(.)", function (x)
-            return string.format("\\%03d", string.byte(x))
-        end)
-
-    for script_name in scripts:gmatch('"(.-)"%s*:%s*(".-")') do
-        table.insert(matches, script_name)
-    end
-
-    return matches
+    local scripts = JSON:decode(package_contents).scripts
+    return w(scripts):keys()
 end
 
 local parser = clink.arg.new_parser

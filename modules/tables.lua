@@ -43,7 +43,7 @@ exports.wrap = function (tbl)
     mt.__index.keys = function (tbl)
         local res = {}
         for k,_ in pairs(tbl) do
-            table.insert(k)
+            table.insert(res, k)
         end
         return exports.wrap(res)
     end
