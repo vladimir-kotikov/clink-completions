@@ -53,6 +53,10 @@ local function global_modules(token)
     -- If we already have matcher then just return it
     if global_modules_matcher then return global_modules_matcher(token) end
 
+    -- If token starts with . or .. or has path delimiter then return empty
+    -- result and do not create a matcher so only fs paths will be completed
+    if (token:match('^%.(%.)?') or token:match('[%\\%/]+')) then return {} end
+
     -- otherwise try to get cache location and return empty table if failed
     globals_location = globals_location or get_npm_config_value("prefix")
     if not globals_location then return {} end
