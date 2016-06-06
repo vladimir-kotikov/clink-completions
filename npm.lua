@@ -197,14 +197,17 @@ function npm_prompt_filter()
     if package ~= nil then
         local package_info = package:read('*a')
         package:close()
-        local package_name = string.match(package_info, '"name"%s*:%s*"(.-)"')
-            or "<invalid_name>"
-
-        local package_version = string.match(package_info, '"version"%s*:%s*"(.-)"')
-            or "<invalid_version>"
-
-        local package_string = color.color_text("("..package_name.."@"..package_version..")", color.YELLOW)
-        clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
+        local package_private = string.match(package_info, '"private"%s*:%s*true')
+        if package_private == nil then
+          local package_name = string.match(package_info, '"name"%s*:%s*"(.-)"')
+              or "<invalid_name>"
+              
+          local package_version = string.match(package_info, '"version"%s*:%s*"(.-)"')
+              or "<invalid_version>"
+              
+          local package_string = color.color_text("("..package_name.."@"..package_version..")", color.YELLOW)
+          clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
+        end
     end
     return false
 end
