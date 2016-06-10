@@ -1,5 +1,14 @@
 # Release Notes
 
+## 0.3.1 (June 11, 2016)
+
+This release adds a few fixes and small improvements for `npm` prompt and completions
+
+  * 'f2e335d' [npm] Do not query global modules when completing FS paths in 'npm link'
+  * 'c59c0d9' [npm] Improve package.json handling for npm prompt
+  * '6edf054' [npm] Do not fetch package name and version for private packages
+  * '23d7599' [npm] Improve package.json parsing
+
 ## 0.3.0 (May 8, 2016)
 
 This release adds support for completions inside of git submodules and a completions for a couple of new commands (`ssh` and `nvm`)
