@@ -1,6 +1,8 @@
 -- preamble: common routines
 
 local JSON = require("JSON")
+function JSON:assert () end -- silence JSON parsing errors
+
 local color = require('color')
 local w = require('tables').wrap
 local matchers = require('matchers')
@@ -193,22 +195,20 @@ local npm_parser = parser({
 clink.arg.register_parser("npm", npm_parser)
 
 function npm_prompt_filter()
-    local package = io.open('package.json')
-    if package ~= nil then
-        local package_info = package:read('*a')
-        package:close()
-        local package_private = string.match(package_info, '"private"%s*:%s*true')
-        if package_private == nil then
-          local package_name = string.match(package_info, '"name"%s*:%s*"(.-)"')
-              or "<invalid_name>"
-              
-          local package_version = string.match(package_info, '"version"%s*:%s*"(.-)"')
-              or "<invalid_version>"
-              
-          local package_string = color.color_text("("..package_name.."@"..package_version..")", color.YELLOW)
-          clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
-        end
-    end
+    local package_file = io.open('package.json')
+    if not package_file then return false end
+
+    local package_data = package_file:read('*a')
+    package_file:close()
+
+    local package = JSON:decode(package_data)
+    if not package.name and not package.version then return false end
+
+    local package_name = package.name or "<no name>"
+    local package_version = package.version and "@"..package.version or ""
+    local package_string = color.color_text("("..package_name..package_version..")", color.YELLOW)
+    clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
+
     return false
 end
 
