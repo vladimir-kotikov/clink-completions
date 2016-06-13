@@ -62,5 +62,11 @@ local vagrant_parser = parser({
         )
     }, "-h", "--help", "-v", "--version")
 
+local help_parser = parser(
+    {
+        "help" .. parser(vagrant_parser:flatten_argument(1))
+    }
+)
+
 clink.arg.register_parser("vagrant", vagrant_parser)
-clink.arg.register_parser("vagrant", parser({"help"..parser(vagrant_parser:flatten_argument(1))}))
+clink.arg.register_parser("vagrant", help_parser)
