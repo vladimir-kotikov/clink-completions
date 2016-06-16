@@ -35,6 +35,7 @@ local plugin_add_parser = parser({matchers.dirs,
         "cordova-plugin-media-capture",
         "cordova-plugin-network-information",
         "cordova-plugin-splashscreen",
+        "cordova-plugin-statusbar",
         "cordova-plugin-test-framework",
         "cordova-plugin-vibration"
     },
