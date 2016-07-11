@@ -193,7 +193,7 @@ local npm_parser = parser({
     "view",
     "whoami"
     },
-    "-h"
+    "-h", "--version"
 )
 
 clink.arg.register_parser("npm", npm_parser)
