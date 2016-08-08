@@ -770,8 +770,8 @@ local git_parser = parser(
         "repo-config",
         "request-pull",
         "rerere",
-        "reset"..parser(
-        -- TODO: Add commit/tree/branch completions
+        -- TODO: Add commit completions
+        "reset"..parser({local_or_remote_branches},
             "-q",
             "-p", "--patch",
             "--soft", "--mixed", "--hard",
