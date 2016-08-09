@@ -3,6 +3,7 @@
 local path = require('path')
 local git = require('gitutil')
 local matchers = require('matchers')
+local shell = require('shell')
 local w = require('tables').wrap
 local parser = clink.arg.new_parser
 
@@ -338,6 +339,58 @@ local merge_strategies = parser({
     "subtree"
 })
 
+local SHA_RE = string.rep ('%w', 40)
+
+local function shorten(sha)
+    return sha:sub(1, 7)
+end
+
+local commits = function (token)
+    local git_dir = git.get_git_dir()
+    if not git_dir then return w() end
+
+    local ret_filter = w()
+
+    clink.match_display_filter = function ()
+        return ret_filter
+    end
+
+    local all_commits = shell.ls('-rf', git_dir..'/logs/refs/heads')
+    :concat(git_dir..'/logs/HEAD')
+    :reduce({}, function (accum, file)
+        local commits = shell.grep(git_dir..'/logs/refs/heads/'..file)
+        :reduce({}, function (accum, line)
+            -- typical log entry
+            -- 24c4426e60123813ee8850b39fa6e4e69b6d7bb6 78a0df63a75bfb46f06bcfe051d90b5dd7f17f3d Vladimir Kotikov <kotikov.vladimir@gmail.com> 1470688871 +0300	commit: [git] Add basic completions for cherry-pick
+            local sha, message = line:match(SHA_RE..' ('..SHA_RE..') .*\tcommit: (.*)')
+            if (sha and message) then
+                accum[sha] = message
+            end
+
+            return accum
+        end)
+
+        -- here we have a map of sha -> commit message
+        -- push them to accum
+        commits:keys()
+        :map(function (sha)
+            accum[sha] = commits[sha]
+            return true
+        end)
+
+        return accum
+    end)
+
+    return all_commits:keys()
+    :map(function (sha)
+        -- Add commit hint to clink.match_display_filter
+        ret_filter:push(shorten(sha)..' '..all_commits[sha])
+        -- and return just 7 digit sha
+        return shorten(sha)
+    end)
+
+end
+
 local git_parser = parser(
     {
         {alias},
@@ -461,7 +514,7 @@ local git_parser = parser(
         ),
         "checkout-index",
         "cherry",
-        "cherry-pick"..parser(
+        "cherry-pick"..parser({commits},
             "-e", "--edit",
             "-m", "--mainline ",
             "-n", "--no-commit",

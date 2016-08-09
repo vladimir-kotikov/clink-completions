@@ -22,7 +22,8 @@ local wrap_concat = function (tbl, ...)
     return exports.wrap(concat(tbl, ...))
 end
 
-local wrap_print = function (tbl)
+local wrap_print = function (tbl, message)
+    if (message) then print(message) end
     return exports.wrap(filter(tbl, function (item)
         print(item)
         return true
@@ -40,6 +41,13 @@ exports.wrap = function (tbl)
     mt.__index.reduce = wrap_reduce
     mt.__index.concat = wrap_concat
     mt.__index.print = wrap_print
+    mt.__index.push = function (tbl, value)
+        if (value ~= nil) then
+            table.insert(tbl, value)
+        end
+
+        return tbl
+    end
     mt.__index.keys = function (tbl)
         local res = {}
         for k,_ in pairs(tbl) do
