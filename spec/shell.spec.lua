@@ -3,10 +3,36 @@ package.path = "modules/?.lua;".. package.path
 local w = require('tables').wrap
 local shell = require('shell')
 
+local __filename = debug.getinfo(1,'S').source;
+
 describe("shell module", function()
 
-    it("should export methods", function()
-        assert_equal(#w(require("shell")):keys(), 4)
+    -- it("module should export methods", function()
+    --     assert_equal(#w(require("shell")):keys(), 4)
+    -- end)
+
+    describe('grep function', function ()
+        it('should throw if 1st argument is not non-empty string', function ()
+            assert_error(function () shell.grep(nil) end)
+            assert_error(function () shell.grep(1) end)
+            assert_error(function () shell.grep('') end)
+            assert_error(function () shell.grep({}) end)
+        end)
+
+        it('should return empty table if file does not exist', function ()
+            assert_type(shell.grep('foo'), 'table')
+        end)
+
+        it('should read lines from file', function ()
+            local grepped = shell.grep('spec/fixtures/foo')
+            local lines_count = 0
+            for line in io.open('spec/fixtures/foo'):lines() do
+                assert_equal(grepped[lines_count], line)
+                lines_count = lines_count + 1
+            end
+
+            assert_equal(lines_count, #grepped)
+        end)
     end)
 
     -- describe("'filter' function", function ()

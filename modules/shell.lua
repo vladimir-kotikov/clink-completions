@@ -65,6 +65,9 @@ end
 
 shell.grep = function (file_path)
 
+    assert(type(file_path) == 'string' and file_path:len() ~= 0,
+        "First argument must be non-empty string")
+
     local result = w()
 
     local file = io.open(file_path)

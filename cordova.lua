@@ -95,5 +95,6 @@ local cordova_parser = parser(
     "-v", "--version",
     "-d", "--verbose")
 
+clink.arg.register_parser("cdv", cordova_parser)
 clink.arg.register_parser("cordova", cordova_parser)
 clink.arg.register_parser("cordova-dev", cordova_parser)

@@ -1,4 +1,10 @@
+# clink profile stuff
 .history
-*.sublime-*
 settings
-/luacov.stats.out
+
+# Lua testing suff
+lua_modules
+luacov.stats.out
+
+# vscode
+.vscode
