@@ -23,15 +23,30 @@ describe("shell module", function()
             assert_type(shell.grep('foo'), 'table')
         end)
 
+        it('should return non-empty table if file does exist', function ()
+            local grepped = shell.grep('spec/fixtures/foo')
+            assert_type(grepped, 'table')
+            assert_greater_than(#grepped, 0)
+        end)
+
+        it('returned table should have numeric indexes', function ()
+            local grepped = shell.grep('spec/fixtures/foo')
+            for i,v in ipairs(grepped) do
+                assert_not_nil(i)
+                assert_not_blank(v)
+            end
+        end)
+
         it('should read lines from file', function ()
             local grepped = shell.grep('spec/fixtures/foo')
-            local lines_count = 0
+            local lines_count = 1
             for line in io.open('spec/fixtures/foo'):lines() do
                 assert_equal(grepped[lines_count], line)
                 lines_count = lines_count + 1
             end
 
-            assert_equal(lines_count, #grepped)
+            -- use +1 here at table indexes starts w/ 1
+            assert_equal(lines_count, #grepped + 1)
         end)
     end)
 
