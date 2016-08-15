@@ -1,9 +1,22 @@
 package.path = "modules/?.lua;".. package.path
 
+clink = {}
+clink.find_files = function ()
+    return {'foo', 'bar', 'baz'}
+end
+
+clink.is_dir = function()
+    return false
+end
+
+-- stub(clink, 'find_files').returns({'foo', 'bar', 'baz'})
+-- stub(clink, 'is_dir').returns(false)
+
 local w = require('tables').wrap
 local shell = require('shell')
 
 local __filename = debug.getinfo(1,'S').source;
+
 
 describe("shell module", function()
 
@@ -13,27 +26,27 @@ describe("shell module", function()
 
     describe('grep function', function ()
         it('should throw if 1st argument is not non-empty string', function ()
-            assert_error(function () shell.grep(nil) end)
-            assert_error(function () shell.grep(1) end)
-            assert_error(function () shell.grep('') end)
-            assert_error(function () shell.grep({}) end)
+            assert.error(function () shell.grep(nil) end)
+            assert.error(function () shell.grep(1) end)
+            assert.error(function () shell.grep('') end)
+            assert.error(function () shell.grep({}) end)
         end)
 
         it('should return empty table if file does not exist', function ()
-            assert_type(shell.grep('foo'), 'table')
+            assert.is_table(shell.grep('foo'))
         end)
 
         it('should return non-empty table if file does exist', function ()
             local grepped = shell.grep('spec/fixtures/foo')
-            assert_type(grepped, 'table')
-            assert_greater_than(#grepped, 0)
+            assert.is_table(grepped)
+            assert.is_true(#grepped > 0)
         end)
 
         it('returned table should have numeric indexes', function ()
             local grepped = shell.grep('spec/fixtures/foo')
             for i,v in ipairs(grepped) do
-                assert_not_nil(i)
-                assert_not_blank(v)
+                assert.is_not_nil(i)
+                assert.is_not.equal(v, '')
             end
         end)
 
@@ -41,12 +54,33 @@ describe("shell module", function()
             local grepped = shell.grep('spec/fixtures/foo')
             local lines_count = 1
             for line in io.open('spec/fixtures/foo'):lines() do
-                assert_equal(grepped[lines_count], line)
+                assert.is.equal(grepped[lines_count], line)
                 lines_count = lines_count + 1
             end
 
             -- use +1 here at table indexes starts w/ 1
-            assert_equal(lines_count, #grepped + 1)
+            assert.is.equal(lines_count, #grepped + 1)
+        end)
+    end)
+
+    describe('ls function', function ()
+
+        it('should throw if passed invalid option', function ()
+            assert.has.error(function () shell.ls(nil) end)
+            assert.has.error(function () shell.ls(1) end)
+            assert.has.error(function () shell.ls('') end)
+            assert.has.error(function () shell.ls('foo') end)
+            assert.has.error(function () shell.ls({}) end)
+        end)
+
+        it('should accept valid options in any combinations', function ()
+            assert.has.no.error(function () shell.ls('-r') end)
+            assert.has.no.error(function () shell.ls('-f') end)
+            assert.has.no.error(function () shell.ls('-F') end)
+            assert.has.no.error(function () shell.ls('-rf') end)
+            assert.has.no.error(function () shell.ls('-rF') end)
+            assert.has.no.error(function () shell.ls('-rfF') end)
+            assert.has.no.error(function () shell.ls('-fF') end)
         end)
     end)
 

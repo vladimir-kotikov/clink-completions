@@ -4,7 +4,7 @@ settings
 
 # Lua testing suff
 lua_modules
-luacov.stats.out
+luacov.*.out
 
 # vscode
 .vscode
