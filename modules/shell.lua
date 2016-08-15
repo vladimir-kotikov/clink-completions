@@ -22,17 +22,15 @@ shell.ls = function (options, where)
     if (options:find('f')) then find_files = true end
     if (options:find('F')) then find_dirs = true end
 
-    if (not files and not dirs) then
-        files = true
-        dirs = true
+    if (not find_files and not find_dirs) then
+        find_files = true
+        find_dirs = true
     end
 
     local where = where or '*'
 
     local entries = w(clink.find_files(where))
-    :filter(function(entry)
-        return exports.is_real_dir(entry)
-    end)
+    :filter(path.is_real_dir)
 
     local files = entries:filter(function(entry)
         return not clink.is_dir(where ..'/'..entry)
