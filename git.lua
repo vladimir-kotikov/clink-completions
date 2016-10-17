@@ -579,7 +579,11 @@ local git_parser = parser(
         "diff-files",
         "diff-index",
         "diff-tree",
-        "difftool",
+        "difftool"..parser(
+            "-d", "--dir-diff",
+            "-y", "--no-prompt", "--prompt",
+            "-t", "--tool=" -- TODO: complete tool (take from config)
+        ),
         "difftool--helper",
         "fast-export",
         "fast-import",
