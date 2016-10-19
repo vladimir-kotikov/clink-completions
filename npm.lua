@@ -206,6 +206,7 @@ function npm_prompt_filter()
     package_file:close()
 
     local package = JSON:decode(package_data)
+    if not package then return false end
     if not package.name and not package.version then return false end
 
     local package_name = package.name or "<no name>"
