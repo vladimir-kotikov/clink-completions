@@ -206,8 +206,10 @@ function npm_prompt_filter()
     package_file:close()
 
     local package = JSON:decode(package_data)
+    -- Bail out if package.json is malformed
     if not package then return false end
-    if not package.name and not package.version then return false end
+    -- Don't print package info when the package is private or both version and name are missing
+    if package.private or (not package.name and not package.version) then return false end
 
     local package_name = package.name or "<no name>"
     local package_version = package.version and "@"..package.version or ""
