@@ -1,13 +1,29 @@
 # Release Notes
 
+## 0.3.2 (Nov 6, 2016)
+
+This release adds completions for `yarn` package manager and a bunch of minor improvements and bugfixes
+
+  * `9789bc8` [npm] Improve prompt output in some situations
+  * `795f6a9` [npm] Resolve lua error when package.json is empty
+  * `fea1e21` [git] Add completions for 'git difftool'
+  * `f840079` Add completions for Yarn v0.14
+  * `8400a8b` [git] Add basic completions for cherry-pick
+  * `f411878` [git] Complete branches in `git reset`
+  * `83c71e1` [vagrant] Fix help parser for Vagrant completions
+  * `2845966` [npm] Add version flag
+  * `1e3931f` [git] '--prune' option for 'fetch'
+  * `cc51616` [cordova] Add statusbar to core plugins
+
+
 ## 0.3.1 (June 11, 2016)
 
 This release adds a few fixes and small improvements for `npm` prompt and completions
 
-  * 'f2e335d' [npm] Do not query global modules when completing FS paths in 'npm link'
-  * 'c59c0d9' [npm] Improve package.json handling for npm prompt
-  * '6edf054' [npm] Do not fetch package name and version for private packages
-  * '23d7599' [npm] Improve package.json parsing
+  * `f2e335d` [npm] Do not query global modules when completing FS paths in 'npm link'
+  * `c59c0d9` [npm] Improve package.json handling for npm prompt
+  * `6edf054` [npm] Do not fetch package name and version for private packages
+  * `23d7599` [npm] Improve package.json parsing
 
 ## 0.3.0 (May 8, 2016)
 
