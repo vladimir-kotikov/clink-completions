@@ -200,19 +200,23 @@ clink.arg.register_parser("npm", npm_parser)
 
 function npm_prompt_filter()
     local package_file = io.open('package.json')
-    if not package_file then return false end
 
-    local package_data = package_file:read('*a')
+    if package_file then
+        local package_data = package_file:read('*a')
+        local package = JSON:decode(package_data)
+
+        if package then
+             if not package.private then
+                local package_name = package.name or "<no name>" 
+                local package_version = package.version and "@"..package.version or ""
+                local package_string = color.color_text("("..package_name..package_version..")", color.YELLOW)
+
+                clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
+            end
+        end
+    end
+
     package_file:close()
-
-    local package = JSON:decode(package_data)
-    if not package then return false end
-    if not package.name and not package.version then return false end
-
-    local package_name = package.name or "<no name>"
-    local package_version = package.version and "@"..package.version or ""
-    local package_string = color.color_text("("..package_name..package_version..")", color.YELLOW)
-    clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
 
     return false
 end
