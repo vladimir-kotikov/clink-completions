@@ -27,3 +27,11 @@ Requirements
 ============
 
 These completions requires clink@0.4.3 or higher version
+
+# Test
+
+You will need `busted` package to be installed locally (to `lua_modules` directory). To install it
+using Luarocks call `luarocks install --tree=lua_modules busted`. You might also want to install
+`luacov` to get the coverage information.
+
+After installing call `test.bat` from repo root and watch tests passing. That's it.
