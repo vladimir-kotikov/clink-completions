@@ -1,15 +1,13 @@
 -- preamble: common routines
 
 local JSON = require("JSON")
-function JSON:assert () end -- silence JSON parsing errors
+
+-- silence JSON parsing errors
+function JSON:assert () end  -- luacheck: no unused args
 
 local color = require('color')
 local w = require('tables').wrap
 local matchers = require('matchers')
-
-function trim(s)
-  return s:match "^%s*(.-)%s*$"
-end
 
 ---
  -- Queries config options value using 'npm config' call
@@ -67,19 +65,19 @@ local function global_modules(token)
 end
 
 -- Reads package.json in current directory and extracts all "script" commands defined
-local function scripts(token)
+local function scripts(token) -- luacheck: no unused args
 
     -- Read package.json first
     local package_json = io.open('package.json')
     -- If there is no such file, then close handle and return
-    if package_json == nil then return matches end
+    if package_json == nil then return w() end
 
     -- Read the whole file contents
     local package_contents = package_json:read("*a")
     package_json:close()
 
-    local scripts = JSON:decode(package_contents).scripts
-    return w(scripts):keys()
+    local package_scripts = JSON:decode(package_contents).scripts
+    return w(package_scripts):keys()
 end
 
 local parser = clink.arg.new_parser
@@ -198,7 +196,7 @@ local npm_parser = parser({
 
 clink.arg.register_parser("npm", npm_parser)
 
-function npm_prompt_filter()
+local function npm_prompt_filter()
     local package_file = io.open('package.json')
     if not package_file then return false end
 

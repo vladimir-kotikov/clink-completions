@@ -1,4 +1,4 @@
-package.path = "modules/?.lua;".. package.path
+
 local color = require('color')
 
 describe("color module", function()

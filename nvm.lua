@@ -1,4 +1,3 @@
-local matchers = require('matchers')
 local path = require('path')
 local w = require('tables').wrap
 local parser = clink.arg.new_parser

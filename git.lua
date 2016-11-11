@@ -8,11 +8,11 @@ local parser = clink.arg.new_parser
 
 ---
  -- Lists remote branches based on packed-refs file from git directory
- -- @param string [git_dir]  Directory where to search file for
+ -- @param string [dir]  Directory where to search file for
  -- @return table  List of remote branches
-local function list_packed_refs(git_dir)
+local function list_packed_refs(dir)
     local result = w()
-    local git_dir = git_dir or git.get_git_dir()
+    local git_dir = dir or git.get_git_dir()
     if not git_dir then return result end
 
     local packed_refs_file = io.open(git_dir..'/packed-refs')
@@ -30,8 +30,8 @@ local function list_packed_refs(git_dir)
     return result
 end
 
-local function list_remote_branches(git_dir)
-    local git_dir = git_dir or git.get_git_dir()
+local function list_remote_branches(dir)
+    local git_dir = dir or git.get_git_dir()
     if not git_dir then return w() end
 
     return w(path.list_files(git_dir..'/refs/remotes', '/*',
@@ -43,10 +43,10 @@ end
 ---
  -- Lists local branches for git repo in git_dir directory.
  --
- -- @param string [git_dir]  Git directory, where to search for remote branches
+ -- @param string [dir]  Git directory, where to search for remote branches
  -- @return table  List of branches.
-local function list_local_branches(git_dir)
-    local git_dir = git_dir or git.get_git_dir()
+local function list_local_branches(dir)
+    local git_dir = dir or git.get_git_dir()
     if not git_dir then return w() end
 
     local result = w(path.list_files(git_dir..'/refs/heads', '/*',
@@ -60,8 +60,8 @@ local branches = function (token)
     if not git_dir then return w() end
 
     return list_local_branches(git_dir)
-    :filter(function(path)
-        return clink.is_match(token, path)
+    :filter(function(branch)
+        return clink.is_match(token, branch)
     end)
 end
 
@@ -73,15 +73,15 @@ local function alias(token)
 
     if git_dir == nil then return res end
 
-    f = io.popen("git config --get-regexp alias 2>nul")
+    local f = io.popen("git config --get-regexp alias 2>nul")
     if f == nil then return {} end
 
     for line in f:lines() do
-        local s, e = line:find(" ", 1, true)
-        local alias = line:sub(7, s - 1)
-        local start = alias:find(token, 1, true)
+        local s = line:find(" ", 1, true)
+        local alias_name = line:sub(7, s - 1)
+        local start = alias_name:find(token, 1, true)
         if start and start == 1 then
-            table.insert(res, alias)
+            table.insert(res, alias_name)
         end
     end
 
@@ -90,24 +90,24 @@ local function alias(token)
     return res
 end
 
-local function remotes(token)
-    local remotes = w()
+local function remotes(token)  -- luacheck: no unused args
+    local result = w()
     local git_dir = git.get_git_dir()
-    if not git_dir then return remotes end
+    if not git_dir then return result end
 
     local git_config = io.open(git_dir..'/config')
     -- if there is no gitconfig file (WAT?!), return empty list
-    if git_config == nil then return remotes end
+    if git_config == nil then return result end
 
     for line in git_config:lines() do
         local remote = line:match('%[remote "(.*)"%]')
         if (remote) then
-            table.insert(remotes, remote)
+            table.insert(result, remote)
         end
     end
 
     git_config:close()
-    return remotes
+    return result
 end
 
 local function local_or_remote_branches(token)
@@ -117,8 +117,8 @@ local function local_or_remote_branches(token)
 
     return list_local_branches(git_dir)
     :concat(list_remote_branches(git_dir))
-    :filter(function(path)
-        return clink.is_match(token, path)
+    :filter(function(branch)
+        return clink.is_match(token, branch)
     end)
 end
 
@@ -132,8 +132,8 @@ local function checkout_spec_generator(token)
 
     local local_branches = branches(token)
     local remote_branches = list_remote_branches(git_dir)
-        :filter(function(path)
-            return clink.is_match(token, path)
+        :filter(function(branch)
+            return clink.is_match(token, branch)
         end)
 
     local predicted_branches = list_remote_branches(git_dir)
@@ -155,7 +155,7 @@ local function checkout_spec_generator(token)
     --   * create display filter for completion table to append path separator to each directory entry
     --     since it is not added automatically by readline (see previous point)
     clink.matches_are_files(0)
-    clink.match_display_filter = function (matches)
+    clink.match_display_filter = function ()
         return files:map(function(file)
             return clink.is_dir(file) and file..'\\' or file
         end)
@@ -204,8 +204,8 @@ local function push_branch_spec(token)
         :filter(function(remote) return path.is_real_dir(remote) end)
         :reduce({}, function(result, remote)
             return w(path.list_files(git_dir..'/refs/remotes/'..remote, '/*', --[[recursive=]]true, --[[reverse_separator=]]true))
-            :filter(function(path)
-                return clink.is_match(remote_branch_spec, path)
+            :filter(function(remote_branch)
+                return clink.is_match(remote_branch_spec, remote_branch)
             end)
             :concat(result)
         end)
@@ -221,7 +221,7 @@ local function push_branch_spec(token)
     end
 end
 
-local stashes = function(token)
+local stashes = function(token)  -- luacheck: no unused args
 
     local git_dir = git.get_git_dir()
     if not git_dir then return w() end
@@ -262,7 +262,7 @@ local stashes = function(token)
         table.insert(ret_filter, "stash@{"..(i-1).."}    "..stashes[v])
     end
 
-    clink.match_display_filter = function (matches)
+    clink.match_display_filter = function ()
         return ret_filter
     end
 

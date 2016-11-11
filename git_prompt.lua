@@ -45,7 +45,7 @@ end
  -- @param {string} text Text to escape
  -- @returns {string} Escaped text
 ---
-function escape(text)
+local function escape(text)
     return text and text:gsub("([^%w])", "%%%1") or ""
 end
 

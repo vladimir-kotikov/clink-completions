@@ -1,4 +1,4 @@
-package.path = "modules/?.lua;".. package.path
+
 local map = require('funclib').map
 local concat = require('funclib').concat
 local filter = require('funclib').filter
@@ -8,7 +8,8 @@ describe("funclib module", function()
 
     it("should export some methods", function()
         local methods_count = 0
-        for k,_ in pairs(require("funclib")) do
+        -- iterate through table to count keys rather than `use #... notation
+        for _,_ in pairs(require("funclib")) do
             methods_count = methods_count + 1 end
         assert.are.equals(methods_count, 4)
     end)
@@ -116,9 +117,6 @@ describe("funclib module", function()
     end)
 
     describe("'concat' function", function ()
-        local test_table = {1, 2, 3}
-        local _noop = function() end
-
         it("should exist", function()
             assert.are.equals(type(concat), "function")
         end)

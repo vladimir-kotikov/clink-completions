@@ -20,8 +20,8 @@ install:
 build: off
 
 test_script:
-  # - luacheck --std max+busted src spec
+  - luacheck .
   - busted
 
 after_test:
-  - codecov
+  - codecov -X gcov

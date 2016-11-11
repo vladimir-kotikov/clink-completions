@@ -41,8 +41,6 @@ exports.files = function (word)
         prefix = word:sub(1, i)
     end
 
-    local include_dots = word:find("%.+$") ~= nil
-
     -- Find matches.
     local matches = w(clink.find_files(word.."*", true))
     :filter(function (file)

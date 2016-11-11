@@ -42,8 +42,8 @@ end
  -- Find out current branch
  -- @return {nil|git branch name}
 ---
-exports.get_git_branch = function (git_dir)
-    local git_dir = git_dir or exports.get_git_dir()
+exports.get_git_branch = function (dir)
+    local git_dir = dir or exports.get_git_dir()
 
     -- If git directory not found then we're probably outside of repo
     -- or something went wrong. The same is when head_file is nil

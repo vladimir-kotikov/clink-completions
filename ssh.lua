@@ -29,7 +29,7 @@ local function list_known_hosts()
         :filter()
 end
 
-local hosts = function (token)
+local hosts = function (token)  -- luacheck: no unused args
     return list_ssh_hosts()
         :concat(list_known_hosts())
 end

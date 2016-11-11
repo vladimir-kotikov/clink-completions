@@ -1,9 +1,9 @@
-exports = {}
+local exports = {}
 
 local w = require('tables').wrap
 
-exports.list_files = function (base_path, mask, recursive, reverse_separator)
-    local mask = mask or '/*'
+exports.list_files = function (base_path, glob, recursive, reverse_separator)
+    local mask = glob or '/*'
 
     local entries = w(clink.find_files(base_path..mask))
     :filter(function(entry)
