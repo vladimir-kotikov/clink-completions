@@ -543,6 +543,7 @@ local git_parser = parser(
         "fast-export",
         "fast-import",
         "fetch" .. parser({remotes},
+            "--all",
             "--prune",
             "--tags"
         ),
