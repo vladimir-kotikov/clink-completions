@@ -34,7 +34,7 @@ end
 exports.map = function (tbl, map_func)
     assert(tbl == nil or type(tbl) == "table",
         "First argument must be either table or nil")
-    
+
     assert(map_func == nil or type(map_func) == "function",
         "Second argument must be either function or nil")
 
@@ -75,7 +75,7 @@ end
  --    a table then its values is copied to the end of resultant table. If the
  --    parameter is single value, then it is appended to the resultant table. If
  --    the input value is 'nil', then it is omitted.
- -- 
+ --
  -- @return a result of concatenation. The result is always a table.
 exports.concat = function (...)
     local input = {...}
