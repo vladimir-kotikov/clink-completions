@@ -68,39 +68,19 @@ local parser = clink.arg.new_parser
 
 -- end preamble
 
-local install_parser = parser(
-        "--flat",
-        "--force",
-        "--har",
-        "--no-lockfile",
-        "--production",
-        "--pure-lockfile"
-    )
 
 local add_parser = parser(
-        "--dev",
-        "--exact",
-        "--optional",
-        "--peer",
-        "--tilde"
-    )
+    "--dev", "-D",
+    "--exact", "-E",
+    "--optional", "-O",
+    "--peer", "-P",
+    "--tilde", "-T"
+)
 
 local script_parser = parser({scripts})
 
 local yarn_parser = parser({
-    "access"..parser({
-        "edit",
-        "grant"..parser({
-            "read-only",
-            "read-write"
-            }),
-        "ls-packages",
-        "ls-collaborators",
-        "public",
-        "revoke",
-        "restricted"
-    }),
-    "add".. add_parser,
+    "add"..add_parser,
     "bin",
     "cache"..parser({
         "clean",
@@ -113,28 +93,33 @@ local yarn_parser = parser({
         "delete",
         "get",
         "list",
-        "set"..parser("-g", "--global")
+        "set"
     }),
     "generate-lock-entry",
     "global"..parser({
-        "add".. add_parser,
+        "add"..add_parser,
         "bin",
         "ls",
-        "remove"..parser({modules})
+        "remove"..parser({modules}),
+        "upgrade"..parser({modules})
     }),
+    "help",
     "info",
-    "init",
-    "install".. install_parser,
+    "init"..parser("--yes", "-y"),
+    "install",
     "licenses"..parser({"generate-disclaimer", "ls"}),
     "link"..parser({matchers.files, global_modules}),
     "login",
     "logout",
-    "ls",
-    "outdated",
+    "ls"..parser("--depth"),
+    "outdated"..parser({modules}),
     "owner"..parser({"add", "ls", "rm"}),
-    "pack"..parser("--filename"),
+    "pack"..parser("--filename", "-f"),
     "publish"..parser(
         "--access"..parser({"public", "restricted"}),
+        "--message",
+        "--new-version",
+        "--no-git-tag-version",
         "--tag"
     ),
     "remove"..parser({modules}),
@@ -144,21 +129,43 @@ local yarn_parser = parser({
     "team"..parser({"add", "create", "destroy", "ls", "rm"}),
     "test",
     "unlink"..parser({modules}),
-    "upgrade",
-    "version"..parser("--new-version"),
+    "upgrade"..parser({modules}, "--ignore-engines"),
+    "upgrade-interactive",
+    "version"..parser(
+        "--message",
+        "--new-version",
+        "--no-git-tag-version"
+    ),
+    "versions",
     "why"..parser({modules})
     },
     "-h",
     "-v",
     "--cache-folder",
+    "--flat",
+    "--force",
     "--global-folder",
+    "--har",
     "--help",
+    "--https-proxy",
+    "--ignore-engines",
+    "--ignore-optional",
+    "--ignore-platform",
+    "--ignore-scripts",
     "--json",
     "--modules-folder",
     "--mutex",
-    "--no-emoji",
+    "--no-bin-links",
+    "--no-lockfile",
     "--offline",
+    "--no-emoji",
+    "--no-progress",
     "--prefer-offline",
+    "--proxy",
+    "--pure-lockfile",
+    "--prod",
+    "--production",
+    "--strict-semver",
     "--version"
 )
 
