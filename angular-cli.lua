@@ -15,8 +15,8 @@ local asset_sizes_parser = parser({
 })
 
 local build_parser = parser({
-    "--environment=", "-e", 
-    "--environment=dev", "-dev", 
+    "--environment=", "-e",
+    "--environment=dev", "-dev",
     "--environment=prod", "-prod",
     "--output-path", "-o",
     "--watch", "-w",
@@ -47,7 +47,7 @@ local generate_parser = parser({
     "pipe", "p",
     "route", "r",
     "service", "s"
-},{     
+},{
     "--dry-run", "-d",
     "--verbose", "-v",
     "--pod", "-p",
@@ -61,7 +61,7 @@ local help_parser = parser({
     "--json"
 })
 
-local init_parser = parser({ 
+local init_parser = parser({
     "--dry-run", "-d",
     "--verbose", "-v",
     "--blueprint", "-b",
@@ -78,7 +78,7 @@ local init_parser = parser({
     "--inline-template", "-it"
 })
 
-local new_parser = parser({ 
+local new_parser = parser({
     "--dry-run", "-d",
     "--verbose", "-v",
     "--blueprint", "-b",
@@ -107,7 +107,7 @@ local serve_parser = parser({
     "--live-reload-base-url", "-lrbu",
     "--live-reload-port", "-lrp",
     "--live-reload-live-css",
-    "--environment", "-e", 
+    "--environment", "-e",
     "--environment=development", "-dev",
     "--environment=production", "-prod",
     "--output-path", "-op", "-out",
@@ -149,7 +149,7 @@ local test_parser = parser({
     "--module", "-m",
     "--watch", "--watcher", "-w",
     "--launch",
-    "--reporter", "-r", 
+    "--reporter", "-r",
     "--silent",
     "--test-page",
     "--page",
@@ -182,7 +182,7 @@ local ng_parser = parser({
     "test"..test_parser, "t"..test_parser,
     "e2e",
     "lint",
-    "version"..version_parser, "v"..version_parser, "--version"..version_parser, "-v"..version_parser, 
+    "version"..version_parser, "v"..version_parser, "--version"..version_parser, "-v"..version_parser,
     "completion",
     "doc",
     "make-this-awesome",
