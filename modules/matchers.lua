@@ -71,7 +71,8 @@ exports.create_files_matcher = function (file_pattern)
     return function (token)
         return w(clink.find_files(file_pattern))
         :filter(function(file)
-            return clink.is_match(token, file)
+            -- Filter out '.' and '..' entries as well
+            return clink.is_match(token, file) and path.is_real_dir(file)
         end )
     end
 end
