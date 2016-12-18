@@ -48,6 +48,9 @@ local function global_modules(token)
     return global_modules_matcher(token)
 end
 
+-- A function that matches all files in bin folder. See #74 for rationale
+local bins = matchers.create_files_matcher('node_modules/.bin/*.')
+
 -- Reads package.json in current directory and extracts all "script" commands defined
 local function scripts(token)  -- luacheck: no unused args
 
@@ -76,8 +79,6 @@ local add_parser = parser(
     "--peer", "-P",
     "--tilde", "-T"
 )
-
-local script_parser = parser({scripts})
 
 local yarn_parser = parser({
     "add"..add_parser,
@@ -123,7 +124,7 @@ local yarn_parser = parser({
         "--tag"
     ),
     "remove"..parser({modules}),
-    "run"..script_parser,
+    "run"..parser({bins, scripts}),
     "self-update",
     "tag"..parser({"add", "ls", "rm"}),
     "team"..parser({"add", "create", "destroy", "ls", "rm"}),
