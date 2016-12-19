@@ -40,20 +40,20 @@ exports.wrap = function (tbl)
     mt.__index.reduce = wrap_reduce
     mt.__index.concat = wrap_concat
     mt.__index.print = wrap_print
-    mt.__index.keys = function (table)
+    mt.__index.keys = function (arg)
         local res = {}
-        for k,_ in pairs(table) do
+        for k,_ in pairs(arg) do
             table.insert(res, k)
         end
         return exports.wrap(res)
     end
-    mt.__index.sort = function (table)
-        table.sort(table)
-        return table
+    mt.__index.sort = function (arg)
+        table.sort(arg)
+        return arg
     end
-    mt.__index.dedupe = function (table)
+    mt.__index.dedupe = function (arg)
         local res, hash = {}, {}
-        for _,v in ipairs(table) do
+        for _,v in ipairs(arg) do
             if not hash[v] then
                 hash[v] = true
                 table.insert(res, v)
@@ -61,8 +61,8 @@ exports.wrap = function (tbl)
         end
         return exports.wrap(res)
     end
-    mt.__index.contains = function (table, value)
-        for _,v in ipairs(table) do
+    mt.__index.contains = function (arg, value)
+        for _,v in ipairs(arg) do
             if v == value then return true, _ end
         end
         return false
