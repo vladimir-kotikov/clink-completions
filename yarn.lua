@@ -52,10 +52,10 @@ end
 local bins = matchers.create_files_matcher('node_modules/.bin/*.')
 
 -- Prefixes project.json scripts with a * (as opposed to node_module/.bin matches)
-local function scripts_display_filter(scripts)
+local function scripts_display_filter(project_scripts)
     return function(matches)
         for i, m in ipairs(matches) do
-            local prefix = scripts[m] ~= nil and '*' or ' '
+            local prefix = project_scripts[m] ~= nil and '*' or ' '
             matches[i] = prefix..m
         end
         return matches
@@ -73,9 +73,9 @@ local function scripts(token)  -- luacheck: no unused args
     local package_contents = package_json:read("*a")
     package_json:close()
 
-    local scripts = w(JSON:decode(package_contents).scripts)
-    clink.match_display_filter = scripts_display_filter(scripts)
-    return scripts:keys()
+    local project_scripts = w(JSON:decode(package_contents).scripts)
+    clink.match_display_filter = scripts_display_filter(project_scripts)
+    return project_scripts:keys()
 end
 
 local parser = clink.arg.new_parser
