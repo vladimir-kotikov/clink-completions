@@ -51,9 +51,19 @@ end
 -- A function that matches all files in bin folder. See #74 for rationale
 local bins = matchers.create_files_matcher('node_modules/.bin/*.')
 
+-- Prefixes project.json scripts with a * (as opposed to node_module/.bin matches)
+local function scripts_display_filter(scripts)
+    return function(matches)
+        for i, m in ipairs(matches) do
+            local prefix = scripts[m] ~= nil and '*' or ' '
+            matches[i] = prefix..m
+        end
+        return matches
+    end
+end
+
 -- Reads package.json in current directory and extracts all "script" commands defined
 local function scripts(token)  -- luacheck: no unused args
-
     -- Read package.json first
     local package_json = io.open('package.json')
     -- If there is no such file, then close handle and return
@@ -63,8 +73,9 @@ local function scripts(token)  -- luacheck: no unused args
     local package_contents = package_json:read("*a")
     package_json:close()
 
-    local package_scripts = JSON:decode(package_contents).scripts
-    return w(package_scripts):keys()
+    local scripts = w(JSON:decode(package_contents).scripts)
+    clink.match_display_filter = scripts_display_filter(scripts)
+    return scripts:keys()
 end
 
 local parser = clink.arg.new_parser
