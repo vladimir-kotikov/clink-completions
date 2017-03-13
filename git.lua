@@ -822,8 +822,7 @@ local git_parser = parser(
             "create-ignore",
             "show-ignore",
             "mkdirs",
-            "commit-
-    ",
+            "commit-diff",
             "info",
             "proplist",
             "propget",
