@@ -203,7 +203,8 @@ local function push_branch_spec(token)
         local b = w(clink.find_dirs(git_dir..'/refs/remotes/*'))
         :filter(function(remote) return path.is_real_dir(remote) end)
         :reduce({}, function(result, remote)
-            return w(path.list_files(git_dir..'/refs/remotes/'..remote, '/*', --[[recursive=]]true, --[[reverse_separator=]]true))
+            return w(path.list_files(git_dir..'/refs/remotes/'..remote, '/*',
+                --[[recursive=]]true, --[[reverse_separator=]]true))
             :filter(function(remote_branch)
                 return clink.is_match(remote_branch_spec, remote_branch)
             end)
@@ -770,7 +771,8 @@ local git_parser = parser(
         "show-ref",
         "stage",
         "stash"..parser({
-            "list", -- TODO: The command takes options applicable to the git log command to control what is shown and how
+            "list", -- TODO: The command takes options applicable to the git log
+                    -- command to control what is shown and how it's done
             "show"..parser({stashes}),
             "drop"..parser({stashes}, "-q", "--quiet"),
             "pop"..parser({stashes}, "--index", "-q", "--quiet"),
@@ -812,8 +814,10 @@ local git_parser = parser(
                 "--placeholder-filename"),
                 "rebase"..parser({local_or_remote_branches}, {branches}),
             "dcommit"..parser("--no-rebase", "--commit-url", "--mergeinfo", "--interactive"),
-            "branch"..parser("-m","--message","-t", "--tags", "-d", "--destination", "--username", "--commit-url", "--parents"),
-            "log"..parser("-r", "--revision", "-v", "--verbose", "--limit", "--incremental", "--show-commit", "--oneline"),
+            "branch"..parser("-m","--message","-t", "--tags", "-d", "--destination",
+                             "--username", "--commit-url", "--parents"),
+            "log"..parser("-r", "--revision", "-v", "--verbose", "--limit",
+                          "--incremental", "--show-commit", "--oneline"),
             "find-rev"..parser("--before", "--after"),
             "reset"..parser("-r", "--revision", "-p", "--parent"),
             "tag",
