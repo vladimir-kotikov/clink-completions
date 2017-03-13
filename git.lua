@@ -530,7 +530,7 @@ local git_parser = parser(
         "credential-wincred",
         "daemon",
         "describe",
-        "diff" .. parser({local_or_remote_branches}),
+        "diff" .. parser({local_or_remote_branches,matchers.files}),
         "diff-files",
         "diff-index",
         "diff-tree",
