@@ -49,10 +49,11 @@ local function get_local_tasks()
         "--tasks"
     }
 
-    local gulpfileLocation = "gulpfile.js"
+    local gulpFileLocation = "gulpfile.js"
+    local gulpBabelFileLocation = "gulpfile.babel.js"
 
     -- Check if gulpfile exists to laod tasks
-    if not is_available(gulpfileLocation) then return {} end
+    if not is_available(gulpFileLocation) and not is_available(gulpBabelFileLocation) then return {} end
 
     -- When there are no tasks, doesn't have to return local tasks
     local proc = io.popen("gulp --tasks-simple 2>nul")
@@ -146,7 +147,7 @@ clink.arg.register_parser("gulp", global_tasks_parser)
 
 -- Prompt
 function gulp_prompt_filter()
-    if is_available("gulpfile.js") then
+    if is_available("gulpfile.js") or is_available("gulpfile.babel.js") then
         clink.prompt.value = clink.prompt.value .. color.color_text("[gulp]", color.RED) .. " "
     end
     return true
