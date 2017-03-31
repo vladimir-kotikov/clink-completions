@@ -72,10 +72,9 @@ end
 ---
  -- Queries gulp in provided location for available tasks
  --
- -- @param {string} [word=nil] - Currently edited word
  -- @return {table} - Table of available tasks
 ---
-local function get_remote_tasks(word)
+local function get_remote_tasks()
 
     -- Remote tasks
     local remoteTasks = {
@@ -83,7 +82,6 @@ local function get_remote_tasks(word)
     }
 
     -- Retrieve gulpfile location (match quoted then unquoted, works for all scenarios)
-    -- local gulpfileLocation = string.sub(rl_state.line_buffer, 17, - 2 - string.len(word))
     local gulpfileLocation = string.match(rl_state.line_buffer, '^gulp %-%-gulpfile "([^"]-)" +')
         or string.match(rl_state.line_buffer, '^gulp %-%-gulpfile (.-) +')
 
@@ -146,7 +144,7 @@ clink.arg.register_parser("gulp", remote_tasks_parser)
 clink.arg.register_parser("gulp", global_tasks_parser)
 
 -- Prompt
-function gulp_prompt_filter()
+local function gulp_prompt_filter()
     if is_available("gulpfile.js") or is_available("gulpfile.babel.js") then
         clink.prompt.value = clink.prompt.value .. color.color_text("[gulp]", color.RED) .. " "
     end
