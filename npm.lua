@@ -1,11 +1,13 @@
 -- preamble: common routines
 
-local color = require('color')
-local matchers = require('matchers')
+local JSON = require("JSON")
 
-function trim(s)
-  return s:match "^%s*(.-)%s*$"
-end
+-- silence JSON parsing errors
+function JSON:assert () end  -- luacheck: no unused args
+
+local color = require('color')
+local w = require('tables').wrap
+local matchers = require('matchers')
 
 ---
  -- Queries config options value using 'npm config' call
@@ -49,6 +51,10 @@ local function global_modules(token)
     -- If we already have matcher then just return it
     if global_modules_matcher then return global_modules_matcher(token) end
 
+    -- If token starts with . or .. or has path delimiter then return empty
+    -- result and do not create a matcher so only fs paths will be completed
+    if (token:match('^%.(%.)?') or token:match('[%\\%/]+')) then return {} end
+
     -- otherwise try to get cache location and return empty table if failed
     globals_location = globals_location or get_npm_config_value("prefix")
     if not globals_location then return {} end
@@ -59,40 +65,19 @@ local function global_modules(token)
 end
 
 -- Reads package.json in current directory and extracts all "script" commands defined
-local function scripts(token)
-
-    local matches = {}
+local function scripts(token) -- luacheck: no unused args
 
     -- Read package.json first
     local package_json = io.open('package.json')
     -- If there is no such file, then close handle and return
-    if package_json == nil then return matches end
+    if package_json == nil then return w() end
 
     -- Read the whole file contents
     local package_contents = package_json:read("*a")
     package_json:close()
 
-    -- First, gind all "scripts" elements in package file
-    -- This is necessary since package.json can contain multiple sections
-    -- And we'll need to merge them first
-    local scripts_sections = {}
-    for section in package_contents:gmatch('"scripts"%s*:%s*{(.-)}') do
-        table.insert(scripts_sections, trim(section))
-    end
-
-    -- Then merge "scripts" sections and try to find
-    -- <script_name>: <script_command> pairs
-    local scripts = table.concat(scripts_sections, ",\n")
-        -- encode escaped quotes, so they won't affect further parsing
-        :gsub("\\(.)", function (x)
-            return string.format("\\%03d", string.byte(x))
-        end)
-
-    for script_name in scripts:gmatch('"(.-)"%s*:%s*(".-")') do
-        table.insert(matches, script_name)
-    end
-
-    return matches
+    local package_scripts = JSON:decode(package_contents).scripts
+    return w(package_scripts):keys()
 end
 
 local parser = clink.arg.new_parser
@@ -206,25 +191,29 @@ local npm_parser = parser({
     "view",
     "whoami"
     },
-    "-h"
+    "-h", "--version"
 )
 
 clink.arg.register_parser("npm", npm_parser)
 
-function npm_prompt_filter()
-    local package = io.open('package.json')
-    if package ~= nil then
-        local package_info = package:read('*a')
-        package:close()
-        local package_name = string.match(package_info, '"name"%s*:%s*"(.-)"')
-            or "<invalid_name>"
+local function npm_prompt_filter()
+    local package_file = io.open('package.json')
+    if not package_file then return false end
 
-        local package_version = string.match(package_info, '"version"%s*:%s*"(.-)"')
-            or "<invalid_version>"
+    local package_data = package_file:read('*a')
+    package_file:close()
 
-        local package_string = color.color_text("("..package_name.."@"..package_version..")", color.YELLOW)
-        clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
-    end
+    local package = JSON:decode(package_data)
+    -- Bail out if package.json is malformed
+    if not package then return false end
+    -- Don't print package info when the package is private or both version and name are missing
+    if package.private or (not package.name and not package.version) then return false end
+
+    local package_name = package.name or "<no name>"
+    local package_version = package.version and "@"..package.version or ""
+    local package_string = color.color_text("("..package_name..package_version..")", color.YELLOW)
+    clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
+
     return false
 end
 

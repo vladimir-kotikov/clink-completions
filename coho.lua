@@ -13,7 +13,7 @@ local repos = {
     "plugin-media-capture", "plugin-network-information", "plugin-splashscreen",
     "plugin-vibration", "plugin-statusbar", "cordova-plugins",
     --tools
-    "docs", "mobile-spec", "js","app-hello-world", "cli", "plugman", "lib",
+    "docs", "mobile-spec", "js","app-hello-world", "cli", "plugman", "lib", "common",
     "coho", "medic", "app-harness", "labs", "registry-web", "registry",
     "dist", "dist/dev", "private-pmc", "website",
     --repos groups
@@ -61,9 +61,17 @@ local coho_parser = parser(
         "tag-release",
         "audit-license-headers",
         "check-license",
-        "create-archive",
+        "create-archive"..parser(
+            '-r'..parser(repos),
+            '--repo'..parser(repos),
+            '--dest'
+        ),
         "verify-archive",
-        "print-tags",
+        "print-tags"..parser(
+            '-r'..parser(repos),
+            '--repo'..parser(repos),
+            '--tag' -- TODO: get tags based on dir and functionality from git.lua
+        ),
         "verify-tags",
         "list-release-urls",
         "nightly",

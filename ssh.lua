@@ -1,34 +1,37 @@
 local w = require('tables').wrap
 local parser = clink.arg.new_parser
 
--- read all Host entries in the user's ssh config file
-local function list_ssh_hosts()
-    local hosts = {}
-    local ssh_config = io.open(clink.get_env("userprofile") .. "/.ssh/config")
+local function read_lines (filename)
+    local lines = w({})
+    local f = io.open(filename)
+    if not f then return lines end
 
-    if ssh_config then
-        local line = ssh_config:read("*line")
-        while line do
-            local hostss = line:match("^Host (.*)$")
-            if hostss then
-                for hst in string.gmatch(hostss, "%S+") do
-                    table.insert(hosts, trim(hst))
-                end
-            end
-            line = ssh_config:read("*line")
-        end
-        ssh_config:close()
-    end
+    for line in f:lines() do table.insert(lines, line) end
 
-    local result = w(hosts)
-    return result
+    f:close()
+    return lines
 end
 
-local hosts = function (token)
+-- read all Host entries in the user's ssh config file
+local function list_ssh_hosts()
+    return read_lines(clink.get_env("userprofile") .. "/.ssh/config")
+        :map(function (line)
+            return line:match('^Host (.*)$')
+        end)
+        :filter()
+end
+
+local function list_known_hosts()
+    return read_lines(clink.get_env("userprofile") .. "/.ssh/known_hosts")
+        :map(function (line)
+            return line:match('^(%S+),')
+        end)
+        :filter()
+end
+
+local hosts = function (token)  -- luacheck: no unused args
     return list_ssh_hosts()
-    :filter(function(path)
-        return clink.is_match(token, path)
-    end)
+        :concat(list_known_hosts())
 end
 
 local ssh_hosts_parser = parser({hosts})

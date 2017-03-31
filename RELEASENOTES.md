@@ -1,13 +1,55 @@
 # Release Notes
 
+## 0.3.2 (Nov 6, 2016)
+
+This release adds completions for `yarn` package manager and a bunch of minor improvements and bugfixes
+
+  * `9789bc8` [npm] Improve prompt output in some situations
+  * `795f6a9` [npm] Resolve lua error when package.json is empty
+  * `fea1e21` [git] Add completions for 'git difftool'
+  * `f840079` Add completions for Yarn v0.14
+  * `8400a8b` [git] Add basic completions for cherry-pick
+  * `f411878` [git] Complete branches in `git reset`
+  * `83c71e1` [vagrant] Fix help parser for Vagrant completions
+  * `2845966` [npm] Add version flag
+  * `1e3931f` [git] '--prune' option for 'fetch'
+  * `cc51616` [cordova] Add statusbar to core plugins
+
+
+## 0.3.1 (June 11, 2016)
+
+This release adds a few fixes and small improvements for `npm` prompt and completions
+
+  * `f2e335d` [npm] Do not query global modules when completing FS paths in 'npm link'
+  * `c59c0d9` [npm] Improve package.json handling for npm prompt
+  * `6edf054` [npm] Do not fetch package name and version for private packages
+  * `23d7599` [npm] Improve package.json parsing
+
+## 0.3.0 (May 8, 2016)
+
+This release adds support for completions inside of git submodules and a completions for a couple of new commands (`ssh` and `nvm`)
+
+  * `21464d1` [ssh] Refactor hosts search logic
+  * `26f4f99` [ssh] Add ssh completion from known_hosts file
+  * `9a4d308` [nvm] Add basic nvm completions
+  * `3c25f96` [git] Housekeeping
+  * `b39e617` [git] Fix fetch --tags completion
+  * `99140d1` [git] Allow multiple branches for git branch -d
+  * `087874b` [cordova] Add a couple of new completions for coho
+  * `e4cf69d` [cordova] Remove old core plugin IDs from 'plugin add/rm'
+  * `a14af9c` [git] Adds basic support for submodules
+  * `e2467f6` [choco] Fix chocolatey non-meta packages listing
+  * `9540aa6` [npm] Adds 'npm outdated' flags
+  * `91cef45` [ssh] Adds ssh autocomplete script
+
 ## 0.2.2 (Dec 10, 2015)
 
 Another bugfix release. Multiple small fixes for git inclded.
 
   * `83ef129` [git] Fixes failure when trying to complete git commmands outside of repo
-  * `7f4c223` [git] add merge strategies and options parsers to pull/rebase/checkout  
+  * `7f4c223` [git] add merge strategies and options parsers to pull/rebase/checkout
   * `faf92f2` [git] Distinguish real and suggestes branch names
-  * `ad24a7f` [git] Adds "core.trustctime" to available options 
+  * `ad24a7f` [git] Adds "core.trustctime" to available options
   * `e6921a3` [npm] Query npm config lazily (only when required by completions)
   * `03bec42` [git] Adds completions for `git remote update`
   * `2ea5f33` [git] Close packed-refs after reading
