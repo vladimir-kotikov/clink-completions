@@ -23,6 +23,7 @@ local vagrant_parser = parser({
         }),
     "connect",
     "destroy" .. parser("-f", "--force"),
+    "global-status",
     "halt" .. parser("-f", "--force"),
     "init" .. parser({boxes}, {}, "--output"),
     "package" .. parser("--base", "--output", "--include", "--vagrantfile"),
