@@ -49,6 +49,18 @@ local vagrant_parser = parser({
     "resume",
     "ssh" .. parser("-c", "--command", "-p", "--plain") ,
     "ssh-config",
+    "snapshot" .. parser({
+    "push",
+    "pop" .. parser(
+        "--provision",
+        "--no-provision",
+        "--no-delete"),
+    "save",
+    "restore" .. parser(
+        "--provision",
+        "--no-provision"),
+    "list",
+    "delete"}),
     "status",
     "suspend",
     "up" .. parser(
