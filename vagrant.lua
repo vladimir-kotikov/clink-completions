@@ -23,6 +23,7 @@ local vagrant_parser = parser({
         }),
     "connect",
     "destroy" .. parser("-f", "--force"),
+    "global-status",
     "halt" .. parser("-f", "--force"),
     "init" .. parser({boxes}, {}, "--output"),
     "package" .. parser("--base", "--output", "--include", "--vagrantfile"),
@@ -48,6 +49,18 @@ local vagrant_parser = parser({
     "resume",
     "ssh" .. parser("-c", "--command", "-p", "--plain") ,
     "ssh-config",
+    "snapshot" .. parser({
+    "push",
+    "pop" .. parser(
+        "--provision",
+        "--no-provision",
+        "--no-delete"),
+    "save",
+    "restore" .. parser(
+        "--provision",
+        "--no-provision"),
+    "list",
+    "delete"}),
     "status",
     "suspend",
     "up" .. parser(
