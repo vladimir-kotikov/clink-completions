@@ -26,15 +26,14 @@ end
 
 local function get_vagrantfile()
     local vagrant_cwd = clink.get_env("VAGRANT_CWD")
-    local vagrant_file = nil
-    if not is_empty(vagrant_cwd) then 
-        return find_vagrantfile(vagrant_cwd) 
-    else 
+    if not is_empty(vagrant_cwd) then
+        return find_vagrantfile(vagrant_cwd)
+    else
         return find_vagrantfile()
     end
 end
 
-function delete_ruby_comment(line)
+local function delete_ruby_comment(line)
   if line == nil then return nil end
     local index = string.find(line, '#')
     if (not (index == nil) and index > 0) then
@@ -43,7 +42,7 @@ function delete_ruby_comment(line)
   return line
 end
 
-local get_provisions = function (token)
+local get_provisions = function ()
     local vagrant_file = get_vagrantfile()
     if vagrant_file == nil then return {} end
 
