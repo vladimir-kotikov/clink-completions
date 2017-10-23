@@ -57,6 +57,7 @@ local get_provisions = function ()
             end
         end
     end
+    vagrant_file:close()
     return provisions
 end
 
