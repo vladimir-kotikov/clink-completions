@@ -50,7 +50,7 @@ local get_provisions = function ()
     for line in vagrant_file:lines() do
         line = delete_ruby_comment(line)
         if not is_empty(line) then
-            local provision_name = line:match('.vm.provision[ \r\t]+\"([A-z]+[A-z0-9]*)\"')
+            local provision_name = line:match('.vm.provision[ \r\t]+[\"|\']([A-z]+[A-z0-9|-]*)[\"|\']')
 
             if not is_empty(provision_name) then
                 table.insert(provisions, provision_name)
