@@ -10,11 +10,14 @@ local exports = {}
  -- @return {string} Path to .git directory or nil if such dir not found
 exports.get_git_dir = function (start_dir)
 
-    -- Checks if provided directory contains git directory
+    -- Checks if provided directory contains '.git' directory
+    -- and returns path to that directory
     local function has_git_dir(dir)
         return #clink.find_dirs(dir..'/.git') > 0 and dir..'/.git'
     end
 
+    -- checks if directory contains '.git' _file_ and if it does
+    -- parses it and returns a path to git directory from that file
     local function has_git_file(dir)
         local gitfile = io.open(dir..'/.git')
         if not gitfile then return false end
@@ -22,7 +25,11 @@ exports.get_git_dir = function (start_dir)
         local git_dir = gitfile:read():match('gitdir: (.*)')
         gitfile:close()
 
-        return git_dir and dir..'/'..git_dir
+        if not git_dir then return false end
+        -- If found path is absolute don't prepend initial
+        -- directory - return absolute path value
+        return path.is_absolute(git_dir) and git_dir
+            or dir..'/'..git_dir
     end
 
     -- Set default path to current directory

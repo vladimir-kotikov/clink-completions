@@ -1,5 +1,5 @@
 return {
-    exclude_files = { ".lua", "modules/JSON.lua" },
+    exclude_files = { ".lua", "modules/JSON.lua", "lua_modules" },
     files = {
         spec = { std = "+busted" },
     },

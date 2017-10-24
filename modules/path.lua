@@ -52,6 +52,11 @@ exports.pathname = function (path)
     return prefix
 end
 
+exports.is_absolute = function (path)
+    local drive = path:find("^%s?[%l%a]:[\\/]")
+    if drive then return true else return false end
+end
+
 exports.is_metadir = function (dirname)
     return exports.basename(dirname) == '.'
         or exports.basename(dirname) == '..'
