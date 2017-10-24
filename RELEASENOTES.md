@@ -1,5 +1,29 @@
 # Release Notes
 
+## 0.3.3 (Oct 24, 2017)
+
+A lot of improvements for vagrant completions (thanks to @Andegawen) and a few bugfixes for `yarn`, `ssh` and `git`.
+
+  * `af5f6d1` [git] Fix git main worktree detection (#95)
+  * `032ff0c` [vagrant] Close Vagrantfile after usage (#93)
+  * `757c096` [vagrant] Enhance regex for finding provision names (#91)
+  * `84884db` [vagrant] Vagrant list provisions on `--provision-with`  (#88)
+  * `59055f7` [vagrant] add `global-status` and `snapshot` commands  (#86)
+  * `e4d562a` [ssh] Improves pattern matching for searching hosts (#85)
+  * `34d3c0c` [common] Make luacheck happy (#83)
+  * `f1898a0` [git] Support completing files for `git diff` (#82)
+  * `c288656` [yarn] Suggest installed executables for yarn run
+  * `162d402` [common] Fix arguments clobbering 'table' class
+  * `a552d8c` [chore] Remove trailing whitespace to pass CI (#70)
+  * `3f635f9` [yarn] Upgrade commands for Yarn v0.17.8 (#69)
+  * `b76867a` [git] Add support for fetch --all (#68)
+  * `8edbf28` Add completions for angular-cli (#67)
+  * `9cc940c` [common] Enable luacheck
+  * `a369227` [common] Configure CI
+  * `0714e67` [common] Add tests for funclib and color modules
+  * `a4c83df` [test] Add test harness and instructions
+  * `834dbf3` [git] Display git push destination in prompt
+
 ## 0.3.2 (Nov 6, 2016)
 
 This release adds completions for `yarn` package manager and a bunch of minor improvements and bugfixes
