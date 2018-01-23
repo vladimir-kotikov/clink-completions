@@ -12,7 +12,7 @@ local parser = clink.arg.new_parser
  -- @return table  List of remote branches
 local function list_packed_refs(dir)
     local result = w()
-    local git_dir = dir or git.get_git_dir()
+    local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return result end
 
     local packed_refs_file = io.open(git_dir..'/packed-refs')
@@ -31,7 +31,7 @@ local function list_packed_refs(dir)
 end
 
 local function list_remote_branches(dir)
-    local git_dir = dir or git.get_git_dir()
+    local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return w() end
 
     return w(path.list_files(git_dir..'/refs/remotes', '/*',
@@ -46,7 +46,7 @@ end
  -- @param string [dir]  Git directory, where to search for remote branches
  -- @return table  List of branches.
 local function list_local_branches(dir)
-    local git_dir = dir or git.get_git_dir()
+    local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return w() end
 
     local result = w(path.list_files(git_dir..'/refs/heads', '/*',
@@ -56,7 +56,7 @@ local function list_local_branches(dir)
 end
 
 local branches = function (token)
-    local git_dir = git.get_git_dir()
+    local git_dir = git.get_git_common_dir()
     if not git_dir then return w() end
 
     return list_local_branches(git_dir)
@@ -92,7 +92,7 @@ end
 
 local function remotes(token)  -- luacheck: no unused args
     local result = w()
-    local git_dir = git.get_git_dir()
+    local git_dir = git.get_git_common_dir()
     if not git_dir then return result end
 
     local git_config = io.open(git_dir..'/config')
@@ -112,7 +112,7 @@ end
 
 local function local_or_remote_branches(token)
     -- Try to resolve .git directory location
-    local git_dir = git.get_git_dir()
+    local git_dir = git.get_git_common_dir()
     if not git_dir then return w() end
 
     return list_local_branches(git_dir)
@@ -128,7 +128,7 @@ local function checkout_spec_generator(token)
             return path.is_real_dir(file)
         end)
 
-    local git_dir = git.get_git_dir()
+    local git_dir = git.get_git_common_dir()
 
     local local_branches = branches(token)
     local remote_branches = list_remote_branches(git_dir)
@@ -171,7 +171,7 @@ local function checkout_spec_generator(token)
 end
 
 local function push_branch_spec(token)
-    local git_dir = git.get_git_dir()
+    local git_dir = git.get_git_common_dir()
     if not git_dir then return w() end
 
     local plus_prefix = token:sub(0, 1) == '+'

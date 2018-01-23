@@ -45,6 +45,20 @@ exports.get_git_dir = function (start_dir)
         or (parent_path ~= start_dir and exports.get_git_dir(parent_path) or nil)
 end
 
+exports.get_git_common_dir = function (start_dir)
+    local git_dir = exports.get_git_dir(start_dir)
+    if not git_dir then return git_dir end
+    local commondirfile = io.open(git_dir..'/commondir')
+    if commondirfile then
+        -- If there's a commondir file, we're in a git worktree
+        local commondir = commondirfile:read()
+        commondirfile.close()
+        return path.is_absolute(commondir) and commondir
+            or git_dir..'/'..commondir
+    end
+    return git_dir
+end
+
 ---
  -- Find out current branch
  -- @return {nil|git branch name}
