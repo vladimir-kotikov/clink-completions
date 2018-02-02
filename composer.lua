@@ -47,14 +47,14 @@ clink.arg.register_parser("composer", local_tasks_parser)
 
 -- Prompt
 local function composer_prompt_filter()
-    local package = io.open('composer.json')
-    if package ~= nil then
+    local package_file = io.open('composer.json')
+    if package_file ~= nil then
 
-        local package_data = package:read('*a')
-        package:close()
+        local package_data = package_file:read('*a')
+        package_file:close()
 
         local package = JSON:decode(package_data)
-        -- Bail out if package.json is malformed
+        -- Bail out if composer.json is malformed
         if not package then return false end
 
         local package_name = package.name or "<no name>"
