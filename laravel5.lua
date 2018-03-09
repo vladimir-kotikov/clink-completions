@@ -2,7 +2,7 @@ local JSON = require('JSON')
 local parser = clink.arg.new_parser
 local la5_args_cache = {}
 
-function JSON:assert() end
+function JSON:assert () end  -- luacheck: no unused args
 
 local function register_parser(la5_parser)
     local artisan_parser = parser({ 'artisan'..la5_parser })
@@ -22,7 +22,7 @@ local function is_la5_project()
     return false
 end
 
-local function parse_la5_args(word)
+local function parse_la5_args(word) -- luacheck: no unused args
     if not is_la5_project() then return end
     if #la5_args_cache > 0 then return la5_args_cache end
 

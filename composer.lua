@@ -2,7 +2,8 @@ local JSON = require('JSON')
 local parser = clink.arg.new_parser
 local composer_args_cache = {}
 
-function JSON:assert() end
+function JSON:assert () end  -- luacheck: no unused args
+
 
 local function register_parser(c_parser)
     c_parser:disable_file_matching()
@@ -14,7 +15,7 @@ local function register_parser(c_parser)
     clink.arg.register_parser('composer', cg_parser)
 end
 
-local function parse_composer_args(word)
+local function parse_composer_args(word) -- luacheck: no unused args
     if #composer_args_cache > 0 then return composer_args_cache end
 
     local args_list = io.popen('composer list --format=json')
