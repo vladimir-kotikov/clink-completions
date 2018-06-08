@@ -9,40 +9,9 @@ local exports = {}
  --                       current directory will be used
  -- @return {string} Path to .git directory or nil if such dir not found
 exports.get_git_dir = function (start_dir)
-
-    -- Checks if provided directory contains '.git' directory
-    -- and returns path to that directory
-    local function has_git_dir(dir)
-        return #clink.find_dirs(dir..'/.git') > 0 and dir..'/.git'
-    end
-
-    -- checks if directory contains '.git' _file_ and if it does
-    -- parses it and returns a path to git directory from that file
-    local function has_git_file(dir)
-        local gitfile = io.open(dir..'/.git')
-        if not gitfile then return false end
-
-        local git_dir = gitfile:read():match('gitdir: (.*)')
-        gitfile:close()
-
-        if not git_dir then return false end
-        -- If found path is absolute don't prepend initial
-        -- directory - return absolute path value
-        return path.is_absolute(git_dir) and git_dir
-            or dir..'/'..git_dir
-    end
-
-    -- Set default path to current directory
-    if not start_dir or start_dir == '.' then start_dir = clink.get_cwd() end
-
-    -- Calculate parent path now otherwise we won't be
-    -- able to do that inside of logical operator
-    local parent_path = path.pathname(start_dir)
-
-    return has_git_dir(start_dir)
-        or has_git_file(start_dir)
-        -- Otherwise go up one level and make a recursive call
-        or (parent_path ~= start_dir and exports.get_git_dir(parent_path) or nil)
+    local git_dir_output = io.popen("git rev-parse --git-dir 2>nul")
+    if git_dir_output == nil then return nil end
+    return git_dir_output:read()
 end
 
 ---
@@ -64,6 +33,12 @@ exports.get_git_branch = function (dir)
     -- otherwise it is a detached commit
     local branch_name = HEAD:match('ref: refs/heads/(.+)')
     return branch_name or 'HEAD detached at '..HEAD:sub(1, 7)
+end
+
+exports.get_common_dir = function()
+    local git_common_dir_output = io.popen("git rev-parse --git-common-dir 2>nul")
+    if git_common_dir_output == nil then return nil end
+    return git_common_dir_output:read()
 end
 
 return exports

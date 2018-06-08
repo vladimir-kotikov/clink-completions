@@ -31,7 +31,7 @@ local function list_packed_refs(dir)
 end
 
 local function list_remote_branches(dir)
-    local git_dir = dir or git.get_git_dir()
+    local git_dir = dir or git.get_common_dir()
     if not git_dir then return w() end
 
     return w(path.list_files(git_dir..'/refs/remotes', '/*',
@@ -46,7 +46,7 @@ end
  -- @param string [dir]  Git directory, where to search for remote branches
  -- @return table  List of branches.
 local function list_local_branches(dir)
-    local git_dir = dir or git.get_git_dir()
+    local git_dir = dir or git.get_common_dir()
     if not git_dir then return w() end
 
     local result = w(path.list_files(git_dir..'/refs/heads', '/*',
@@ -56,7 +56,7 @@ local function list_local_branches(dir)
 end
 
 local branches = function (token)
-    local git_dir = git.get_git_dir()
+    local git_dir = git.get_common_dir()
     if not git_dir then return w() end
 
     return list_local_branches(git_dir)
@@ -112,7 +112,7 @@ end
 
 local function local_or_remote_branches(token)
     -- Try to resolve .git directory location
-    local git_dir = git.get_git_dir()
+    local git_dir = git.get_common_dir()
     if not git_dir then return w() end
 
     return list_local_branches(git_dir)
@@ -128,7 +128,7 @@ local function checkout_spec_generator(token)
             return path.is_real_dir(file)
         end)
 
-    local git_dir = git.get_git_dir()
+    local git_dir = git.get_common_dir()
 
     local local_branches = branches(token)
     local remote_branches = list_remote_branches(git_dir)
