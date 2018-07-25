@@ -247,7 +247,7 @@ local generate_parser = parser({
     "--force",
     "--help",
     "-d",
-    "-f",
+    "-f"
 )
 
 local update_parser = parser(
