@@ -77,7 +77,7 @@ local function git_prompt_filter()
     local text = remote_to_push
     if (remote_ref) then text = text..'/'..remote_ref end
 
-    clink.prompt.value = clink.prompt.value:gsub(escape(branch), '%1 -> '..text)
+    clink.prompt.value = clink.prompt.value:gsub(escape(branch), '%1 » '..text)
 
     return false
 end
