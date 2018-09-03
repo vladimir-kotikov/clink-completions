@@ -70,14 +70,18 @@ local function git_prompt_filter()
     if not branch then return false end
 
     -- for remote and ref resolution algorithm see https://git-scm.com/docs/git-push
-    local remote_to_push = git.get_config(git_dir, 'branch "'..branch..'"', 'remote') or 'origin'
+    local remote_to_push = git.get_config(git_dir, 'branch "'..branch..'"', 'remote') or ''
     local remote_ref = git.get_config(git_dir, 'remote "'..remote_to_push..'"', 'push') or
         git.get_config(git_dir, 'push', 'default')
 
     local text = remote_to_push
     if (remote_ref) then text = text..'/'..remote_ref end
 
-    clink.prompt.value = clink.prompt.value:gsub(escape(branch), '%1 -> '..text)
+    if (text == '') then
+      clink.prompt.value = clink.prompt.value:gsub(escape(branch), '%1'..text)
+    else
+      clink.prompt.value = clink.prompt.value:gsub(escape(branch), '%1 -> '..text)
+    end
 
     return false
 end
