@@ -484,9 +484,9 @@ local git_parser = parser(
         "clean",
         "clone" .. parser("--template","-l","-s",
             "--no-hardlinks","-q","-n","--bare","--mirror",
-            "-o","-b","--branch=","-u","--reference","--dissociate",
+            "-o","-b","--branch","-u","--reference","--dissociate",
             "--separate-git-dir","--depth", "--single-branch",
-            "--no-single-branch","--no-tags","--recurse-submodules=",
+            "--no-single-branch","--no-tags","--recurse-submodules",
             "--shallow-submodules","--no-shallow-submodules","--jobs"
         ),
         "column",
