@@ -28,7 +28,7 @@ local net_parser = parser(
 
 local help_parser = parser(
     {
-        "help" .. parser(net_parser:flatten_argument(1))
+        "help" .. parser({net_parser:flatten_argument(1), "names", "services", "syntax"})
     }
 )
 
