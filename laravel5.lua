@@ -1,6 +1,7 @@
 local JSON = require('JSON')
 local parser = clink.arg.new_parser
 local la5_args_cache = {}
+local cwd = clink.get_cwd()
 
 function JSON:assert () end  -- luacheck: no unused args
 
@@ -24,7 +25,7 @@ end
 
 local function parse_la5_args(word) -- luacheck: no unused args
     if not is_la5_project() then return end
-    if #la5_args_cache > 0 then return la5_args_cache end
+    if #la5_args_cache > 0 and cwd == clink.get_cwd() then return la5_args_cache end
 
     local args_list = io.popen('php artisan list --format=json')
     if args_list == nil then return end
@@ -41,6 +42,8 @@ local function parse_la5_args(word) -- luacheck: no unused args
     local commands_table = JSON:decode(args_json)
     if commands_table == nil then return end
 
+    la5_args_cache = {}
+    cwd = clink.get_cwd()
     for _, command in pairs(commands_table.commands) do
         table.insert(la5_args_cache, command.name)
 

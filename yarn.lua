@@ -211,7 +211,8 @@ local yarn_parser = parser({
     "versions",
     "why"..parser({modules}),
     "workspace",
-    "workspaces"
+    "workspaces",
+    scripts
     },
     "-h",
     "-s",
