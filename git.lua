@@ -489,8 +489,8 @@ local git_parser = parser(
             "--no-hardlinks",
             "-q", "--quiet",
             "-n", "--no-checkout",
-            "--bare"
-            "--mirror"
+            "--bare",
+            "--mirror",
             "-o", "--origin",
             "-b", "--branch",
             "-u", "--upload-pack",
