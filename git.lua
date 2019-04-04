@@ -482,12 +482,26 @@ local git_parser = parser(
         ),
         "citool",
         "clean",
-        "clone" .. parser("--template","-l","-s",
-            "--no-hardlinks","-q","-n","--bare","--mirror",
-            "-o","-b","--branch","-u","--reference","--dissociate",
-            "--separate-git-dir","--depth", "--single-branch",
-            "--no-single-branch","--no-tags","--recurse-submodules",
-            "--shallow-submodules","--no-shallow-submodules","--jobs"
+        "clone" .. parser(
+            "--template",
+            "-l", "--local",
+            "-s", "--shared",
+            "--no-hardlinks",
+            "-q", "--quiet",
+            "-n", "--no-checkout",
+            "--bare"
+            "--mirror"
+            "-o", "--origin",
+            "-b", "--branch",
+            "-u", "--upload-pack",
+            "--reference",
+            "--dissociate",
+            "--separate-git-dir",
+            "--depth",
+            "--single-branch", "--no-single-branch",
+            "--no-tags",
+            "--recurse-submodules", "--shallow-submodules", "--no-shallow-submodules",
+            "--jobs"
         ),
         "column",
         "commit" .. parser(
