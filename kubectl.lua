@@ -7,7 +7,7 @@ local function exec_kubectl(arguments, template)
 	local output = f:read('*all')
 	f:close()
 	local res = w({})
-	for element in output:gmatch("%S+") do table.insert(res, element) end	
+	for element in output:gmatch("%S+") do table.insert(res, element) end
 	return res
 end
 
@@ -33,10 +33,10 @@ end
 
 local resource_parser = parser(
 	{
-		"all" .. parser({get_resources_func("all")}), 
-		"node" .. parser({get_resources_func("node")}), 
-		"service" .. parser({get_resources_func("service")}), 
-		"pod" .. parser({get_resources_func("pod")}), 
+		"all" .. parser({get_resources_func("all")}),
+		"node" .. parser({get_resources_func("node")}),
+		"service" .. parser({get_resources_func("service")}),
+		"pod" .. parser({get_resources_func("pod")}),
 		"deployment" .. parser({get_resources_func("deployment")})
 	}
 )
@@ -48,7 +48,7 @@ local scale_parser = parser(
 )
 
 local config_parser = parser(
-	{ 
+	{
 		"current-context",
 		"delete-cluster",
 		"delete-context",
@@ -59,7 +59,7 @@ local config_parser = parser(
 		"set-cluster",
 		"set-context",
 		"set-credentials",
-		"unset",				
+		"unset",
 		"use-context" .. parser({get_config_func("contexts")}),
 		"view"
 	}
@@ -71,8 +71,8 @@ local kubectl_parser = parser(
 		"exec" .. parser({get_resources_func("pod")}, parser({ "-it"})),
 		"get" .. resource_parser,
 		"describe" .. resource_parser,
-		"logs" .. parser({get_pods}),
-		"port-forward" .. parser({get_pods}),
+		"logs" .. parser({get_resources_func("pod")}),
+		"port-forward" .. parser({get_resources_func("pod")}),
 		"scale" .. scale_parser,
 		"config" .. config_parser
 	}
