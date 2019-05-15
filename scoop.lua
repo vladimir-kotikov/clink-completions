@@ -31,7 +31,7 @@ local function scoop_global_folder()
 end
 
 local function scoop_load_config() -- luacheck: no unused args
-    local file = io.open(os.getenv("home") .. "\\.scoop")
+    local file = io.open(os.getenv("home") .. "\\.config\\scoop\\config.json")
     -- If there is no such file, then close handle and return
     if file == nil then
         return w()
