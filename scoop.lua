@@ -43,7 +43,7 @@ local function scoop_load_config() -- luacheck: no unused args
 
     -- strip UTF-8-BOM
     local utf8_len = contents:len()
-    local pat_start = string.find(contents, "{")[0]
+    local pat_start, _ = string.find(contents, "{")
     contents = contents:sub(pat_start, utf8_len)
 
     local data = JSON:decode(contents)
@@ -95,7 +95,7 @@ local function scoop_apps_list(token)
     local folders = {scoop_folder(), scoop_global_folder()}
 
     local list = w()
-    for folder in folders do
+    for _, folder in pairs(folders) do
         local finder = matchers.create_files_matcher(folder .. "\\apps\\*")
 
         local new_list = finder(token)
@@ -112,7 +112,7 @@ local function scoop_available_apps_list(token)
 
     -- search in each installed bucket
     local buckets = scoop_bucket_list("")
-    for bucket in buckets do
+    for _, bucket in pairs(buckets) do
         local bucket_folder = scoop_folder() .. "\\buckets\\" .. bucket
 
         -- check the bucket folder exists
