@@ -1,5 +1,15 @@
 # Release Notes
 
+## 0.3.4 (Aug 19, 2019)
+
+Improvements/bugfixes for git completions/prompt
+
+  * f85c7a1 [git] fix gsub branch (#114)
+  * bf114aa [git] Add support for detecting branch names in worktrees (#96)
+  * 5d33037 [git] Add missing clone options for git (#106)
+  * b2d207d [net] Add three remaining help topics (#107)
+  * 781c0bf Don't default to origin if no remote is configured (#102)
+
 ## 0.3.3 (Oct 24, 2017)
 
 A lot of improvements for vagrant completions (thanks to @Andegawen) and a few bugfixes for `yarn`, `ssh` and `git`.
