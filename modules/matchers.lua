@@ -77,4 +77,46 @@ exports.create_files_matcher = function (file_pattern)
     end
 end
 
+exports.ext_files = function (extension)
+    return function (word)
+
+        -- Strip off any path components that may be on text.
+        local prefix = ""
+        local i = word:find("[\\/:][^\\/:]*$")
+        if i then
+            prefix = word:sub(1, i)
+        end
+
+        -- dir matches.
+        local dirmatches = w(clink.find_dirs(word.."*", true))
+        :filter(function (dir)
+            return clink.is_match(word, prefix..dir) and
+                (include_dots or path.is_real_dir(dir))
+        end)
+        :map(function(dir)
+            return prefix..dir
+        end)
+
+        -- extension matches. (e.g. *.dll)
+        local dllmatches = w(clink.find_files(word..extension, true))
+        :filter(function (file)
+            return clink.is_match(word, prefix..file)
+        end)
+        :map(function(file)
+            return prefix..file
+        end)
+        
+        for _,v in ipairs(dirmatches) do 
+            table.insert(dllmatches, v)
+        end
+
+        -- Tell readline that matches are files and it will do magic.
+        if #dllmatches ~= 0 then
+            clink.matches_are_files()
+        end
+
+        return dllmatches
+    end
+end
+
 return exports
