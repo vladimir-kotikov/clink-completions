@@ -104,6 +104,19 @@ local search_parser = parser("--long")
 
 local script_parser = parser({scripts})
 
+local list_parser = parser(
+    {modules},
+    "--prod", "--production",
+    "--dev", "--development",
+    "--only"..parser({"dev", "prod"}),
+    "--json",
+    "--long",
+    "--parseable",
+    "--global",
+    "--depth",
+    "--link"
+)
+
 local npm_parser = parser({
     "add-user",
     "adduser",
@@ -138,11 +151,11 @@ local npm_parser = parser({
     "issues",
     "la",
     "link"..parser({matchers.files, global_modules}),
-    "list",
-    "ll",
+    "list"..list_parser,
+    "ll"..list_parser,
     "ln"..parser({matchers.files, global_modules}),
     "login",
-    "ls",
+    "ls"..list_parser,
     "outdated"..parser(
         "--json",
         "--long",
