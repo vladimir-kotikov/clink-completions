@@ -112,7 +112,7 @@ local list_parser = parser(
     "--json",
     "--long",
     "--parseable",
-    "--global",
+    "--global", "-g",
     "--depth",
     "--link"
 )
