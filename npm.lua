@@ -121,6 +121,11 @@ local npm_parser = parser({
     "add-user",
     "adduser",
     "apihelp",
+    "audit"..parser({
+        "fix"..parser("--force", "--package-lock-only", "--dry-run", "--production", "--only=dev"),
+        "--json",
+        "--parseable"
+    }),
     "author",
     "bin",
     "bugs",
