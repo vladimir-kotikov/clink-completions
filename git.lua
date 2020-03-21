@@ -751,6 +751,7 @@ local git_parser = parser(
                 "--add"..parser("--push", {remotes}),
                 "--delete"..parser("--push", {remotes})
             ),
+            "get-url"..parser({remotes}, "--push", "--all"),
             "show"..parser("-n", {remotes}),
             "prune"..parser("-n", "--dry-run", {remotes}),
             "update"..parser({remotes}, "-p", "--prune")
