@@ -1,7 +1,23 @@
+local w = require('tables').wrap
+
 local parser = clink.arg.new_parser
+
+local function list_env(include_current)
+	local f = io.popen("conda env list")
+	if not f then return w({}) end
+	local output = f:read('*all')
+	f:close()
+	local res = w({})
+	local output_no_comment = output:gsub('#[^\n]-\n', "")
+	local output_no_current = output_no_comment:gsub('^.+*[^\n]-\n', "")
+	-- print(output_no_current)
+	for element in output:gmatch("(%S+)%s+%S+\n") do table.insert(res, element) end
+	return res
+end
+
 local anaconda_parser = parser(
    {
-      "clean" .. parser(
+      "clean" .. parser({
 	 "-h", "--help",
 	 "-a", "--all",
 	 "-i", "--index-cache",
@@ -14,8 +30,8 @@ local anaconda_parser = parser(
 	 "-q", "--quiet",
 	 "-v", "--verbose",
 	 "-y", "--yes"
-		       ), 
-      "config" .. parser(
+		       }), 
+      "config" .. parser({
 	 "-h", "--help",
 	 "--json",
 	 "-v", "--verbose",
@@ -35,8 +51,8 @@ local anaconda_parser = parser(
 	 "--remove",
 	 "--remove-key",
 	 "--stdin"
-			),
-      "create" .. parser("-h", "--help",
+			}),
+      "create" .. parser({"-h", "--help",
 			 "--clone",
 			 "--file",
 			 "-n", "--name",
@@ -62,9 +78,9 @@ local anaconda_parser = parser(
 			 "-v", "--verbose",
 			 "-y", "--yes",
 			 "--download-only",
-			 "--show-channel-urls"),
+			 "--show-channel-urls"}),
       "help",
-      "info" .. parser(
+      "info" .. parser({
 	 "-h", "--help",
 	 "-a", "--all",
 	 "--base",
@@ -74,8 +90,8 @@ local anaconda_parser = parser(
 	 "--json",
 	 "-v", "--verbose",
 	 "-q", "--quiet"
-		      ),
-      "init" .. parser(
+		      }),
+      "init" .. parser({
 	 "-h", "--help",
 	 "--all",
 	 "--anaconda-prompt",
@@ -84,12 +100,12 @@ local anaconda_parser = parser(
 	 "--json",
 	 "-v", "--verbose",
 	 "-q", "--quiet"
-		      ),
-      "install" .. parser("-h", "--help",
+		      }),
+      "install" .. parser({"-h", "--help",
 			  "--revision",
 			  "--file",
 			  "--dev",
-			  "-n", "--name",
+			  "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 			  "-p", "--prefix",
 			  "-c", "--channel",
 			  "--use-local",
@@ -119,8 +135,8 @@ local anaconda_parser = parser(
 			  "-v", "--verbose",
 			  "-y", "--yes",
 			  "--download-only",
-			  "--show-channel-urls"),
-      "list" .. parser(
+			  "--show-channel-urls"}),
+      "list" .. parser({
 	 "-h", "--help",
 	 "--show-channel-urls",
 	 "-c", "--canonical",
@@ -130,13 +146,13 @@ local anaconda_parser = parser(
 	 "-e", "--export",
 	 "-r", "--revisions",
 	 "--no-pip",
-	 "-n ", "--name",
+	 "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 	 "-p PATH", "--prefix PATH",
 	 "--json",
 	 "-v", "--verbose",
 	 "-q", "--quiet"
-		      ),
-      "package" .. parser(
+		      }),
+      "package" .. parser({
 	 "-h", "--help",
 	 "-w", "--which",
 	 "-r", "--reset",
@@ -144,13 +160,13 @@ local anaconda_parser = parser(
 	 "--pkg-name",
 	 "--pkg-version",
 	 "--pkg-build",
-	 "-n", "--name",
+	 "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 	 "-p", "--prefix"
-			 ),
-      "remove" .. parser(
+			 }),
+      "remove" .. parser({
 	 "-h", "--help",
 	 "--dev",
-	 "-n", "--name",
+	 "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 	 "-p", "--prefix",
 	 "-c", "--channel",
 	 "--use-local",
@@ -168,11 +184,11 @@ local anaconda_parser = parser(
 	 "-q", "--quiet",
 	 "-v", "--verbose",
 	 "-y", "--yes"
-			),
-      "uninstall" .. parser(
+			}),
+      "uninstall" .. parser({
 	 "-h", "--help",
 	 "--dev",
-	 "-n", "--name",
+	 "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 	 "-p", "--prefix",
 	 "-c", "--channel",
 	 "--use-local",
@@ -190,18 +206,18 @@ local anaconda_parser = parser(
 	 "-q", "--quiet",
 	 "-v", "--verbose",
 	 "-y", "--yes"
-			   ),
-      "run" .. parser(
+			   }),
+      "run" .. parser({
 	 "-h", "--help",
 	 "-v", "--verbose",
 	 "--dev",
 	 "--debug-wrapper-scripts",
 	 "--cwd",
-	 "-n", "--name",
+	 "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 	 "-p", "--prefix"
 
-		     ),
-      "search" .. parser("-h", "--help",
+		     }),
+      "search" .. parser({"-h", "--help",
 			 "--envs",
 			 "-i", "--info",
 			 "--subdir", "--platform",
@@ -215,10 +231,10 @@ local anaconda_parser = parser(
 			 "--json",
 			 "-v", "--verbose",
 			 "-q", "--quiet"
-			),
-      "update" .. parser("-h", "--help",
+			}),
+      "update" .. parser({"-h", "--help",
 			 "--file",
-			 "-n", "--name",
+			 "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 			 "-p", "--prefix",
 			 "-c", "--channel",
 			 "--use-local",
@@ -247,10 +263,10 @@ local anaconda_parser = parser(
 			 "-v", "--verbose",
 			 "-y", "--yes",
 			 "--download-only",
-			 "--show-channel-urls"),
-      "upgrade" .. parser("-h", "--help",
+			 "--show-channel-urls"}),
+      "upgrade" .. parser({"-h", "--help",
 			  "--file FILE",
-			  "-n", "--name",
+			  "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 			  "-p", "--prefix",
 			  "-c", "--channel",
 			  "--use-local",
@@ -279,14 +295,14 @@ local anaconda_parser = parser(
 			  "-v", "--verbose",
 			  "-y", "--yes",
 			  "--download-only",
-			  "--show-channel-urls"),
+			  "--show-channel-urls"}),
       "--help",
       "-h",
       "env" .. parser({
 	    "create" .. parser("-h", "--help",
 			       "-f", "--file",
 			       "--force",
-			       "-n", "--name",
+			       "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 			       "-p", "--prefix",
 			       "-C", "--use-index-cache",
 			       "-k", "--insecure",
@@ -301,28 +317,28 @@ local anaconda_parser = parser(
 			       "--no-builds",
 			       "--ignore-channels",
 			       "--from-history",
-			       "-n", "--name",
+			       "-n" .. parser({list_env}), "--name" .. parser({list_env}),
 			       "-p", "--prefix",
 			       "--json",
 			       "-v", "--verbose",
 			       "-q", "--quiet"),
 
-	    "list" .. parser("-h", "--help", "--json", "-v", "--verbose", "-q", "--quiet"),
+	    "list" .. parser({"-h", "--help", "--json", "-v", "--verbose", "-q", "--quiet"}),
 
-	    "remove" .. parser("-h", "--help", "-n", "--name", "-p",
+	    "remove" .. parser({"-h", "--help", "-n" .. parser({list_env}), "--name" .. parser({list_env}), "-p",
 			       "--prefix", "-d", "--dry-run", "--json", "-q", "--quiet",
-			       "-v", "--verbose", "-y", "--yes"),
+			       "-v", "--verbose", "-y", "--yes"}),
 
-	    "update" .. parser("-h", "--help", "-f", "--file",
-			       "--prune", "-n", "--name", "-p", "--prefix", "--json",
-			       "-v", "--verbose", "-q", "--quiet"),
+	    "update" .. parser({"-h", "--help", "-f", "--file",
+			       "--prune", "-n" .. parser({list_env}), "--name" .. parser({list_env}), "-p", "--prefix", "--json",
+			       "-v", "--verbose", "-q", "--quiet"}),
 
-	    "config" .. parser("-h", "--help"),
+	    "config" .. parser({"-h", "--help"}),
 	    "--help",
 	    "-h"
 		     }),
-      "activate",
-      "deactivate"
+      "activate" .. parser({{list_env}, "-h", "--help", "--stack", "--no-stack"}),
+      "deactivate" .. parser({"-h", "--help"})
    }
 )
 
