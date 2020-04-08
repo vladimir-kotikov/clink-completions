@@ -10,8 +10,7 @@ local function list_env(include_current)
 	local res = w({})
 	local output_no_comment = output:gsub('#[^\n]-\n', "")
 	local output_no_current = output_no_comment:gsub('^.+*[^\n]-\n', "")
-	-- print(output_no_current)
-	for element in output:gmatch("(%S+)%s+%S+\n") do table.insert(res, element) end
+	for element in output_no_current:gmatch("(%S+)%s+%S+\n") do table.insert(res, element) end
 	return res
 end
 
