@@ -4,7 +4,7 @@ local parser = clink.arg.new_parser
 
 local function find_environment_txt()
     local reltive_path = ".conda\\environments.txt"
-    local environment_txt_path = ""
+    local environment_txt_path
 
     local home_path = os.getenv("HOME")
     if home_path then
