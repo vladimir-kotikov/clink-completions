@@ -899,6 +899,27 @@ local git_parser = parser(
         "verify-tag",
         "web--browse",
         "whatchanged",
+        "worktree"..parser({
+            "add"..parser(
+                {matchers.dirs},
+                {branches},
+                "-f", "--force",
+                "--detach",
+                "--checkout",
+                "--lock",
+                "-b"..parser({branches})
+            ),
+            "list"..parser("--porcelain"),
+            "lock"..parser("--reason"),
+            "move",
+            "prune"..parser(
+                "-n", "--dry-run",
+                "-v", "--verbose",
+                "--expire"
+            ),
+            "remove"..parser("-f"),
+            "unlock"
+        }),
         "write-tree",
     },
     "--version",
