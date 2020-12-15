@@ -235,7 +235,7 @@ local stashes = function(token)  -- luacheck: no unused args
     -- make a dictionary of stash time and stash comment to
     -- be able to sort stashes by date/time created
     for stash in stash_file:lines() do
-        local stash_time, stash_name = stash:match('(%d%d%d%d%d%d%d%d%d%d) %+%d%d%d%d%s+(.*)')
+        local stash_time, stash_name = stash:match('(%d%d%d%d%d%d%d%d%d%d) [+-]%d%d%d%d%s+(.*)')
         if (stash_name and stash_name) then
             stashes[stash_time] = stash_name
         end
