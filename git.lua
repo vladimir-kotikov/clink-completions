@@ -259,7 +259,7 @@ local stashes = function(token)  -- luacheck: no unused args
     local ret = {}
     local ret_filter = {}
     for i,v in ipairs(stash_times) do
-        table.insert(ret, "stash@{"..i.."}")
+        table.insert(ret, "stash@{"..(i-1).."}")
         table.insert(ret_filter, "stash@{"..(i-1).."}    "..stashes[v])
     end
 
