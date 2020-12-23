@@ -268,13 +268,27 @@ local stashes = function(token)  -- luacheck: no unused args
     -- generate matches and match filter table
     local ret = {}
     local ret_filter = {}
+    local clink_version_encoded = clink.version_encoded or 0
     for i,v in ipairs(stash_times) do
-        table.insert(ret, "stash@{"..(i-1).."}")
-        table.insert(ret_filter, "stash@{"..(i-1).."}    "..stashes[v])
+        local match = "stash@{"..(i-1).."}"
+        table.insert(ret, match)
+        if clink_version_encoded >= 10010012 then
+            table.insert(ret_filter, { match=match, type="word", description=stashes[v] })
+        elseif clink_version_encoded >= 10010009 then
+            table.insert(ret_filter, "stash@{"..(i-1).."}\x1b[m    "..stashes[v])
+        else
+            table.insert(ret_filter, "stash@{"..(i-1).."}    "..stashes[v])
+        end
     end
 
-    clink.match_display_filter = function ()
+    local function filter()
         return ret_filter
+    end
+
+    if clink_version_encoded >= 10010012 then
+        clink.ondisplaymatches(filter)
+    else
+        clink.match_display_filter = filter
     end
 
     return ret
