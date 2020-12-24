@@ -1,5 +1,14 @@
 # Release Notes
 
+## 0.3.6 (Dec 16, 2020)
+
+  * c9ed54d [git] Fix stash completions (0 based). (#133)
+  * 82a0311 [git] Fix stash completion to work west of GMT. (#132)
+  * a63cbca [git] Add completions for git-worktree (#130)
+  * b6a521f [scoop] added commands "hold" and "unhold" (#129)
+  * f639287 [npm] Extend completions (#125)
+  * 04541ff [git] Add support for `git remote get-url ...` (#124)
+
 ## 0.3.5 (Dec 5, 2019)
 
   * eb3099e [git] Add `restore` and `switch` commands (#119)
