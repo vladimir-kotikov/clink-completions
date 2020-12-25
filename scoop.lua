@@ -14,7 +14,7 @@ local function scoop_folder()
     local folder = os.getenv("SCOOP")
 
     if not folder then
-        folder = os.getenv("home") .. "\\scoop"
+        folder = os.getenv("USERPROFILE") .. "\\scoop"
     end
 
     return folder
@@ -31,7 +31,7 @@ local function scoop_global_folder()
 end
 
 local function scoop_load_config() -- luacheck: no unused args
-    local file = io.open(os.getenv("home") .. "\\.config\\scoop\\config.json")
+    local file = io.open(os.getenv("USERPROFILE") .. "\\.config\\scoop\\config.json")
     -- If there is no such file, then close handle and return
     if file == nil then
         return w()
