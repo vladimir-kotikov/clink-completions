@@ -1,3 +1,5 @@
+local ver = require('version')
+
 local exports = {}
 
 exports.BLACK   = 0
@@ -21,6 +23,17 @@ exports.set_color = function (fore, back, bold)
     bold = bold and exports.BOLD or 22
 
     return "\x1b[3"..fore..";"..bold..";".."4"..back.."m"
+end
+
+exports.get_clink_color = function (setting_name)
+    local sgr
+    if ver.supports_color_settings() then
+        sgr = settings.get(setting_name)
+        if sgr ~= "" then
+            sgr = "\x1b["..sgr.."m"
+        end
+    end
+    return sgr
 end
 
 exports.color_text = function (text, fore, back, bold)

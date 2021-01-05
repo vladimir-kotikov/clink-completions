@@ -4,7 +4,13 @@ local path = require('path')
 local git = require('gitutil')
 local matchers = require('matchers')
 local w = require('tables').wrap
+local ver = require('version')
+local color = require('color')
 local parser = clink.arg.new_parser
+
+if ver.supports_color_settings() then
+    settings.add('color.git.star', 'bright green', 'Color for preferred branch completions')
+end
 
 ---
  -- Lists remote branches based on packed-refs file from git directory
@@ -158,9 +164,9 @@ local function checkout_spec_generator(token)
     clink.match_display_filter = function ()
         local pre = ''
         local suf = ''
-        if (clink.version_encoded or 0) >= 10010009 and rl.isvariabletrue('colored-stats') then
-            pre = '\x1b['..settings.get('color.git.star')..'m'
-            suf = '\x1b['..settings.get('color.filtered')..'m'
+        if ver.supports_query_rl_var() and rl.isvariabletrue('colored-stats') then
+            pre = color.get_clink_color('color.git.star')
+            suf = color.get_clink_color('color.filtered')
         end
         return files:map(function(file)
             return clink.is_dir(file) and file..'\\' or file
@@ -264,16 +270,18 @@ local stashes = function(token)  -- luacheck: no unused args
     -- generate matches and match filter table
     local ret = {}
     local ret_filter = {}
-    local clink_version_encoded = clink.version_encoded or 0
     for i,v in ipairs(stash_times) do
         local match = "stash@{"..(i-1).."}"
         table.insert(ret, match)
-        if clink_version_encoded >= 10010012 then
+        if ver.supports_display_filter_description() then
+            -- Clink now has a richer match interface.  By returning a table,
+            -- the script is able to provide the stash name separately from the
+            -- description.  If the script does so, then the popup completion
+            -- window is able to show the stash name plus a dimmed description,
+            -- but only insert the stash name.
             table.insert(ret_filter, { match=match, type="word", description=stashes[v] })
-        elseif clink_version_encoded >= 10010009 then
-            table.insert(ret_filter, "stash@{"..(i-1).."}\x1b[m    "..stashes[v])
         else
-            table.insert(ret_filter, "stash@{"..(i-1).."}    "..stashes[v])
+            table.insert(ret_filter, match.."    "..stashes[v])
         end
     end
 
@@ -281,7 +289,7 @@ local stashes = function(token)  -- luacheck: no unused args
         return ret_filter
     end
 
-    if clink_version_encoded >= 10010012 then
+    if ver.supports_display_filter_description() then
         clink.ondisplaymatches(filter)
     else
         clink.match_display_filter = filter
