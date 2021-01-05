@@ -26,12 +26,9 @@ exports.set_color = function (fore, back, bold)
 end
 
 exports.get_clink_color = function (setting_name)
-    local sgr
-    if ver.supports_color_settings() then
-        sgr = settings.get(setting_name)
-        if sgr ~= "" then
-            sgr = "\x1b["..sgr.."m"
-        end
+    local sgr = ver.supports_color_settings() and settings.get(setting_name) or ""
+    if sgr ~= "" then
+        sgr = "\x1b["..sgr.."m"
     end
     return sgr
 end
