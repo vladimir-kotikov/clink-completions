@@ -4,7 +4,7 @@ local path = require('path')
 local git = require('gitutil')
 local matchers = require('matchers')
 local w = require('tables').wrap
-local clink_version = require('version')
+local clink_version = require('clink_version')
 local color = require('color')
 local parser = clink.arg.new_parser
 
