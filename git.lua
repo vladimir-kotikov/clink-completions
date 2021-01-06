@@ -4,11 +4,11 @@ local path = require('path')
 local git = require('gitutil')
 local matchers = require('matchers')
 local w = require('tables').wrap
-local ver = require('version')
+local clink_version = require('version')
 local color = require('color')
 local parser = clink.arg.new_parser
 
-if ver.supports_color_settings() then
+if clink_version.supports_color_settings then
     settings.add('color.git.star', 'bright green', 'Color for preferred branch completions')
 end
 
@@ -164,7 +164,7 @@ local function checkout_spec_generator(token)
     clink.match_display_filter = function ()
         local pre = ''
         local suf = ''
-        if ver.supports_query_rl_var() and rl.isvariabletrue('colored-stats') then
+        if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
             pre = color.get_clink_color('color.git.star')
             suf = color.get_clink_color('color.filtered')
         end
@@ -273,7 +273,7 @@ local stashes = function(token)  -- luacheck: no unused args
     for i,v in ipairs(stash_times) do
         local match = "stash@{"..(i-1).."}"
         table.insert(ret, match)
-        if ver.supports_display_filter_description() then
+        if clink_version.supports_display_filter_description then
             -- Clink now has a richer match interface.  By returning a table,
             -- the script is able to provide the stash name separately from the
             -- description.  If the script does so, then the popup completion
@@ -289,7 +289,7 @@ local stashes = function(token)  -- luacheck: no unused args
         return ret_filter
     end
 
-    if ver.supports_display_filter_description() then
+    if clink_version.supports_display_filter_description then
         clink.ondisplaymatches(filter)
     else
         clink.match_display_filter = filter
