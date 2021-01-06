@@ -162,17 +162,15 @@ local function checkout_spec_generator(token)
     --     since it is not added automatically by readline (see previous point)
     clink.matches_are_files(0)
     clink.match_display_filter = function ()
-        local pre = ''
-        local suf = ''
+        local star = '*'
         if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
-            pre = color.get_clink_color('color.git.star')
-            suf = color.get_clink_color('color.filtered')
+            star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
         end
         return files:map(function(file)
             return clink.is_dir(file) and file..'\\' or file
         end)
         :concat(local_branches)
-        :concat(predicted_branches:map(function(branch) return pre..'*'..suf..branch end))
+        :concat(predicted_branches:map(function(branch) return star..branch end))
         :concat(remote_branches)
     end
 
