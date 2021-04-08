@@ -7,7 +7,7 @@ local gitutil = require('gitutil')
 -- Resolve licensing issues before exposing
 local function load_ini(fileName)
     -- Check for Cmder configured Git Status Opt In/Out - See: https://github.com/cmderdev/cmder/issues/2484
-    if cmderGitStatusOptIn == false then return nil end  -- luacheck: globals cmderGitStatusOptIn 
+    if cmderGitStatusOptIn == false then return nil end  -- luacheck: globals cmderGitStatusOptIn
 
     assert(type(fileName) == 'string', 'Parameter "fileName" must be a string.')
     local file = io.open(fileName, 'r')
