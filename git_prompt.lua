@@ -6,6 +6,9 @@ local gitutil = require('gitutil')
 -- this code is stolen from https://github.com/Dynodzzo/Lua_INI_Parser/blob/master/LIP.lua
 -- Resolve licensing issues before exposing
 local function load_ini(fileName)
+    -- Check for Cmder configured Git Status Opt In/Out - See: https://github.com/cmderdev/cmder/issues/2484
+    if cmderGitStatusOptIn == false then return nil end
+
     assert(type(fileName) == 'string', 'Parameter "fileName" must be a string.')
     local file = io.open(fileName, 'r')
     if not file then return nil end
