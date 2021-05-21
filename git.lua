@@ -4,9 +4,11 @@ local path = require('path')
 local git = require('gitutil')
 local matchers = require('matchers')
 local w = require('tables').wrap
+local clink_version = require('clink_version')
+local color = require('color')
 local parser = clink.arg.new_parser
 
-if (clink.version_encoded or 0) >= 10010009 then
+if clink_version.supports_color_settings then
     settings.add('color.git.star', 'bright green', 'Color for preferred branch completions')
 end
 
@@ -160,17 +162,15 @@ local function checkout_spec_generator(token)
     --     since it is not added automatically by readline (see previous point)
     clink.matches_are_files(0)
     clink.match_display_filter = function ()
-        local pre = ''
-        local suf = ''
-        if (clink.version_encoded or 0) >= 10010009 and rl.isvariabletrue('colored-stats') then
-            pre = '\x1b['..settings.get('color.git.star')..'m'
-            suf = '\x1b['..settings.get('color.filtered')..'m'
+        local star = '*'
+        if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
+            star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
         end
         return files:map(function(file)
             return clink.is_dir(file) and file..'\\' or file
         end)
         :concat(local_branches)
-        :concat(predicted_branches:map(function(branch) return pre..'*'..suf..branch end))
+        :concat(predicted_branches:map(function(branch) return star..branch end))
         :concat(remote_branches)
     end
 
@@ -272,12 +272,15 @@ local stashes = function(token)  -- luacheck: no unused args
     for i,v in ipairs(stash_times) do
         local match = "stash@{"..(i-1).."}"
         table.insert(ret, match)
-        if clink_version_encoded >= 10010012 then
+        if clink_version.supports_display_filter_description then
+            -- Clink now has a richer match interface.  By returning a table,
+            -- the script is able to provide the stash name separately from the
+            -- description.  If the script does so, then the popup completion
+            -- window is able to show the stash name plus a dimmed description,
+            -- but only insert the stash name.
             table.insert(ret_filter, { match=match, type="word", description=stashes[v] })
-        elseif clink_version_encoded >= 10010009 then
-            table.insert(ret_filter, "stash@{"..(i-1).."}\x1b[m    "..stashes[v])
         else
-            table.insert(ret_filter, "stash@{"..(i-1).."}    "..stashes[v])
+            table.insert(ret_filter, match.."    "..stashes[v])
         end
     end
 
@@ -285,7 +288,7 @@ local stashes = function(token)  -- luacheck: no unused args
         return ret_filter
     end
 
-    if clink_version_encoded >= 10010012 then
+    if clink_version.supports_display_filter_description then
         clink.ondisplaymatches(filter)
     else
         clink.match_display_filter = filter
