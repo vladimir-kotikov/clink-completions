@@ -12,9 +12,13 @@ local function load_git_config(git_dir)
     local section;
     for line in file:lines() do
         if (line:sub(1,1) == "[" and line:sub(-1) == "]") then
-            section = line:sub(2,-2)
-            config[section] = config[section] or {}
-        else
+            if (line:sub(2,5) == "lfs ") then
+                section = nil -- skip LFS entries as there can be many and we never use them
+            else
+                section = line:sub(2,-2)
+                config[section] = config[section] or {}
+            end
+        elseif section then
             local param, value = line:match('^%s-([%w|_]+)%s-=%s+(.+)$')
             if (param and value ~= nil) then
                 config[section][param] = value
