@@ -138,7 +138,9 @@ local yarn_parser = parser({
         "--no-git-tag-version"
     ),
     "versions",
-    "why"..parser({modules})
+    "why"..parser({modules}),
+    bins,
+    scripts
     },
     "-h",
     "-v",
