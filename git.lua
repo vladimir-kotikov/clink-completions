@@ -365,6 +365,14 @@ local merge_strategies = parser({
     "subtree"
 })
 
+local cleanup_options = parser({
+    "strip",
+    "whitespace",
+    "verbatim",
+    "scissors",
+    "default"
+})
+
 local git_parser = parser(
     {
         {alias},
@@ -553,7 +561,7 @@ local git_parser = parser(
             "-n", "--no-verify",
             "--allow-empty",
             "--allow-empty-message",
-            "--cleanup", -- .. parser({"strip", "whitespace", "verbatim", "default"}),
+            "--cleanup"..cleanup_options,
             "-e", "--edit",
             "--no-edit",
             "--amend",
@@ -818,7 +826,25 @@ local git_parser = parser(
         ),
         "rev-list",
         "rev-parse",
-        "revert",
+        "revert"..parser(
+            "-e", "--edit",
+            "-m", "--mainline",
+            "--no-edit",
+            "--cleanup"..cleanup_options,
+            "-n", "--no-commit",
+            "-S", "--gpg-sign",
+            "--no-gpg-sign",
+            "-s", "--signoff",
+            "--strategy"..merge_strategies,
+            "-X"..merge_recursive_options,
+            "--strategy-option"..merge_recursive_options,
+            "--rerere-autoupdate",
+            "--no-rerere-autoupdate",
+            "--continue",
+            "--skip",
+            "--quit",
+            "--abort"
+        ),
         "rm",
         "send-email",
         "send-pack",
