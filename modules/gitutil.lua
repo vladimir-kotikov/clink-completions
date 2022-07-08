@@ -42,7 +42,7 @@ exports.get_git_dir = function (start_dir)
     return has_git_dir(start_dir)
         or has_git_file(start_dir)
         -- Otherwise go up one level and make a recursive call
-        or (parent_path ~= start_dir and exports.get_git_dir(parent_path) or nil)
+        or (parent_path ~= '' and parent_path ~= start_dir and exports.get_git_dir(parent_path) or nil)
 end
 
 exports.get_git_common_dir = function (start_dir)
