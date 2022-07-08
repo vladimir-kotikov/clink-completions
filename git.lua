@@ -81,36 +81,42 @@ local branches = function (token)
     end)
 end
 
-local function alias(token)
+-- Function to get the list of git aliases.
+local function get_git_aliases()
     local res = w()
 
-    -- Try to resolve .git directory location
     local git_dir = git.get_git_dir()
-
     if git_dir == nil then return res end
 
     local f = io.popen("git config --get-regexp alias 2>nul")
-    if f == nil then return {} end
+    if f == nil then return res end
 
-    if clink_version.supports_display_filter_description then
-        for line in f:lines() do
-            local name, command = line:match("^alias.([^ ]+) +(.+)$")
-            if name then
-                table.insert(res, { match=name, description="Alias: "..command })
-            end
-        end
-    else
-        for line in f:lines() do
-            local s = line:find(" ", 1, true)
-            local alias_name = line:sub(7, s - 1)
-            local start = alias_name:find(token, 1, true)
-            if start and start == 1 then
-                table.insert(res, alias_name)
-            end
+    for line in f:lines() do
+        local name, command = line:match("^alias.([^ ]+) +(.+)$")
+        if name then
+            table.insert(res, { name=name, command=command })
         end
     end
 
     f:close()
+
+    return res
+end
+
+-- Function to generate completions for alias
+local function alias(token)
+    local res = w()
+
+    local aliases = get_git_aliases()
+    if clink_version.supports_display_filter_description then
+        for _, a in ipairs(aliases) do
+            table.insert(res, { match=a.name, description="Alias: "..a.command })
+        end
+    else
+        for _, a in ipairs(aliases) do
+            table.insert(res, a.name)
+        end
+    end
 
     return res
 end
@@ -1582,40 +1588,86 @@ local worktree_parser = parser()
 --------------------------------------------------------------------------------
 -- The main git command parser.
 
-local git_parser = parser()
-:_addexarg({
+-- This is the set of git commands with custom parsers.  It exists as a separate
+-- table so that aliases can be linked to the associated parser for the command
+-- they alias.
+local linked_parsers = {
+    ["add"]                 = add_parser,
+    ["annotate"]            = blame_parser,
+    ["apply"]               = apply_parser,
+    ["blame"]               = blame_parser,
+    ["branch"]              = branch_parser,
+    ["cat-file"]            = catfile_parser,
+    ["checkout"]            = checkout_parser,
+    ["cherry-pick"]         = cherrypick_parser,
+    ["clone"]               = clone_parser,
+    ["commit"]              = commit_parser,
+    ["config"]              = config_parser,
+    ["diff"]                = diff_parser,
+    ["difftool"]            = difftool_parser,
+    ["fetch"]               = fetch_parser,
+    ["help"]                = help_parser,
+    ["log"]                 = log_parser,
+    ["merge"]               = merge_parser,
+    ["pull"]                = pull_parser,
+    ["push"]                = push_parser,
+    ["rebase"]              = rebase_parser,
+    ["remote"]              = remote_parser,
+    ["reset"]               = reset_parser,
+    ["restore"]             = restore_parser,
+    ["revert"]              = revert_parser,
+    ["show"]                = show_parser,
+    ["stash"]               = stash_parser,
+    ["status"]              = status_parser,
+    ["submodule"]           = submodule_parser,
+    ["svn"]                 = svn_parser,
+    ["switch"]              = switch_parser,
+    ["worktree"]            = worktree_parser,
+}
+
+-- Commands with descriptions.
+-- Each entry must be a table containing two strings:  { command, description }.
+--
+-- NOTE:  These are added in the order listed; they are not auto-sorted.
+local main_commands = {
     nosort=true,
-    { "add"..add_parser,                    "Add file contents to the index" },
-    { "annotate"..blame_parser,             "Annotate file lines with commit information" },
-    { "apply"..apply_parser,                "Apply a patch to files and/or to the index" },
-    { "blame"..blame_parser,                "Show last modify info for lines of a file" },
-    { "branch"..branch_parser,              "List, create, or delete branches" },
-    { "cat-file"..catfile_parser,           "Provide content or type and size info for repo objects" },
-    { "checkout"..checkout_parser,          "Switch branches or restore working tree files" },
-    { "cherry-pick"..cherrypick_parser,     "Apply changes introduced by some existing commits" },
-    { "clone"..clone_parser,                "Clone a repository into a new directory" },
-    { "commit"..commit_parser,              "Record changes to the repository" },
-    { "config"..config_parser,              "Get and set repository or global options" },
-    { "diff"..diff_parser,                  "Show changes between commits, trees, tags, etc" },
-    { "difftool"..difftool_parser,          "Show changes using common diff tools" },
-    { "fetch"..fetch_parser,                "Download objects and refs from another repository" },
-    { "help"..help_parser,                  "Print help on a command or topic" },
-    { "log"..log_parser,                    "Show commit logs" },
-    { "merge"..merge_parser,                "Join two or more development histories together" },
-    { "pull"..pull_parser,                  "Fetch from and integrate with another repo or local branch" },
-    { "push"..push_parser,                  "Update remote refs along with associated objects" },
-    { "rebase"..rebase_parser,              "Reapply commits on top of another base tip" },
-    { "remote"..remote_parser,              "Manage set of tracked repositories" },
-    { "reset"..reset_parser,                "Reset current HEAD to the specified state" },
-    { "restore"..restore_parser,            "Restore working tree files" },
-    { "revert"..revert_parser,              "Revert some existing commits" },
-    { "show"..show_parser,                  "Show various types of objects" },
-    { "stash"..stash_parser,                "Stash the changes in a dirty working directory away" },
-    { "status"..status_parser,              "Show the working tree status" },
-    { "submodule"..submodule_parser,        "Initialize, update or inspect submodules" },
-    { "switch"..switch_parser,              "Switch branches" },
-    { "worktree"..worktree_parser,          "Manage multiple working trees" },
-    alias,                                  -- Aliases for commands.
+    { "add",                "Add file contents to the index" },
+    { "annotate",           "Annotate file lines with commit information" },
+    { "apply",              "Apply a patch to files and/or to the index" },
+    { "blame",              "Show last modify info for lines of a file" },
+    { "branch",             "List, create, or delete branches" },
+    { "cat-file",           "Provide content or type and size info for repo objects" },
+    { "checkout",           "Switch branches or restore working tree files" },
+    { "cherry-pick",        "Apply changes introduced by some existing commits" },
+    { "clone",              "Clone a repository into a new directory" },
+    { "commit",             "Record changes to the repository" },
+    { "config",             "Get and set repository or global options" },
+    { "diff",               "Show changes between commits, trees, tags, etc" },
+    { "difftool",           "Show changes using common diff tools" },
+    { "fetch",              "Download objects and refs from another repository" },
+    { "help",               "Print help on a command or topic" },
+    { "log",                "Show commit logs" },
+    { "merge",              "Join two or more development histories together" },
+    { "pull",               "Fetch from and integrate with another repo or local branch" },
+    { "push",               "Update remote refs along with associated objects" },
+    { "rebase",             "Reapply commits on top of another base tip" },
+    { "remote",             "Manage set of tracked repositories" },
+    { "reset",              "Reset current HEAD to the specified state" },
+    { "restore",            "Restore working tree files" },
+    { "revert",             "Revert some existing commits" },
+    { "show",               "Show various types of objects" },
+    { "stash",              "Stash the changes in a dirty working directory away" },
+    { "status",             "Show the working tree status" },
+    { "submodule",          "Initialize, update or inspect submodules" },
+    { "switch",             "Switch branches" },
+    { "worktree",           "Manage multiple working trees" },
+}
+
+-- Commands without descriptions.
+-- This is a table of just command name strings.
+--
+-- NOTE:  These are added in the order listed; they are not auto-sorted.
+local other_commands = {
     "add--interactive",
     "am",
     "archive",
@@ -1730,7 +1782,7 @@ local git_parser = parser()
     "stage",
     "stripspace",
     "subtree",
-    "svn"..svn_parser,
+    "svn",
     "symbolic-ref",
     "tag",
     "tar-tree",
@@ -1747,8 +1799,10 @@ local git_parser = parser()
     "web--browse",
     "whatchanged",
     "write-tree",
-})
-:_addexflags({
+}
+
+-- This is the set of flags for git itself (versus flags for commands in git).
+local git_flags = {
     { "--version",                          "Print the git suite version" },
     { "--help"..help_parser, " [...]",      "Print general help, or help on a topic" },
     { "-C"..dirs_parser, " path",           "Run as if git was started in PATH" },
@@ -1771,6 +1825,79 @@ local git_parser = parser()
     { "--no-glob-pathspecs",                "Add 'literal' magic to all pathspecs" },
     { "--icase-pathspecs",                  "Add 'icase' magic to all pathspecs" },
     { "--no-optional-locks",                "Do not perform optional operations that require locks" },
-})
+}
+
+-- Initialize the argmatcher.  This may be called repeatedly.
+local function init(argmatcher, full_init)
+    -- When doing a full init, must reset in order to maintain the sort order.
+    -- Full init is used from the setdelayinit callback function, for an alias
+    -- to be able to parse arguments for the command it aliases.
+    if full_init then
+        argmatcher:reset()
+    end
+
+    -- Build a table that will be used to (re)initialize the git parser.
+    local commands = { nosort=true }
+
+    -- First the main commands, with descriptions.
+    for _,x in ipairs(main_commands) do
+        local linked = linked_parsers[x[1]]
+        if linked then
+            table.insert(commands, { x[1]..linked, x[2] })
+        else
+            table.insert(commands, x)
+        end
+    end
+
+    -- Then the function to get all aliases.  This only affects generating
+    -- completions; it doesn't affect input line parsing or coloring.
+    table.insert(commands, alias)
+
+    -- Then aliases with linked argmatchers.  By coming after the alias
+    -- function, the sort order when displaying completions is defined by the
+    -- alias function.  But these do affect input line parsing and coloring.
+    local aliases = get_git_aliases()
+    for _, a in ipairs(aliases) do
+        local linked = linked_parsers[a.command]
+        if linked then
+            table.insert(commands, a.name..linked)
+        end
+    end
+
+    -- Finally other commands.
+    for _,x in ipairs(other_commands) do
+        local linked = linked_parsers[x]
+        if linked then
+            table.insert(commands, x..linked)
+        else
+            table.insert(commands, x)
+        end
+    end
+
+    -- Initialize the argmatcher.
+    argmatcher:_addexarg(commands)
+    argmatcher:_addexflags(git_flags)
+end
+
+local cached_cwd
+local cached_repo
+
+local git_parser = parser()
+init(git_parser, false--[[full_init]])
+if git_parser.setdelayinit then
+    git_parser:setdelayinit(function (argmatcher)
+        local cwd = os.getcwd()
+        if cached_cwd ~= cwd then               -- No-op unless cwd changes.
+            cached_cwd = cwd
+            local repo = git.get_git_dir()
+            if cached_repo ~= repo then         -- No-op unless repo changes.
+                cached_repo = repo
+                if repo and repo ~= "" then     -- No-op unless in a repo.
+                    init(argmatcher, true--[[full_init]])
+                end
+            end
+        end
+    end)
+end
 
 clink.arg.register_parser("git", git_parser)
