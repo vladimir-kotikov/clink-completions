@@ -202,17 +202,26 @@ local function push_branch_spec(token)
     -- starting from here we have 2 options:
     -- * if there is no branch separator complete word with local branches
     if not s then
-        local b = branches(branch_spec)
-
         -- setup display filter to prevent display '+' symbol in completion list
-        clink.match_display_filter = function ()
+        if clink_version.supports_display_filter_description then
+            local b = branches(branch_spec):map(function(branch)
+                -- append '+' to results if it was specified
+                return { match=plus_prefix and '+'..branch or branch, display=branch }
+            end)
+            clink.ondisplaymatches(function ()
+                return b
+            end)
             return b
+        else
+            local b = branches(branch_spec)
+            clink.match_display_filter = function ()
+                return b
+            end
+            return b:map(function(branch)
+                -- append '+' to results if it was specified
+                return plus_prefix and '+'..branch or branch
+            end)
         end
-
-        return b:map(function(branch)
-            -- append '+' to results if it was specified
-            return plus_prefix and '+'..branch or branch
-        end)
     else
     -- * if there is ':' separator then we need to complete remote branch
         local local_branch_spec = branch_spec:sub(1, s - 1)
@@ -231,13 +240,22 @@ local function push_branch_spec(token)
         end)
 
         -- setup display filter to prevent display '+' symbol in completion list
-        clink.match_display_filter = function ()
+        if clink_version.supports_display_filter_description then
+            b = b:map(function(branch)
+                return { match=(plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch, display=branch }
+            end)
+            clink.ondisplaymatches(function ()
+                return b
+            end)
             return b
+        else
+            clink.match_display_filter = function ()
+                return b
+            end
+            return b:map(function(branch)
+                return (plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch
+            end)
         end
-
-        return b:map(function(branch)
-            return (plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch
-        end)
     end
 end
 
