@@ -96,6 +96,25 @@ local function alias(token)
     return res
 end
 
+local function aliases()
+    local res = w()
+
+    local f = io.popen("git config --get-regexp alias 2>nul")
+    if f == nil then return {} end
+
+    for line in f:lines() do
+        local s = line:find(" ", 1, true)
+        local alias_name = line:sub(7, s - 1)
+        local alias_cmd = line:sub(10)
+        res[alias_name] = alias_cmd
+    end
+
+    f:close()
+    return res
+end
+
+local aliases = aliases()
+
 local function remotes(token)  -- luacheck: no unused args
     local result = w()
     local git_dir = git.get_git_common_dir()
@@ -971,6 +990,12 @@ local parser_args = {
         }),
         ["write-tree"] = "",
 }
+
+for k,v in pairs(aliases) do
+  if parser_args[v] ~= nil then
+    parser_args[k] = parser_args[v]
+  end
+end
 
 local git_parser_list = {}
 for k,v in pairs(parser_args) do
