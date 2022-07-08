@@ -277,7 +277,6 @@ local stashes = function(token)  -- luacheck: no unused args
     -- generate matches and match filter table
     local ret = {}
     local ret_filter = {}
-    local clink_version_encoded = clink.version_encoded or 0
     for i,v in ipairs(stash_times) do
         local match = "stash@{"..(i-1).."}"
         table.insert(ret, match)
@@ -287,7 +286,7 @@ local stashes = function(token)  -- luacheck: no unused args
             -- description.  If the script does so, then the popup completion
             -- window is able to show the stash name plus a dimmed description,
             -- but only insert the stash name.
-            table.insert(ret_filter, { match=match, type="word", description=stashes[v] })
+            table.insert(ret_filter, { match=match, type="none", description=stashes[v] })
         else
             table.insert(ret_filter, match.."    "..stashes[v])
         end
