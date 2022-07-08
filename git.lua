@@ -137,7 +137,7 @@ local function local_or_remote_branches(token)
     end)
 end
 
-local function checkout_spec_generator(token)
+local function checkout_spec_generator_deprecated(token)
     local files = matchers.files(token)
         :filter(function(file)
             return path.is_real_dir(file)
@@ -182,6 +182,53 @@ local function checkout_spec_generator(token)
         :concat(predicted_branches:map(function(branch) return star..branch end))
         :concat(remote_branches)
     end
+
+    return files
+        :concat(local_branches)
+        :concat(predicted_branches)
+        :concat(remote_branches)
+end
+
+local function checkout_spec_generator(token)
+    if not clink_version.supports_display_filter_description then
+        return checkout_spec_generator_deprecated(token)
+    end
+
+    local git_dir = git.get_git_common_dir()
+
+    local files = matchers.files(token)
+    local local_branches = branches(token)
+    local remote_branches = list_remote_branches(git_dir)
+        :filter(function(branch)
+            return clink.is_match(token, branch)
+        end)
+
+    local predicted_branches = list_remote_branches(git_dir)
+        :map(function (remote_branch)
+            return remote_branch:match('.-/(.+)')
+        end)
+        :filter(function(branch)
+            return branch
+                and clink.is_match(token, branch)
+                -- Filter out those predictions which are already exists as local branches
+                and not local_branches:contains(branch)
+        end)
+
+    -- if there is any refspec that matches token then:
+    --   * disable readline's filename completion, otherwise we'll get a list of these specs
+    --     threaten as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
+    --   * create display filter for completion table to append path separator to each directory entry
+    --     since it is not added automatically by readline (see previous point)
+    clink.ondisplaymatches(function ()
+        local star = '*'
+        if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
+            star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
+        end
+        return files
+            :concat(local_branches:map(function(branch) return { match=branch } end))
+            :concat(predicted_branches:map(function(branch) return { match=branch, display=star..branch } end))
+            :concat(remote_branches:map(function(branch) return { match=branch } end))
+    end)
 
     return files
         :concat(local_branches)

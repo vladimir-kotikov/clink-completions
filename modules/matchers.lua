@@ -1,3 +1,4 @@
+local clink_version = require('clink_version')
 
 local exports = {}
 
@@ -34,6 +35,11 @@ exports.dirs = function(word)
 end
 
 exports.files = function (word)
+    if clink_version.supports_display_filter_description then
+        local matches = w(clink.filematches(word))
+        return matches
+    end
+
     -- Strip off any path components that may be on text.
     local prefix = ""
     local i = word:find("[\\/:][^\\/:]*$")
