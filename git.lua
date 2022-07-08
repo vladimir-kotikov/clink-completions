@@ -82,12 +82,21 @@ local function alias(token)
     local f = io.popen("git config --get-regexp alias 2>nul")
     if f == nil then return {} end
 
-    for line in f:lines() do
-        local s = line:find(" ", 1, true)
-        local alias_name = line:sub(7, s - 1)
-        local start = alias_name:find(token, 1, true)
-        if start and start == 1 then
-            table.insert(res, alias_name)
+    if clink_version.supports_display_filter_description then
+        for line in f:lines() do
+            local name, command = line:match("^alias.([^ ]+) +(.+)$")
+            if name then
+                table.insert(res, { match=name, description="Alias: "..command })
+            end
+        end
+    else
+        for line in f:lines() do
+            local s = line:find(" ", 1, true)
+            local alias_name = line:sub(7, s - 1)
+            local start = alias_name:find(token, 1, true)
+            if start and start == 1 then
+                table.insert(res, alias_name)
+            end
         end
     end
 
