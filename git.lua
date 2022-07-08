@@ -393,7 +393,6 @@ local git_parser = parser(
             "--ignore-errors",
             "--ignore-missing"
             ),
-        "add--interactive",
         "am",
         "annotate" .. parser({matchers.files},
             "-b",
