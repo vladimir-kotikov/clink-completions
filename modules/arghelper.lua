@@ -24,7 +24,8 @@
 --
 -- This also fills in compatibility methods for any of the following argmatcher
 -- methods that may be missing in older versions of Clink.  This makes backward
--- compatibility much easier, because your code can
+-- compatibility much easier, because your code can use newer APIs and they'll
+-- just do nothing if the version of Clink in use doesn't actually support them.
 --
 --      argmatcher:addarg()
 --      argmatcher:addflags()
