@@ -9,6 +9,7 @@
 --      local a = clink.argmatcher()
 --
 --      a:_addexflags({
+--          nosort=true,                    -- Disables sorting the matches.
 --          some_function,                  -- Adds some_function.
 --          "-a",                           -- Adds match "-a".
 --          { "-b" },                       -- Adds match "-b".
@@ -18,6 +19,14 @@
 --              { "-e" },
 --              { "-f" },
 --          },
+--          -- Add hide=true to hide the match.
+--          { "-x", hide=true },
+--          -- Add opteq=true when there's a linked argmatcher to also add a
+--          -- hidden opposite style:
+--          { "-x"..argmatcher, opteq=true },   -- Adds "-x"..argmatcher, and a hidden "-x="..argmatcher.
+--          { "-x="..argmatcher, opteq=true },  -- Adds "-x="..argmatcher, and a hidden "-x"..argmatcher.
+--          -- Also, adding opteq=true or opteq=false to an outer table applies
+--          -- to everything nested within the table.
 --      })
 --
 -- Both _addexflags() and _addexarg() accept the same input format.
@@ -34,6 +43,20 @@
 --      argmatcher:hideflags()
 --      argmatcher:setflagsanywhere()
 --      argmatcher:setendofflags()
+--
+--------------------------------------------------------------------------------
+-- Changes:
+--
+--  2022/07/30
+--      - `hide=true` hides a match.
+--      - `opteq=true` affects nested tables.
+--
+--  2022/07/06
+--      - Fixed backward compatibility shim to work on v0.4.9 as well.
+--
+--  2022/03/22
+--      - Initial version.
+--------------------------------------------------------------------------------
 
 if not clink then
     -- E.g. some unit test systems will run this module *outside* of Clink.
@@ -102,21 +125,24 @@ if not tmp._addexflags or not tmp._addexarg then
         return getmetatable(x) == meta_link
     end
 
-    local function add_elm(elm, list, descriptions, hide)
+    local function add_elm(elm, list, descriptions, hide, in_opteq)
         local arg
-        local opteq
+        local opteq = in_opteq
         if elm[1] then
             arg = elm[1]
-            opteq = elm.opteq and is_link(arg)
         else
             if type(elm) == "table" and not is_link(elm) and not is_parser(elm) then
                 return
             end
             arg = elm
         end
+        if elm.opteq ~= nil then
+            opteq = elm.opteq
+        end
 
         local t = type(arg)
-        if is_link(arg) or is_parser(arg) then
+        local arglinked = is_link(arg)
+        if arglinked or is_parser(arg) then
             t = "matcher"
         elseif t == "table" then
             if elm[4] then
@@ -133,7 +159,7 @@ if not tmp._addexflags or not tmp._addexarg then
         if t == "string" or t == "number" or t == "matcher" then
             if t == "matcher" then
                 table.insert(list, arg)
-                if opteq and clink.argmatcher then
+                if opteq and arglinked and clink.argmatcher then
                     local altkey
                     if arg._key:sub(-1) == '=' then
                         altkey = arg._key:sub(1, #arg._key - 1)
@@ -147,18 +173,22 @@ if not tmp._addexflags or not tmp._addexarg then
                 table.insert(list, tostring(arg))
             end
             if elm[2] and descriptions then
-                local name = is_link(arg) and arg._key or arg
+                local name = arglinked and arg._key or arg
                 if elm[3] then
                     descriptions[name] = { elm[2], elm[3] }
                 else
                     descriptions[name] = { elm[2] }
                 end
             end
+            if elm.hide then
+                local name = arglinked and arg._key or arg
+                table.insert(hide, arg)
+            end
         elseif t == "function" then
             table.insert(list, arg)
         elseif t == "nested" then
             for _,sub_elm in ipairs(elm) do
-                add_elm(sub_elm, list, descriptions, hide)
+                add_elm(sub_elm, list, descriptions, hide, opteq)
             end
         else
             pause("unrecognized input table format.")
@@ -177,7 +207,7 @@ if not tmp._addexflags or not tmp._addexarg then
         for _,elm in ipairs(tbl) do
             local t = type(elm)
             if t == "table" then
-                add_elm(elm, list, descriptions, hide)
+                add_elm(elm, list, descriptions, hide, tbl.opteq)
             elseif t == "string" or t == "number" or t == "function" then
                 table.insert(list, elm)
             end
