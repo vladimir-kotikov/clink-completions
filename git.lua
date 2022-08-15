@@ -1196,7 +1196,7 @@ local log_parser = parser()
 :_addexflags(commit_formatting_flags)
 
 local merge_parser = parser()
-:addarg(branches)
+:addarg(local_or_remote_branches)
 :_addexflags({
     "--commit", "--no-commit",
     "--edit", "-e", "--no-edit",
