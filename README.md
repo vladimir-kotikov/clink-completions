@@ -1,7 +1,11 @@
+
+[![Build status](https://ci.appveyor.com/api/projects/status/h401gvqery4wwa6p/branch/master?svg=true)](https://ci.appveyor.com/project/vladimir-kotikov/clink-completions/branch/master)
+[![codecov](https://codecov.io/gh/vladimir-kotikov/clink-completions/branch/master/graph/badge.svg)](https://codecov.io/gh/vladimir-kotikov/clink-completions)
+
 clink-completions
 =================
 
-Completion files to [clink](https://github.com/mridgers/clink) util
+Completion files to [clink](https://github.com/mridgers/clink) util. Bundled with [Cmder](https://github.com/cmderdev/cmder).
 
 Notes
 =====
@@ -27,3 +31,11 @@ Requirements
 ============
 
 These completions requires clink@0.4.3 or higher version
+
+# Test
+
+You will need `busted` package to be installed locally (to `lua_modules` directory). To install it
+using Luarocks call `luarocks install --tree=lua_modules busted`. You might also want to install
+`luacov` to get the coverage information.
+
+After installing call `test.bat` from repo root and watch tests passing. That's it.

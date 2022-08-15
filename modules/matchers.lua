@@ -1,3 +1,4 @@
+local clink_version = require('clink_version')
 
 local exports = {}
 
@@ -34,14 +35,17 @@ exports.dirs = function(word)
 end
 
 exports.files = function (word)
+    if clink_version.supports_display_filter_description then
+        local matches = w(clink.filematches(word))
+        return matches
+    end
+
     -- Strip off any path components that may be on text.
     local prefix = ""
     local i = word:find("[\\/:][^\\/:]*$")
     if i then
         prefix = word:sub(1, i)
     end
-
-    local include_dots = word:find("%.+$") ~= nil
 
     -- Find matches.
     local matches = w(clink.find_files(word.."*", true))
@@ -73,7 +77,8 @@ exports.create_files_matcher = function (file_pattern)
     return function (token)
         return w(clink.find_files(file_pattern))
         :filter(function(file)
-            return clink.is_match(token, file)
+            -- Filter out '.' and '..' entries as well
+            return clink.is_match(token, file) and path.is_real_dir(file)
         end )
     end
 end
