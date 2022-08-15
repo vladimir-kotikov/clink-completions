@@ -2,7 +2,7 @@
 -- @compatible Android SDK Platform-tools v31.0.3 (ADB v1.0.41)
 -- @author Goldie Lin
 -- @date 2021-08-27
--- @see [Clink](https://github.com/mridgers/clink/)
+-- @see [Clink](https://github.com/chrisant996/clink)
 -- @usage
 --   Place it in "%LocalAppData%\clink\" if installed globally,
 --   or "ConEmu/ConEmu/clink/" if you used portable ConEmu & Clink.

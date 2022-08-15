@@ -2,7 +2,7 @@
 -- @compatible scrcpy v1.21
 -- @author Goldie Lin
 -- @date 2021-12-12
--- @see [Clink](https://github.com/mridgers/clink/)
+-- @see [Clink](https://github.com/chrisant996/clink)
 -- @see [scrcpy](https://github.com/Genymobile/scrcpy)
 -- @usage
 --   Place it in "%LocalAppData%\clink\" if installed globally,
