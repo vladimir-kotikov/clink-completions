@@ -1,0 +1,1 @@
+clink.argmatcher("sudo"):chaincommand()
