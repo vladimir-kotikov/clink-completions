@@ -1,6 +1,6 @@
 -- preamble: common routines
 
-local path = require('path')
+local path_module = require('path')
 local git = require('gitutil')
 local matchers = require('matchers')
 local w = require('tables').wrap
@@ -50,7 +50,7 @@ local function list_remote_branches(dir)
     local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return w() end
 
-    return w(path.list_files(git_dir..'/refs/remotes', '/*',
+    return w(path_module.list_files(git_dir..'/refs/remotes', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
     :concat(list_packed_refs(git_dir))
     :sort():dedupe()
@@ -65,7 +65,7 @@ local function list_local_branches(dir)
     local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return w() end
 
-    local result = w(path.list_files(git_dir..'/refs/heads', '/*',
+    local result = w(path_module.list_files(git_dir..'/refs/heads', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
 
     return result
@@ -156,7 +156,7 @@ end
 local function checkout_spec_generator_deprecated(token)
     local files = matchers.files(token)
         :filter(function(file)
-            return path.is_real_dir(file)
+            return path_module.is_real_dir(file)
         end)
 
     local git_dir = git.get_git_common_dir()
@@ -292,9 +292,9 @@ local function push_branch_spec(token)
 
         -- TODO: show remote branches only for remote that has been specified as previous argument
         local b = w(clink.find_dirs(git_dir..'/refs/remotes/*'))
-        :filter(function(remote) return path.is_real_dir(remote) end)
+        :filter(function(remote) return path_module.is_real_dir(remote) end)
         :reduce({}, function(result, remote)
-            return w(path.list_files(git_dir..'/refs/remotes/'..remote, '/*',
+            return w(path_module.list_files(git_dir..'/refs/remotes/'..remote, '/*',
                 --[[recursive=]]true, --[[reverse_separator=]]true))
             :filter(function(remote_branch)
                 return clink.is_match(remote_branch_spec, remote_branch)
