@@ -22,6 +22,8 @@ local dir_matches = clink.dirmatches or matchers.dirs
 local files_parser = parser({file_matches})
 local dirs_parser = parser({dir_matches})
 
+local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(clink.filematches):loop()
+
 ---
  -- Lists remote branches based on packed-refs file from git directory
  -- @param string [dir]  Directory where to search file for
@@ -1844,6 +1846,8 @@ local function init(argmatcher, full_init)
         local linked = linked_parsers[x[1]]
         if linked then
             table.insert(commands, { x[1]..linked, x[2] })
+        elseif looping_files_parser then
+            table.insert(commands, x..looping_files_parser)
         else
             table.insert(commands, x)
         end
@@ -1869,6 +1873,8 @@ local function init(argmatcher, full_init)
         local linked = linked_parsers[x]
         if linked then
             table.insert(commands, x..linked)
+        elseif looping_files_parser then
+            table.insert(commands, x..looping_files_parser)
         else
             table.insert(commands, x)
         end
