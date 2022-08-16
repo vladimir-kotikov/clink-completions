@@ -76,7 +76,7 @@ if not clink then
 end
 local clink_version = require('clink_version')
 if not clink_version.supports_argmatcher_delayinit then
-    return {}
+    return
 end
 
 --------------------------------------------------------------------------------
