@@ -58,6 +58,45 @@ local function list_remote_branches(dir)
     :sort():dedupe()
 end
 
+local function list_git_status_files(token, flags)
+    local result = w()
+    local git_dir = git.get_git_common_dir()
+    if git_dir then
+        local f = io.popen("git status --porcelain "..(flags or "").." 2>nul")
+        if f then
+            if string.matchlen then
+                token = path.normalise(token)
+                for line in f:lines() do
+                    line = line:match("^.. (.+)$")
+                    if line then
+                        line = path.normalise(line)
+                        --[[
+                        -- TODO: Maybe use match display filtering to show the number of files in each dir?
+                        local mlen = string.matchlen(line, token)
+                        if mlen < 0 then
+                            table.insert(result, { match = line, type = "file" })
+                        else
+                            local dir = path.getdirectory(line:sub(1, mlen))
+                            local child = line:sub(mlen + 1):match("^([^/\\]*[/\\]?)")
+                            local m = dir and path.join(dir, child) or child
+                            local isdir = m:sub(-1):find("[/\\]")
+                            table.insert(result, { match = m, type = (isdir and "dir" or "file") })
+                        end
+                        --]]
+                        table.insert(result, line)
+                    end
+                end
+            else
+                for line in f:lines() do
+                    table.insert(result, line:sub(4))
+                end
+            end
+            f:close()
+        end
+    end
+    return result
+end
+
 ---
  -- Lists local branches for git repo in git_dir directory.
  --
@@ -155,12 +194,12 @@ local function local_or_remote_branches(token)
     end)
 end
 
-local function checkout_spec_generator_deprecated(token)
-    local files = matchers.files(token)
-        :filter(function(file)
-            return path_module.is_real_dir(file)
-        end)
+local function add_spec_generator(token)
+    return list_git_status_files(token, "-uall")
+end
 
+local function checkout_spec_generator_deprecated(token)
+    local files = list_git_status_files(token, "-uno")
     local git_dir = git.get_git_common_dir()
 
     local local_branches = branches(token)
@@ -214,7 +253,7 @@ local function checkout_spec_generator(token)
 
     local git_dir = git.get_git_common_dir()
 
-    local files = matchers.files(token)
+    local files = list_git_status_files(token, "-uno")
     local local_branches = branches(token)
     local remote_branches = list_remote_branches(git_dir)
         :filter(function(branch)
@@ -242,7 +281,7 @@ local function checkout_spec_generator(token)
         if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
             star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
         end
-        return files
+        return files:map(function(file) return '\x1b[m'..file end)
             :concat(local_branches:map(function(branch) return { match=branch } end))
             :concat(predicted_branches:map(function(branch) return { match=branch, display=star..branch } end))
             :concat(remote_branches:map(function(branch) return { match=branch } end))
@@ -787,7 +826,7 @@ local merge_flags = {
 -- Command parsers.
 
 local add_parser = parser()
-:addarg(file_matches)
+:addarg(add_spec_generator)
 :_addexflags({
     "-n", "--dry-run",
     "-v", "--verbose",
