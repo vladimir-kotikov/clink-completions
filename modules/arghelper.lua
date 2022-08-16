@@ -182,7 +182,7 @@ if not tmp._addexflags or not tmp._addexarg then
             end
             if elm.hide then
                 local name = arglinked and arg._key or arg
-                table.insert(hide, arg)
+                table.insert(hide, name)
             end
         elseif t == "function" then
             table.insert(list, arg)
