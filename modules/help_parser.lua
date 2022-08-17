@@ -175,7 +175,7 @@ local function earlier_gap(a, b)
 end
 
 --------------------------------------------------------------------------------
-local function find_flag_gap(line)
+local function find_flag_gap(line, allow_no_gap)
     local colon  = { len=3, ofs=line:find(' : ') }
     local spaces = { len=2, ofs=line:find('  ') }
     local tab    = { len=1, ofs=line:find('\t') }
@@ -187,7 +187,11 @@ local function find_flag_gap(line)
 
     local space  = { len=1, ofs=line:find(' ') }
     if not space.ofs then
-        return { len=0, ofs=#line + 1 }
+        if allow_no_gap then
+            return { len=0, ofs=#line + 1 }
+        else
+            return
+        end
     end
 
     if not line:find('[ \t][-/][^ \t/]', space.ofs) then
@@ -213,7 +217,7 @@ local function basic_parser(context, flags, descriptions, hideflags, line)
     local indent,f = line:match('^([ \t]*)([-/].+)$')
     local pad,d
     if f then
-        local gap = find_flag_gap(f)
+        local gap = find_flag_gap(f, true--[[allow_no_gap]])
         if gap then
             d = f:sub(gap.ofs + gap.len):gsub('^[ \t]+', '')
             f = f:sub(1, gap.ofs - 1):gsub('[ \t]+$', '')
