@@ -4,6 +4,12 @@
 -- Info:    http://www.greenwoodsoftware.com/less
 -- Repo:    https://github.com/gwsw/less.git
 
+local clink_version = require('clink_version')
+if not clink_version.supports_argmatcher_delayinit then
+    print("less.lua argmatcher requires a newer version of Clink; please upgrade.")
+    return
+end
+
 local inited
 
 local function init(argmatcher)

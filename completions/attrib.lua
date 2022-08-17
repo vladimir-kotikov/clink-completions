@@ -4,7 +4,9 @@
 -- Argmatcher for ATTRIB.  Uses delayinit to support localized help text.
 
 --------------------------------------------------------------------------------
-if (clink.version_encoded or 0) < 10030010 then
+local clink_version = require('clink_version')
+if not clink_version.supports_argmatcher_delayinit then
+    print("attrib.lua argmatcher requires a newer version of Clink; please upgrade.")
     return
 end
 
