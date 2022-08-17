@@ -5,6 +5,10 @@ local exports = {}
 local path = require('path')
 local w = require('tables').wrap
 
+-- A function to generate directory matches.
+--
+--  local matchers = require("matchers")
+--  clink.argmatcher():addarg(matchers.dirs)
 exports.dirs = function(word)
     -- Strip off any path components that may be on text.
     local prefix = ""
@@ -34,6 +38,10 @@ exports.dirs = function(word)
     return matches
 end
 
+-- A function to generate file matches.
+--
+--  local matchers = require("matchers")
+--  clink.argmatcher():addarg(matchers.files)
 exports.files = function (word)
     if clink_version.supports_display_filter_description then
         local matches = w(clink.filematches(word))
@@ -64,25 +72,10 @@ exports.files = function (word)
     return matches
 end
 
-exports.create_dirs_matcher = function (dir_pattern, show_dotfiles)
-    return function (token)
-        return w(clink.find_dirs(dir_pattern))
-        :filter(function(dir)
-            return clink.is_match(token, dir) and (path.is_real_dir(dir) or show_dotfiles)
-        end )
-    end
-end
-
-exports.create_files_matcher = function (file_pattern)
-    return function (token)
-        return w(clink.find_files(file_pattern))
-        :filter(function(file)
-            -- Filter out '.' and '..' entries as well
-            return clink.is_match(token, file) and path.is_real_dir(file)
-        end )
-    end
-end
-
+-- Returns a function that generates matches for the specified wildcards.
+--
+--  local matchers = require("matchers")
+--  clink.argmatcher():addarg(matchers.ext_files("*.json"))
 exports.ext_files = function (...)
     local wildcards = {...}
 
@@ -135,6 +128,25 @@ exports.ext_files = function (...)
         end
 
         return matches
+    end
+end
+
+exports.create_dirs_matcher = function (dir_pattern, show_dotfiles)
+    return function (token)
+        return w(clink.find_dirs(dir_pattern))
+        :filter(function(dir)
+            return clink.is_match(token, dir) and (path.is_real_dir(dir) or show_dotfiles)
+        end )
+    end
+end
+
+exports.create_files_matcher = function (file_pattern)
+    return function (token)
+        return w(clink.find_files(file_pattern))
+        :filter(function(file)
+            -- Filter out '.' and '..' entries as well
+            return clink.is_match(token, file) and path.is_real_dir(file)
+        end )
     end
 end
 
