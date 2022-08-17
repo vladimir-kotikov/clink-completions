@@ -11,6 +11,17 @@ end
 require('arghelper')
 local mcf = require('multicharflags')
 
+local function sentence_casing(text)
+    if unicode.iter then
+        for str, value in unicode.iter(text) do
+            return clink.upper(str) .. text:sub(#str + 1)
+        end
+        return text
+    else
+        return clink.upper(text:sub(1,1)) .. text:sub(2)
+    end
+end
+
 local function delayinit(argmatcher)
     local r = io.popen('robocopy.exe /??? 2>nul')
     if not r then
@@ -26,7 +37,7 @@ local function delayinit(argmatcher)
         if flag == altflag then
             altflag = nil
         end
-        desc = clink.upper(desc:sub(1,1))..desc:sub(2)
+        desc = sentence_casing(desc)
         if linked then
             table.insert(flags, flag..linked)
             if altflag then
