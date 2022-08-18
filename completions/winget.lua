@@ -12,7 +12,7 @@ local function winget_complete(command)
     local winget = os.getenv("USERPROFILE")
     if winget then
         winget = '"'..path.join(winget, "AppData\\Local\\Microsoft\\WindowsApps\\winget.exe")..'"'
-        local f = io.popen('2>nul '..winget..' complete --word="" --commandline="winget '..command..' " --position='..tostring(8 + #command))
+        local f = io.popen('2>nul '..winget..' complete --word="" --commandline="winget '..command..' " --position='..tostring(9 + #command))
         if f then
             for line in f:lines() do
                 table.insert(matches, line)
