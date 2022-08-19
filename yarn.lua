@@ -7,6 +7,8 @@ function JSON:assert () end  -- luacheck: no unused args
 
 local w = require('tables').wrap
 local matchers = require('matchers')
+local color = require('color')
+local clink_version = require('clink_version')
 
 ---
  -- Queries config options value using 'yarn config get' call
@@ -48,12 +50,13 @@ local function global_modules(token)
     return global_modules_matcher(token)
 end
 
--- A function that matches all files in bin folder. See #74 for rationale
-local bins = matchers.create_files_matcher('node_modules/.bin/*.')
+--------------------------------------------------------------------------------
+-- Let `yarn run` match files in bin folder (see #74 for why) and package.json
+-- scripts.  When using newer versions of Clink, it is also able to colorize the
+-- matches.
 
 -- Reads package.json in current directory and extracts all "script" commands defined
-local function scripts(token)  -- luacheck: no unused args
-
+local function package_scripts()
     -- Read package.json first
     local package_json = io.open('package.json')
     -- If there is no such file, then close handle and return
@@ -63,13 +66,51 @@ local function scripts(token)  -- luacheck: no unused args
     local package_contents = package_json:read("*a")
     package_json:close()
 
-    local package_scripts = JSON:decode(package_contents).scripts
-    return w(package_scripts):keys()
+    return JSON:decode(package_contents).scripts
 end
 
 local parser = clink.arg.new_parser
 
 -- end preamble
+
+
+local yarn_run_matches_parser
+if not clink_version.supports_display_filter_description then
+    local bins = matchers.create_files_matcher('node_modules/.bin/*.')
+    local function scripts()
+        return w(package_scripts):keys()
+    end
+    yarn_run_matches_parser = parser({bins, scripts})
+else
+    settings.add('color.yarn.module', 'bold', 'Color for yarn run local module', 'Used when Clink displays yarn run local module completions.')
+    settings.add('color.yarn.script', 'bright blue', 'Color for yarn run project.json script', 'Used when Clink displays yarn run project.json script completions.')
+
+    local function yarn_run_matches(word)
+        local bin_matches = clink.filematches('node_modules/.bin/*.')
+        local scripts = w(package_scripts())
+
+        if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
+            clink.ondisplaymatches(function (matches)
+                local bc = color.get_clink_color('color.yarn.module')
+                local sc = color.get_clink_color('color.yarn.script')
+                return w(matches):map(function (match)
+                    local m = match.match
+                    if scripts[m] then
+                        match.display = sc..m
+                        return match
+                    else
+                        match.display = bc..m
+                        return match
+                    end
+                end)
+            end)
+        end
+
+        return bin_matches:concat(scripts:keys())
+    end
+
+    yarn_run_matches_parser = clink.argmatcher():addarg({yarn_run_matches})
+end
 
 
 local add_parser = parser(
@@ -124,7 +165,7 @@ local yarn_parser = parser({
         "--tag"
     ),
     "remove"..parser({modules}),
-    "run"..parser({bins, scripts}),
+    "run"..yarn_run_matches_parser,
     "self-update",
     "tag"..parser({"add", "ls", "rm"}),
     "team"..parser({"add", "create", "destroy", "ls", "rm"}),
