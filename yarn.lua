@@ -78,7 +78,7 @@ local yarn_run_matches
 local yarn_run_matches_parser
 if not clink_version.supports_display_filter_description then
     yarn_run_matches = function ()
-        local bins = matchers.create_files_matcher('node_modules/.bin/*.')
+        local bins = w(matchers.create_files_matcher('node_modules/.bin/*.')(''))
         return bins:concat(w(package_scripts()):keys())
     end
     yarn_run_matches_parser = parser({yarn_run_matches})

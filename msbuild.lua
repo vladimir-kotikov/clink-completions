@@ -29,6 +29,11 @@
 -- Because of the global msbuild_parser_data table, this script should be
 -- located in a normal script directory, not in a completions subdirectory.
 
+local clink_version = require('clink_version')
+if not clink_version.new_api then
+    return
+end
+
 --[[
 // vim: set et:
 --]]
