@@ -1,6 +1,6 @@
 -- preamble: common routines
 
-local path = require('path')
+local path_module = require('path')
 local git = require('gitutil')
 local matchers = require('matchers')
 local w = require('tables').wrap
@@ -21,6 +21,8 @@ local file_matches = clink.filematches or matchers.files
 local dir_matches = clink.dirmatches or matchers.dirs
 local files_parser = parser({file_matches})
 local dirs_parser = parser({dir_matches})
+
+local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(clink.filematches):loop()
 
 ---
  -- Lists remote branches based on packed-refs file from git directory
@@ -50,10 +52,51 @@ local function list_remote_branches(dir)
     local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return w() end
 
-    return w(path.list_files(git_dir..'/refs/remotes', '/*',
+    return w(path_module.list_files(git_dir..'/refs/remotes', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
     :concat(list_packed_refs(git_dir))
     :sort():dedupe()
+end
+
+local function list_git_status_files(token, flags) -- luacheck: no unused args
+    local result = w()
+    local git_dir = git.get_git_common_dir()
+    if git_dir then
+        local f = io.popen("git status --porcelain "..(flags or "").." 2>nul")
+        if f then
+            if string.matchlen then
+                --[[
+                token = path.normalise(token)
+                --]]
+                for line in f:lines() do
+                    line = line:match("^.. (.+)$")
+                    if line then
+                        line = path.normalise(line)
+                        --[[
+                        -- TODO: Maybe use match display filtering to show the number of files in each dir?
+                        local mlen = string.matchlen(line, token)
+                        if mlen < 0 then
+                            table.insert(result, { match = line, type = "file" })
+                        else
+                            local dir = path.getdirectory(line:sub(1, mlen))
+                            local child = line:sub(mlen + 1):match("^([^/\\]*[/\\]?)")
+                            local m = dir and path.join(dir, child) or child
+                            local isdir = m:sub(-1):find("[/\\]")
+                            table.insert(result, { match = m, type = (isdir and "dir" or "file") })
+                        end
+                        --]]
+                        table.insert(result, line)
+                    end
+                end
+            else
+                for line in f:lines() do
+                    table.insert(result, line:sub(4))
+                end
+            end
+            f:close()
+        end
+    end
+    return result
 end
 
 ---
@@ -65,7 +108,7 @@ local function list_local_branches(dir)
     local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return w() end
 
-    local result = w(path.list_files(git_dir..'/refs/heads', '/*',
+    local result = w(path_module.list_files(git_dir..'/refs/heads', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
 
     return result
@@ -104,7 +147,7 @@ local function get_git_aliases()
 end
 
 -- Function to generate completions for alias
-local function alias(token)
+local function alias(token) -- luacheck: no unused args
     local res = w()
 
     local aliases = get_git_aliases()
@@ -153,12 +196,12 @@ local function local_or_remote_branches(token)
     end)
 end
 
-local function checkout_spec_generator_deprecated(token)
-    local files = matchers.files(token)
-        :filter(function(file)
-            return path.is_real_dir(file)
-        end)
+local function add_spec_generator(token)
+    return list_git_status_files(token, "-uall")
+end
 
+local function checkout_spec_generator_deprecated(token)
+    local files = list_git_status_files(token, "-uno")
     local git_dir = git.get_git_common_dir()
 
     local local_branches = branches(token)
@@ -212,7 +255,7 @@ local function checkout_spec_generator(token)
 
     local git_dir = git.get_git_common_dir()
 
-    local files = matchers.files(token)
+    local files = list_git_status_files(token, "-uno")
     local local_branches = branches(token)
     local remote_branches = list_remote_branches(git_dir)
         :filter(function(branch)
@@ -240,7 +283,7 @@ local function checkout_spec_generator(token)
         if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
             star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
         end
-        return files
+        return files:map(function(file) return '\x1b[m'..file end)
             :concat(local_branches:map(function(branch) return { match=branch } end))
             :concat(predicted_branches:map(function(branch) return { match=branch, display=star..branch } end))
             :concat(remote_branches:map(function(branch) return { match=branch } end))
@@ -292,9 +335,9 @@ local function push_branch_spec(token)
 
         -- TODO: show remote branches only for remote that has been specified as previous argument
         local b = w(clink.find_dirs(git_dir..'/refs/remotes/*'))
-        :filter(function(remote) return path.is_real_dir(remote) end)
+        :filter(function(remote) return path_module.is_real_dir(remote) end)
         :reduce({}, function(result, remote)
-            return w(path.list_files(git_dir..'/refs/remotes/'..remote, '/*',
+            return w(path_module.list_files(git_dir..'/refs/remotes/'..remote, '/*',
                 --[[recursive=]]true, --[[reverse_separator=]]true))
             :filter(function(remote_branch)
                 return clink.is_match(remote_branch_spec, remote_branch)
@@ -305,7 +348,10 @@ local function push_branch_spec(token)
         -- setup display filter to prevent display '+' symbol in completion list
         if clink_version.supports_display_filter_description then
             b = b:map(function(branch)
-                return { match=(plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch, display=branch }
+                return {
+                    match=(plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch,
+                    display=branch
+                }
             end)
             clink.ondisplaymatches(function ()
                 return b
@@ -391,12 +437,12 @@ local function concept_guides()
         local r = io.popen("git help -g 2>nul")
         if r then
             local matches = {}
-            local color = "\x1b[1m"
+            local sgr = "\x1b[1m"
             local mark = " \x1b[22;32m*"
             for line in r:lines() do
                 local guide, desc = line:match("^   ([^ ]+) +(.+)$")
                 if guide then
-                    table.insert(matches, { match=guide, display=color..guide..mark, description="Guide: "..desc } )
+                    table.insert(matches, { match=guide, display=sgr..guide..mark, description="Guide: "..desc } )
                 end
             end
             r:close()
@@ -412,14 +458,14 @@ local function all_commands()
         if r then
             local matches = {}
             local prefix = "Command: "
-            local color = ""
+            local sgr = ""
             for line in r:lines() do
                 local command, desc = line:match("^   ([^ ]+) +(.+)$")
                 if command then
-                    table.insert(matches, { match=command, display=color..command, description=prefix..desc } )
+                    table.insert(matches, { match=command, display=sgr..command, description=prefix..desc } )
                 elseif line == "Command aliases" then
                     prefix = "Alias: "
-                    color = "\x1b["..settings.get("color.doskey").."m"
+                    sgr = "\x1b["..settings.get("color.doskey").."m"
                 end
             end
             r:close()
@@ -428,6 +474,9 @@ local function all_commands()
     end
     return {}
 end
+
+-- luacheck: push
+-- luacheck: no max line length
 
 local mergesubtree_arg = parser({dir_matches})
 local placeholder_required_arg = parser({})
@@ -785,7 +834,7 @@ local merge_flags = {
 -- Command parsers.
 
 local add_parser = parser()
-:addarg(file_matches)
+:addarg(add_spec_generator)
 :_addexflags({
     "-n", "--dry-run",
     "-v", "--verbose",
@@ -1177,7 +1226,7 @@ local help_parser = parser()
     { "--web",                          "Display manual page for the command in HTML format" },
 })
 if help_parser.setdelayinit then
-    help_parser:addarg({delayinit=function (argmatcher)
+    help_parser:addarg({delayinit=function (argmatcher) -- luacheck: no unused args
         local matches = all_commands() or {}
         local guides = concept_guides() or {}
         for _,g in ipairs(guides) do
@@ -1196,7 +1245,7 @@ local log_parser = parser()
 :_addexflags(commit_formatting_flags)
 
 local merge_parser = parser()
-:addarg(branches)
+:addarg(local_or_remote_branches)
 :_addexflags({
     "--commit", "--no-commit",
     "--edit", "-e", "--no-edit",
@@ -1827,6 +1876,8 @@ local git_flags = {
     { "--no-optional-locks",                "Do not perform optional operations that require locks" },
 }
 
+-- luacheck: pop
+
 -- Initialize the argmatcher.  This may be called repeatedly.
 local function init(argmatcher, full_init)
     -- When doing a full init, must reset in order to maintain the sort order.
@@ -1844,6 +1895,8 @@ local function init(argmatcher, full_init)
         local linked = linked_parsers[x[1]]
         if linked then
             table.insert(commands, { x[1]..linked, x[2] })
+        elseif looping_files_parser then
+            table.insert(commands, x..looping_files_parser)
         else
             table.insert(commands, x)
         end
@@ -1869,6 +1922,8 @@ local function init(argmatcher, full_init)
         local linked = linked_parsers[x]
         if linked then
             table.insert(commands, x..linked)
+        elseif looping_files_parser then
+            table.insert(commands, x..looping_files_parser)
         else
             table.insert(commands, x)
         end

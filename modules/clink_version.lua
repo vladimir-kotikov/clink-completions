@@ -14,5 +14,7 @@ exports.supports_display_filter_description = (clink_version_encoded >= 10010012
 exports.supports_color_settings = (clink_version_encoded >= 10010009)
 exports.supports_query_rl_var = (clink_version_encoded >= 10010009)
 exports.supports_path_toparent = (clink_version_encoded >= 10010020)
+exports.supports_argmatcher_delayinit = (clink_version_encoded >= 10030010)
+exports.supports_argmatcher_chaincommand = (clink_version_encoded >= 10030013)
 
 return exports
