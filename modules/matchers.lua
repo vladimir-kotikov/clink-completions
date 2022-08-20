@@ -103,8 +103,7 @@ exports.ext_files = function (...)
         -- Find directories.
         local matches = w(clink.find_dirs(word.."*", true))
         :filter(function (dir)
-            return clink.is_match(word, prefix..dir) and
-                (include_dots or path.is_real_dir(dir))
+            return clink.is_match(word, prefix..dir) and path.is_real_dir(dir)
         end)
         :map(function(dir)
             return prefix..dir

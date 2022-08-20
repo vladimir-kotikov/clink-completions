@@ -82,7 +82,7 @@ end
 --------------------------------------------------------------------------------
 local function sentence_casing(text)
     if unicode.iter then
-        for str, value in unicode.iter(text) do
+        for str in unicode.iter(text) do -- luacheck: ignore 512
             return clink.upper(str) .. text:sub(#str + 1)
         end
         return text
@@ -122,18 +122,18 @@ local function is_dir_arg(display)
 end
 
 --------------------------------------------------------------------------------
-local function add_pending(context, flags, descriptions, hideflags, pending)
+local function add_pending(context, flags, descriptions, hideflags, pending) -- luacheck: no unused args
     if not pending.flag then
         return
     end
 
     if pending.has_arg and pending.display then
         if not pending.argmatcher then
-            if not pending.flag:match('[:=]$') and not pending.display:match('^[ \t]') then
+            if not pending.flag:match('[:=]$') and not pending.display:match('^[ \t]') then -- luacheck: ignore 542
                 -- -x<n> or -x[n] or -Tn or etc.  Argmatchers must be separated
                 -- from flag by : or = or space.  So, no argmatcher.
             else
-                local args = args or clink.argmatcher()
+                local args = clink.argmatcher()
                 if is_file_arg(pending.display) then
                     args:addarg(clink.filematches)
                 elseif is_dir_arg(pending.display) then
@@ -434,7 +434,7 @@ local function gnu_parser(context, flags, descriptions, hideflags, line)
                 context.desc = nil
             end
             for _,f in ipairs(context.pending) do
-                if f.flag == '-NUM' then
+                if f.flag == '-NUM' then -- luacheck: ignore 542
                     -- Clink can't represent minus followed by any number.
                 else
                     context.pending.flag = f.flag
@@ -459,8 +459,6 @@ local function gnu_parser(context, flags, descriptions, hideflags, line)
         -- Parse if the line declares one or more flags.
         local s = line:match('^  +(%-.+)$')
         if s then
-            local k
-            local f
             if context.carryover then
                 s = context.carryover .. ' ' .. s
                 context.carryover = nil

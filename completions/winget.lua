@@ -12,7 +12,7 @@ local function winget_complete(command)
     local winget = os.getenv("USERPROFILE")
     if winget then
         winget = '"'..path.join(winget, "AppData\\Local\\Microsoft\\WindowsApps\\winget.exe")..'"'
-        local f = io.popen('2>nul '..winget..' complete --word="" --commandline="winget '..command..' " --position='..tostring(9 + #command))
+        local f = io.popen('2>nul '..winget..' complete --word="" --commandline="winget '..command..' " --position='..tostring(9 + #command)) -- luacheck: no max line length
         if f then
             for line in f:lines() do
                 table.insert(matches, line)
@@ -23,14 +23,12 @@ local function winget_complete(command)
     return matches
 end
 
-local function complete_export_source(word)
+local function complete_export_source()
     return winget_complete("export --source")
 end
 
 --------------------------------------------------------------------------------
 -- Parsers for linking.
-
-local nothing = clink.argmatcher()
 
 local add_source_matches = clink.argmatcher():addarg()
 local arch_matches = clink.argmatcher():addarg({fromhistory=true})
@@ -363,4 +361,4 @@ local winget_parser = {
     "validate" .. validate_parser,
 }
 
-clink.argmatcher("winget"):addarg(winget_parser):addflags("--version", "--info", "--help") 
+clink.argmatcher("winget"):addarg(winget_parser):addflags("--version", "--info", "--help")

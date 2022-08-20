@@ -39,14 +39,6 @@ local function add_pending(pending, flags, descriptions, hideflags)
 end
 
 --------------------------------------------------------------------------------
-local function make_desc(lhs, rhs)
-    if rhs:match('^[A-Z][a-z ]') then
-        rhs = rhs:sub(1, 1):lower() .. rhs:sub(2)
-    end
-    return lhs .. rhs
-end
-
---------------------------------------------------------------------------------
 local inited
 
 --------------------------------------------------------------------------------
@@ -82,8 +74,8 @@ local function delayinit(argmatcher)
     end
     inited = true
 
-    local f = io.popen('dir /?')
-    if not f then
+    local file = io.popen('dir /?')
+    if not file then
         return
     end
 
@@ -93,7 +85,7 @@ local function delayinit(argmatcher)
     local pending
 
     local section = 'header'
-    for line in f:lines() do
+    for line in file:lines() do
         if unicode.fromcodepage then
             line = unicode.fromcodepage(line)
         end
@@ -115,7 +107,8 @@ local function delayinit(argmatcher)
                 if indent and #indent == (pending.indent or 0) then
                     pending.desc = pending.desc .. ' ' .. desc:gsub(' +$', '')
                 elseif indent and #indent >= 2 and #indent < 8 then
-                    local display, pad, desc = desc:match('^([^ ]+)( +)([^ ].+)$')
+                    local display
+                    display, pad, desc = desc:match('^([^ ]+)( +)([^ ].+)$')
                     indent = #indent + #display + #pad
                     if display and indent >= pending.indent then
                         pending.display = display
@@ -141,7 +134,7 @@ local function delayinit(argmatcher)
     end
     add_pending(pending, flags, descriptions, hideflags)
 
-    f:close()
+    file:close()
 
     local actual_flags = {}
     for _, f in ipairs(flags) do

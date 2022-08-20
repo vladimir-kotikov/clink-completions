@@ -58,13 +58,14 @@ local function index_chars_table(t)
     end
 end
 
-local function compound_matches_func(chars, word, word_index, line_state, builder, user_data)
+local function compound_matches_func(chars, word,   -- luacheck: no unused args, no unused
+        word_index, line_state, builder, user_data) -- luacheck: no unused
     local info = line_state:getwordinfo(word_index)
     if not info then
         return {}
     end
 
-    local used = {}
+    -- local used = {}
     local available = {}
 
     if chars.caseless then
@@ -85,15 +86,15 @@ local function compound_matches_func(chars, word, word_index, line_state, builde
             local l = m[1]:lower()
             local u = m[1]:upper()
             if word:find(l, 1, true--[[plain]]) or word:find(u, 1, true--[[plain]]) then
-                used[l] = true
-                used[u] = true
+                -- used[l] = true
+                -- used[u] = true
                 available[l] = false
                 available[u] = false
             end
         else
             local c = m[1]
             if word:find(c, 1, true--[[plain]]) then
-                used[c] = true
+                -- used[c] = true
                 available[c] = false
             end
         end
@@ -133,7 +134,8 @@ local function get_bad_color()
     return bad
 end
 
-local function compound_classifier(chars, arg_index, word, word_index, line_state, classifications)
+local function compound_classifier(chars, arg_index,    -- luacheck: no unused args
+        word, word_index, line_state, classifications)
     local info = line_state:getwordinfo(word_index)
     if not info then
         return

@@ -14,7 +14,9 @@
 --          "-a",                           -- Adds match "-a".
 --          { "-b" },                       -- Adds match "-b".
 --          { "-c", "Use colors" },         -- Adds match "-c" and description "Use colors".
---          { "-d", " date",  "List newer than date" }, -- Adds string "-d", arginfo " date", and description "List newer than date".
+--          { "-d", " date",  "List newer than date" },
+--                                          -- Adds string "-d", arginfo " date", and
+--                                             description "List newer than date".
 --          {                               -- Nested table, following the same format.
 --              { "-e" },
 --              { "-f" },
@@ -198,7 +200,7 @@ if not tmp._addexflags or not tmp._addexarg then
 
     local function build_lists(tbl)
         local list = {}
-        local descriptions = (not ARGHELPER_DISABLE_DESCRIPTIONS) and {}
+        local descriptions = (not ARGHELPER_DISABLE_DESCRIPTIONS) and {} -- luacheck: no global
         local hide = {}
         if type(tbl) ~= "table" then
             pause('table expected.')
@@ -244,7 +246,7 @@ end
 
 -- If nothing was missing, then no interop functions got added, and the meta
 -- table doesn't need to be modified.
-for _,_ in pairs(interop) do
+for _,_ in pairs(interop) do -- luacheck: ignore 512
     local old_index = meta.__index
     meta.__index = function(parser, key)
         local value = rawget(interop, key)

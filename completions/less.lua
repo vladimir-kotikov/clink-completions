@@ -80,7 +80,7 @@ local function init(argmatcher)
                     table.insert(pending, f)
                 end
             end
-        else
+        else -- luacheck: ignore 542
             -- Nothing to do.
         end
     end
@@ -97,4 +97,3 @@ if a.setdelayinit then
 else
     init(a)
 end
-a = nil

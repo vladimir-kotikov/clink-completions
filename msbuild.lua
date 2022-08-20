@@ -34,10 +34,13 @@
 --]]
 require('arghelper')
 
+-- luacheck: no max line length
+
 -- This is a global so that other scripts can add the tables into their own
 -- argmatchers, e.g. for use with scripts that wrap msbuild with additional
 -- functionality.
 
+-- luacheck: globals msbuild_parser_data
 msbuild_parser_data = {}
 
 local binlog = clink.argmatcher():addarg({ fromhistory=true })

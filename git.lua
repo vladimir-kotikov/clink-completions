@@ -58,14 +58,16 @@ local function list_remote_branches(dir)
     :sort():dedupe()
 end
 
-local function list_git_status_files(token, flags)
+local function list_git_status_files(token, flags) -- luacheck: no unused args
     local result = w()
     local git_dir = git.get_git_common_dir()
     if git_dir then
         local f = io.popen("git status --porcelain "..(flags or "").." 2>nul")
         if f then
             if string.matchlen then
+                --[[
                 token = path.normalise(token)
+                --]]
                 for line in f:lines() do
                     line = line:match("^.. (.+)$")
                     if line then
@@ -145,7 +147,7 @@ local function get_git_aliases()
 end
 
 -- Function to generate completions for alias
-local function alias(token)
+local function alias(token) -- luacheck: no unused args
     local res = w()
 
     local aliases = get_git_aliases()
@@ -346,7 +348,10 @@ local function push_branch_spec(token)
         -- setup display filter to prevent display '+' symbol in completion list
         if clink_version.supports_display_filter_description then
             b = b:map(function(branch)
-                return { match=(plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch, display=branch }
+                return {
+                    match=(plus_prefix and '+'..local_branch_spec or local_branch_spec)..':'..branch,
+                    display=branch
+                }
             end)
             clink.ondisplaymatches(function ()
                 return b
@@ -432,12 +437,12 @@ local function concept_guides()
         local r = io.popen("git help -g 2>nul")
         if r then
             local matches = {}
-            local color = "\x1b[1m"
+            local sgr = "\x1b[1m"
             local mark = " \x1b[22;32m*"
             for line in r:lines() do
                 local guide, desc = line:match("^   ([^ ]+) +(.+)$")
                 if guide then
-                    table.insert(matches, { match=guide, display=color..guide..mark, description="Guide: "..desc } )
+                    table.insert(matches, { match=guide, display=sgr..guide..mark, description="Guide: "..desc } )
                 end
             end
             r:close()
@@ -453,14 +458,14 @@ local function all_commands()
         if r then
             local matches = {}
             local prefix = "Command: "
-            local color = ""
+            local sgr = ""
             for line in r:lines() do
                 local command, desc = line:match("^   ([^ ]+) +(.+)$")
                 if command then
-                    table.insert(matches, { match=command, display=color..command, description=prefix..desc } )
+                    table.insert(matches, { match=command, display=sgr..command, description=prefix..desc } )
                 elseif line == "Command aliases" then
                     prefix = "Alias: "
-                    color = "\x1b["..settings.get("color.doskey").."m"
+                    sgr = "\x1b["..settings.get("color.doskey").."m"
                 end
             end
             r:close()
@@ -469,6 +474,9 @@ local function all_commands()
     end
     return {}
 end
+
+-- luacheck: push
+-- luacheck: no max line length
 
 local mergesubtree_arg = parser({dir_matches})
 local placeholder_required_arg = parser({})
@@ -1218,7 +1226,7 @@ local help_parser = parser()
     { "--web",                          "Display manual page for the command in HTML format" },
 })
 if help_parser.setdelayinit then
-    help_parser:addarg({delayinit=function (argmatcher)
+    help_parser:addarg({delayinit=function (argmatcher) -- luacheck: no unused args
         local matches = all_commands() or {}
         local guides = concept_guides() or {}
         for _,g in ipairs(guides) do
@@ -1867,6 +1875,8 @@ local git_flags = {
     { "--icase-pathspecs",                  "Add 'icase' magic to all pathspecs" },
     { "--no-optional-locks",                "Do not perform optional operations that require locks" },
 }
+
+-- luacheck: pop
 
 -- Initialize the argmatcher.  This may be called repeatedly.
 local function init(argmatcher, full_init)
