@@ -8,6 +8,7 @@ return {
         "error",
         "log",
         "os.getcwd",
+        "os.globfiles",
         "os.isdir",
         "os.setenv",
         "path",
