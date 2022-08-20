@@ -74,19 +74,30 @@ local parser = clink.arg.new_parser
 -- end preamble
 
 
+local yarn_run_matches
 local yarn_run_matches_parser
 if not clink_version.supports_display_filter_description then
-    local bins = matchers.create_files_matcher('node_modules/.bin/*.')
-    local function scripts()
-        return w(package_scripts):keys()
+    yarn_run_matches = function ()
+        local bins = matchers.create_files_matcher('node_modules/.bin/*.')
+        return bins:concat(w(package_scripts()):keys())
     end
-    yarn_run_matches_parser = parser({bins, scripts})
+    yarn_run_matches_parser = parser({yarn_run_matches})
 else
-    settings.add('color.yarn.module', 'bold', 'Color for yarn run local module', 'Used when Clink displays yarn run local module completions.')
-    settings.add('color.yarn.script', 'bright blue', 'Color for yarn run project.json script', 'Used when Clink displays yarn run project.json script completions.')
+    settings.add('color.yarn.module', 'brightgreen', 'Color for yarn run local module',
+        'Used when Clink displays yarn run local module completions.')
+    settings.add('color.yarn.script', 'bright blue', 'Color for yarn run project.json script',
+        'Used when Clink displays yarn run project.json script completions.')
 
-    local function yarn_run_matches(word)
-        local bin_matches = clink.filematches('node_modules/.bin/*.')
+    yarn_run_matches = function ()
+        local bin_matches = w(os.globfiles('node_modules/.bin/*.'))
+        local bin_index = {}
+        for _, m in ipairs(bin_matches) do
+            bin_index[m] = true
+        end
+        bin_matches = bin_matches:map(function (m)
+            return { match=m }
+        end)
+
         local scripts = w(package_scripts())
 
         if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
@@ -97,11 +108,10 @@ else
                     local m = match.match
                     if scripts[m] then
                         match.display = sc..m
-                        return match
-                    else
+                    elseif bin_index[m] then
                         match.display = bc..m
-                        return match
                     end
+                    return match
                 end)
             end)
         end
@@ -180,8 +190,7 @@ local yarn_parser = parser({
     ),
     "versions",
     "why"..parser({modules}),
-    bins,
-    scripts
+    yarn_run_matches,
     },
     "-h",
     "-v",
