@@ -83,7 +83,7 @@ if not clink_version.supports_display_filter_description then
     end
     yarn_run_matches_parser = parser({yarn_run_matches})
 else
-    settings.add('color.yarn.module', 'brightgreen', 'Color for yarn run local module',
+    settings.add('color.yarn.module', 'bright green', 'Color for yarn run local module',
         'Used when Clink displays yarn run local module completions.')
     settings.add('color.yarn.script', 'bright blue', 'Color for yarn run project.json script',
         'Used when Clink displays yarn run project.json script completions.')
