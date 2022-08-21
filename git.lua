@@ -24,6 +24,17 @@ local dirs_parser = parser({dir_matches})
 
 local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(clink.filematches):loop()
 
+local map_file
+if rl.getmatchcolor then
+    map_file = function (file)
+        return { match=file, display='\x1b[m'..rl.getmatchcolor(file, 'file')..file, type='arg' }
+    end
+else
+    map_file = function (file)
+        return { match=file, display='\x1b[m'..file, type='arg' }
+    end
+end
+
 ---
  -- Lists remote branches based on packed-refs file from git directory
  -- @param string [dir]  Directory where to search file for
@@ -194,7 +205,7 @@ local function local_or_remote_branches(token)
 end
 
 local function add_spec_generator(token)
-    return list_git_status_files(token, "-uall")
+    return list_git_status_files(token, "-uall"):map(map_file)
 end
 
 local function checkout_spec_generator_049(token)
@@ -328,17 +339,15 @@ local function checkout_spec_generator_nosort(token)
         end)
 
     local filtered_color = color.get_clink_color('color.filtered')
-    local file_pre = '\x1b[m'
     local local_pre = filtered_color
     local predicted_pre = '*'
     local remote_pre = filtered_color
     if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
         predicted_pre = color.get_clink_color('color.git.star')..predicted_pre..filtered_color
-        -- TODO: apply LS_COLORS to f_pre.
     end
 
     local mapped = {
-        files:map(function(file) return { match=file, display=file_pre..file, type='arg' } end),
+        files:map(map_file),
         local_branches:map(function(branch) return { match=branch, display=local_pre..branch, type='arg' } end),
         predicted_branches:map(function(branch) return { match=branch, display=predicted_pre..branch, type='arg' } end),
         remote_branches:map(function(branch) return { match=branch, display=remote_pre..branch, type='arg' } end),
