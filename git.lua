@@ -197,7 +197,7 @@ local function add_spec_generator(token)
     return list_git_status_files(token, "-uall")
 end
 
-local function checkout_spec_generator_deprecated_049(token)
+local function checkout_spec_generator_049(token)
     local function is_token_match(value)
         return clink.is_match(token, value)
     end
