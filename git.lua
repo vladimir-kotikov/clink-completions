@@ -114,14 +114,11 @@ local function list_local_branches(dir)
     return result
 end
 
-local branches = function (token)
+local function branches()
     local git_dir = git.get_git_common_dir()
     if not git_dir then return w() end
 
     return list_local_branches(git_dir)
-    :filter(function(branch)
-        return clink.is_match(token, branch)
-    end)
 end
 
 -- Function to get the list of git aliases.
@@ -200,19 +197,16 @@ local function add_spec_generator(token)
     return list_git_status_files(token, "-uall")
 end
 
-local function checkout_spec_generator_deprecated(token)
-    local files = list_git_status_files(token, "-uno")
-        :filter(function(file)
-            return clink.is_match(token, file)
-        end)
+local function checkout_spec_generator_deprecated_049(token)
+    local function is_token_match(value)
+        return clink.is_match(token, value)
+    end
 
     local git_dir = git.get_git_common_dir()
 
-    local local_branches = branches(token)
-    local remote_branches = list_remote_branches(git_dir)
-        :filter(function(branch)
-            return clink.is_match(token, branch)
-        end)
+    local files = list_git_status_files(token, "-uno"):filter(is_token_match)
+    local local_branches = branches():filter(is_token_match)
+    local remote_branches = list_remote_branches(git_dir):filter(is_token_match)
 
     local predicted_branches = list_remote_branches(git_dir)
         :map(function (remote_branch)
@@ -229,7 +223,7 @@ local function checkout_spec_generator_deprecated(token)
 
     -- if there is any refspec that matches token then:
     --   * disable readline's filename completion, otherwise we'll get a list of these specs
-    --     threaten as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
+    --     treated as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
     --   * create display filter for completion table to append path separator to each directory entry
     --     since it is not added automatically by readline (see previous point)
     clink.matches_are_files(0)
@@ -252,27 +246,20 @@ local function checkout_spec_generator_deprecated(token)
         :concat(remote_branches)
 end
 
-local function checkout_spec_generator(token)
-    if not clink_version.supports_display_filter_description then
-        return checkout_spec_generator_deprecated(token)
-    end
-
+local function checkout_spec_generator_usedisplay(token)
     -- NOTE:  The only reason this needs to use clink.is_match() is because the
-    -- match_display_filter function ignores the list of matches it receives,
-    -- which already filtered correctly and has had duplicates removed.
+    -- match_display_filter function defined here ignores the list of matches it
+    -- receives, which is already filtered correctly and has had duplicates
+    -- removed.
+    local function is_token_match(value)
+        return clink.is_match(token, value)
+    end
 
     local git_dir = git.get_git_common_dir()
 
-    local files = list_git_status_files(token, "-uno")
-        :filter(function(file)
-            return clink.is_match(token, file)
-        end)
-
-    local local_branches = branches(token)
-    local remote_branches = list_remote_branches(git_dir)
-        :filter(function(branch)
-            return clink.is_match(token, branch)
-        end)
+    local files = list_git_status_files(token, "-uno"):filter(is_token_match)
+    local local_branches = branches(token):filter(is_token_match)
+    local remote_branches = list_remote_branches(git_dir):filter(is_token_match)
 
     local predicted_branches = list_remote_branches(git_dir)
         :map(function (remote_branch)
@@ -287,7 +274,7 @@ local function checkout_spec_generator(token)
 
     -- if there is any refspec that matches token then:
     --   * disable readline's filename completion, otherwise we'll get a list of these specs
-    --     threaten as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
+    --     treated as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
     --   * create display filter for completion table to append path separator to each directory entry
     --     since it is not added automatically by readline (see previous point)
     clink.match_display_filter = function ()
@@ -305,6 +292,86 @@ local function checkout_spec_generator(token)
         :concat(local_branches)
         :concat(predicted_branches)
         :concat(remote_branches)
+end
+
+local function make_indexed_table(input)
+    local output = {}
+    for _, value in ipairs(input) do
+        output[value] = true
+    end
+    return output
+end
+
+local function checkout_spec_generator_nosort(token)
+    local git_dir = git.get_git_common_dir()
+
+    local local_branches = branches(token)
+    local local_branches_idx = make_indexed_table(local_branches)
+
+    local remote_branches = list_remote_branches(git_dir)
+    local remote_branches_idx = make_indexed_table(remote_branches)
+
+    local predicted_branches = list_remote_branches(git_dir)
+        :map(function (remote_branch)
+            return remote_branch:match('.-/(.+)')
+        end)
+        :filter(function(name)
+            -- Filter out predictions that already exist as local branches.
+            return not local_branches_idx[name]
+        end)
+    local predicted_branches_idx = make_indexed_table(predicted_branches)
+
+    local files = list_git_status_files(token, "-uno")
+        :filter(function(name)
+            name = path.normalise(name, '/')
+            return not predicted_branches_idx[name] and not remote_branches_idx[name] and not local_branches_idx[name]
+        end)
+
+    local filtered_color = color.get_clink_color('color.filtered')
+    local file_pre = '\x1b[m'
+    local local_pre = filtered_color
+    local predicted_pre = '*'
+    local remote_pre = filtered_color
+    if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
+        predicted_pre = color.get_clink_color('color.git.star')..predicted_pre..filtered_color
+        -- TODO: apply LS_COLORS to f_pre.
+    end
+
+    local mapped = {
+        files:map(function(file) return { match=file, display=file_pre..file, type='arg' } end),
+        local_branches:map(function(branch) return { match=branch, display=local_pre..branch, type='arg' } end),
+        predicted_branches:map(function(branch) return { match=branch, display=predicted_pre..branch, type='arg' } end),
+        remote_branches:map(function(branch) return { match=branch, display=remote_pre..branch, type='arg' } end),
+    }
+
+    local result = {}
+    for _, t in ipairs(mapped) do
+        for _, m in ipairs(t) do
+            table.insert(result, m)
+        end
+    end
+    result.nosort = true
+    return result
+end
+
+local function checkout_spec_generator(token)
+    if clink_version.supports_argmatcher_nosort then
+        return checkout_spec_generator_nosort(token)
+    elseif clink_version.supports_display_filter_description then
+        return checkout_spec_generator_usedisplay(token)
+    else
+        return checkout_spec_generator_049(token)
+    end
+end
+
+local function checkout_dashdash(token)
+    local status_files = list_git_status_files(token, "-uno")
+    if clink_version.supports_display_filter_description then
+        return status_files:map(function(file) return { match=file, display='\x1b[m'..file, type='arg' } end)
+    else
+        clink.matches_are_files(false)
+        return status_files
+    end
 end
 
 local function push_branch_spec(token)
@@ -1020,6 +1087,7 @@ local checkout_parser = parser()
     '--ignore-other-worktrees',
     '--pathspec-from-file='..files_parser,
     '--pathspec-file-nul',
+    '--'..parser({checkout_dashdash}),
 })
 
 local cherrypick_parser = parser()
