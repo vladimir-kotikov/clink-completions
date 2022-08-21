@@ -62,7 +62,7 @@ local function list_git_status_files(token, flags) -- luacheck: no unused args
     local result = w()
     local git_dir = git.get_git_common_dir()
     if git_dir then
-        local f = io.popen("git status --porcelain "..(flags or "").." 2>nul")
+        local f = io.popen("git status --porcelain "..(flags or "").." ** 2>nul")
         if f then
             if string.matchlen then
                 --[[
@@ -202,6 +202,10 @@ end
 
 local function checkout_spec_generator_deprecated(token)
     local files = list_git_status_files(token, "-uno")
+        :filter(function(file)
+            return clink.is_match(token, file)
+        end)
+
     local git_dir = git.get_git_common_dir()
 
     local local_branches = branches(token)
@@ -253,9 +257,17 @@ local function checkout_spec_generator(token)
         return checkout_spec_generator_deprecated(token)
     end
 
+    -- NOTE:  The only reason this needs to use clink.is_match() is because the
+    -- match_display_filter function ignores the list of matches it receives,
+    -- which already filtered correctly and has had duplicates removed.
+
     local git_dir = git.get_git_common_dir()
 
     local files = list_git_status_files(token, "-uno")
+        :filter(function(file)
+            return clink.is_match(token, file)
+        end)
+
     local local_branches = branches(token)
     local remote_branches = list_remote_branches(git_dir)
         :filter(function(branch)
@@ -278,7 +290,7 @@ local function checkout_spec_generator(token)
     --     threaten as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
     --   * create display filter for completion table to append path separator to each directory entry
     --     since it is not added automatically by readline (see previous point)
-    clink.ondisplaymatches(function ()
+    clink.match_display_filter = function ()
         local star = '*'
         if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
             star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
@@ -287,7 +299,7 @@ local function checkout_spec_generator(token)
             :concat(local_branches:map(function(branch) return { match=branch } end))
             :concat(predicted_branches:map(function(branch) return { match=branch, display=star..branch } end))
             :concat(remote_branches:map(function(branch) return { match=branch } end))
-    end)
+    end
 
     return files
         :concat(local_branches)
