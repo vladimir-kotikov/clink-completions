@@ -1,41 +1,69 @@
 # Release Notes
 
+## 0.4.0 (Aug 25, 2022)
+
+This update includes many improvements.  Using the latest version of [Clink](https://github.com/chrisant996/clink) is always recommended.  Older versions of Clink may be used, but some features will not be available.
+
+  * `8519ae` [git] Add file match colors in `git add` and `git checkout`
+  * `fd6c9d` Major enhancements and fixes (#156)
+    * Better display of `yarn` completions (#76).
+    * Add completions for `adb`, `fastboot`, and `scrcpy` tools for Android devices.
+    * Add completions for GNU `grep` and `sed`.
+    * Add completions for `msbuild` and `premake5`.
+    * Add completions for `attrib`, `dir`, `doskey`, `findstr`, `less`, `robocopy`, and `xcopy`.
+    * Add completions for `winget` (#131)
+    * Smarter completions for `git add` and `git checkout`.
+    * Add completions for `sudo` (#145)
+    * Add completions for `curl` (#16)
+    * .init.lua isn't copied by some file sync tools (#117)
+    * Show remote remote branches in `git merge` (#103)
+  * `90275b` [common] Add `matchers.ext_files(wildcard)` helper function (#122)
+  * `292814` Many improvements (#149)
+    * Major improvements to `git` completions.
+    * `scoop` completions get the HOME directory optimally.
+    * Enhanced support for newer versions of Clink.
+  * `9ab934` [git] Add `git revert` completions (#144)
+  * `0e240d` [yarn] Completions for `yarn` scripts/bins when used without `run` (#143)
+  * `1e5f40` [git] Fast git prompt filter (#142)
+
+And misc other minor changes.
+
 ## 0.3.7 (Apr 10, 2021)
 
-  * 0a9ea6b [ssh] Allow - in known hosts (#139)
-  * e2784e0 [cmder] Check for global cmderGitStatusOptIn var (#141)
-  * dc590e8 [git] Colored completions for `git checkout ...` with Clink v1.1.12 popup list (#135)
-  * a9b3134 [common] Update JSON.lua (#137)
-  * 4cf49eb [scoop] Fix scoop config discovery (#134)
+  * `0a9ea6b` [ssh] Allow - in known hosts (#139)
+  * `e2784e0` [cmder] Check for global cmderGitStatusOptIn var (#141)
+  * `dc590e8` [git] Colored completions for `git checkout ...` with Clink v1.1.12 popup list (#135)
+  * `a9b3134` [common] Update JSON.lua (#137)
+  * `4cf49eb` [scoop] Fix scoop config discovery (#134)
 
 ## 0.3.6 (Dec 16, 2020)
 
-  * c9ed54d [git] Fix stash completions (0 based). (#133)
-  * 82a0311 [git] Fix stash completion to work west of GMT. (#132)
-  * a63cbca [git] Add completions for git-worktree (#130)
-  * b6a521f [scoop] added commands "hold" and "unhold" (#129)
-  * f639287 [npm] Extend completions (#125)
-  * 04541ff [git] Add support for `git remote get-url ...` (#124)
+  * `c9ed54d` [git] Fix stash completions (0 based). (#133)
+  * `82a0311` [git] Fix stash completion to work west of GMT. (#132)
+  * `a63cbca` [git] Add completions for git-worktree (#130)
+  * `b6a521f` [scoop] added commands "hold" and "unhold" (#129)
+  * `f639287` [npm] Extend completions (#125)
+  * `04541ff` [git] Add support for `git remote get-url ...` (#124)
 
 ## 0.3.5 (Dec 5, 2019)
 
-  * eb3099e [git] Add `restore` and `switch` commands (#119)
-  * 50954bc [.net] Add completions for dotnet (#120)
-  * aa0541f [k8s] Basic kubectl completion script (#113)
-  * a3339f8 [py] Added pipenv completion (#111)
-  * 8228a33 [py] Added pip completion (#110)
-  * b366d5d [scoop] Added scoop completions (#109)
-  * 4a8056d [.net] Add netcoreapp3.1 (#123)
+  * `eb3099e` [git] Add `restore` and `switch` commands (#119)
+  * `50954bc` [.net] Add completions for dotnet (#120)
+  * `aa0541f` [k8s] Basic kubectl completion script (#113)
+  * `a3339f8` [py] Added pipenv completion (#111)
+  * `8228a33` [py] Added pip completion (#110)
+  * `b366d5d` [scoop] Added scoop completions (#109)
+  * `4a8056d` [.net] Add netcoreapp3.1 (#123)
 
 ## 0.3.4 (Aug 19, 2019)
 
 Improvements/bugfixes for git completions/prompt
 
-  * f85c7a1 [git] fix gsub branch (#114)
-  * bf114aa [git] Add support for detecting branch names in worktrees (#96)
-  * 5d33037 [git] Add missing clone options for git (#106)
-  * b2d207d [net] Add three remaining help topics (#107)
-  * 781c0bf Don't default to origin if no remote is configured (#102)
+  * `f85c7a1` [git] fix gsub branch (#114)
+  * `bf114aa` [git] Add support for detecting branch names in worktrees (#96)
+  * `5d33037` [git] Add missing clone options for git (#106)
+  * `b2d207d` [net] Add three remaining help topics (#107)
+  * `781c0bf` Don't default to origin if no remote is configured (#102)
 
 ## 0.3.3 (Oct 24, 2017)
 
