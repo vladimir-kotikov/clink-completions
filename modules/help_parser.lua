@@ -74,8 +74,10 @@ if not clink then
     -- E.g. some unit test systems will run this module *outside* of Clink.
     return
 end
-local clink_version = require('clink_version')
-if not clink_version.supports_argmatcher_delayinit then
+if (clink.version_encoded or 0) < 10030010 then -- Requires _argmatcher:setdelayinit().
+    if log.info then
+        log.info('The help_parser.lua module requires a newer version of Clink; please upgrade.')
+    end
     return
 end
 
