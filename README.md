@@ -5,16 +5,28 @@
 clink-completions
 =================
 
-Completion files for [clink](https://github.com/chrisant996/clink) util. Bundled with [Cmder](https://github.com/cmderdev/cmder).
+Completion files for [Clink](https://github.com/chrisant996/clink) util. Bundled with [Cmder](https://github.com/cmderdev/cmder).
 
 Notes
 =====
 
-Master branch of this repo contains all available completions. If you lack some functionality, post a feature request.
+The `master` branch of this repo contains all available completions. If you lack some functionality, post a feature request.
 
-Some of completion generators in this bundle uses features from latest clink distribution. If you get an error messages in console while using these completions, consider upgrading clink to latest version.
+Some completion generators in this bundle use features from the latest Clink distribution. If you get an error messages while using these completions, consider upgrading Clink to the latest version.
 
 If this doesn't help, feel free to submit an issue.
+
+Installation
+============
+
+If you're using [Cmder](https://github.com/cmderdev/cmder), then the clink-completions are already bundled with it.
+
+Otherwise, here is the easiest way to install the clink-completions scripts, when using a recent version of [Clink](https://github.com/chrisant996/clink):
+
+1. Make sure you have [git](https://www.git-scm.com/downloads) installed.
+2. Clone this repo into a new local directory via `git clone https://github.com/vladimir-kotikov/clink-completions local_directory` (replace `local_directory` with the name of the directory where you want to install the scripts)..
+3. Tell Clink to load scripts from the repo via `clink installscripts local_directory`.
+4. Start a new session of Clink.
 
 Development and contribution
 ============================
