@@ -7,6 +7,11 @@ clink-completions
 
 Completion files for [Clink](https://github.com/chrisant996/clink) util. Bundled with [Cmder](https://github.com/cmderdev/cmder).
 
+Requirements
+============
+
+These completions requires Clink v0.4.3 or newer.
+
 Notes
 =====
 
@@ -28,6 +33,18 @@ Otherwise, here is the easiest way to install the clink-completions scripts, whe
 3. Tell Clink to load scripts from the repo via `clink installscripts local_directory`.
 4. Start a new session of Clink.
 
+Repo structure
+==============
+
+Script files in the root directory are loaded when Clink starts.
+
+Scripts in the `completions\` directory are not loaded until the associated command is actually used.  Most completion scripts could be located in the completions directory, except that older versions of Clink don't load scripts from the completions directory.
+
+Scripts in the `modules\` directory contain helper functions.  The `!init.lua` script (or `.init.lua` script) tells Clink about the modules and completions directories.
+
+Scripts in the `spec\` directory are tests which the `busted` package can run.
+
+
 Development and contribution
 ============================
 
@@ -39,12 +56,8 @@ Avoid reusing a topic branch after it's been merged into `master`, because reusi
 
 The `dev` branch is volatile and should not be used by contributors.
 
-Requirements
-============
-
-These completions requires Clink v0.4.3 or newer.
-
-# Test
+Test
+====
 
 You will need `busted` package to be installed locally (to `lua_modules` directory). To install it
 using Luarocks call `luarocks install --tree=lua_modules busted`. You might also want to install
