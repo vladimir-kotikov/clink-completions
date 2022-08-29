@@ -40,9 +40,7 @@ local function generate_matches(command, pattern)
     end
 end
 
-local function serialno_parser(word)
-    return clink.argmatcher():addarg({generate_matches('fastboot devices', '^(%w+)%s+.*$')})
-end
+local serialno_parser = clink.argmatcher():addarg({generate_matches('fastboot devices', '^(%w+)%s+.*$')})
 
 local null_parser = clink.argmatcher():nofiles()
 

@@ -41,9 +41,7 @@ local function generate_matches(command, pattern)
     end
 end
 
-local function serialno_parser(word)
-    return clink.argmatcher():addarg({generate_matches('adb devices', '^(%w+)%s+.*$')})
-end
+local serialno_parser = clink.argmatcher():addarg({generate_matches('adb devices', '^(%w+)%s+.*$')})
 
 local null_parser = clink.argmatcher():nofiles()
 
@@ -174,7 +172,7 @@ local windowheight_parser = clink.argmatcher()
     "0"                 .. null_parser
 })
 
-clink.argmatcher()
+clink.argmatcher("scrcpy")
 :nofiles()
 :addflags(
     "--always-on-top"            .. null_parser,
