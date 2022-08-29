@@ -79,8 +79,8 @@ local function list_tags(dir)
         --[[recursive=]]true, --[[reverse_separator=]]true))
     :concat(list_packed_refs(git_dir, 'tags'))
 
-    if string.comparematches then
-        table.sort(result, string.comparematches)
+    if string.comparematches then -- luacheck: no global
+        table.sort(result, string.comparematches) -- luacheck: no global
     else
         result = result:sort()
     end
@@ -93,7 +93,7 @@ local function list_git_status_files(token, flags) -- luacheck: no unused args
     if git_dir then
         local f = io.popen("git status --porcelain "..(flags or "").." ** 2>nul")
         if f then
-            if string.matchlen then
+            if string.matchlen then -- luacheck: no global
                 --[[
                 token = path.normalise(token)
                 --]]
@@ -103,7 +103,7 @@ local function list_git_status_files(token, flags) -- luacheck: no unused args
                         line = path.normalise(line)
                         --[[
                         -- TODO: Maybe use match display filtering to show the number of files in each dir?
-                        local mlen = string.matchlen(line, token)
+                        local mlen = string.matchlen(line, token) -- luacheck: no global
                         if mlen < 0 then
                             table.insert(result, { match = line, type = "file" })
                         else

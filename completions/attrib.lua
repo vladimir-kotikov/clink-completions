@@ -50,8 +50,8 @@ local function delayinit(argmatcher)
 
     local section = 'header'
     for line in f:lines() do
-        if unicode.fromcodepage then
-            line = unicode.fromcodepage(line)
+        if unicode.fromcodepage then -- luacheck: no global
+            line = unicode.fromcodepage(line) -- luacheck: no global
         end
         if section == 'attrs' then
             local attr, desc = line:match('^ +([A-Z])  +([^ ].+)$')

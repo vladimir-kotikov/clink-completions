@@ -17,8 +17,5 @@ return {
         "rl_state",
         "settings",
         "string.explode",
-        "string.matchlen",
-        "unicode.fromcodepage",
-        "unicode.iter",
     }
 }

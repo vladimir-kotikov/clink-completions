@@ -12,8 +12,8 @@ require('arghelper')
 local mcf = require('multicharflags')
 
 local function sentence_casing(text)
-    if unicode.iter then
-        for str in unicode.iter(text) do -- luacheck: ignore 512
+    if unicode.iter then -- luacheck: no global
+        for str in unicode.iter(text) do -- luacheck: ignore 512, no global
             return clink.upper(str) .. text:sub(#str + 1)
         end
         return text
@@ -83,8 +83,8 @@ local function delayinit(argmatcher)
     local rashcneto = mcf.addcharflagsarg(clink.argmatcher(), rashcneto_chars)
 
     for line in r:lines() do
-        if unicode.fromcodepage then
-            line = unicode.fromcodepage(line)
+        if unicode.fromcodepage then -- luacheck: no global
+            line = unicode.fromcodepage(line) -- luacheck: no global
         end
         local f,d = line:match('^ *(/[^ ]+) :: (.+)$')
         if f then

@@ -86,8 +86,8 @@ local function delayinit(argmatcher)
 
     local section = 'header'
     for line in file:lines() do
-        if unicode.fromcodepage then
-            line = unicode.fromcodepage(line)
+        if unicode.fromcodepage then -- luacheck: no global
+            line = unicode.fromcodepage(line) -- luacheck: no global
         end
         if section == 'header' and line:match('^ +/') then
             section = 'flags'
