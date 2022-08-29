@@ -40,11 +40,11 @@ local function generate_matches(command, pattern)
     end
 end
 
-local function serialno_parser(word)
+local function create_serialno_parser()
     return clink.argmatcher():addarg({generate_matches('adb devices', '^(%w+)%s+.*$')})
 end
 
-local function transportid_parser(word)
+local function create_transportid_parser()
     return clink.argmatcher():addarg({generate_matches('adb devices -l', '^.*%s+transport_id:(%d+)%s*.*$')})
 end
 
@@ -327,9 +327,9 @@ clink.argmatcher("adb")
     "-a",
     "-d",
     "-e",
-    "-s"                            .. serialno_parser,
+    "-s"                            .. create_serialno_parser(),
     "-p",
-    "-t"                            .. transportid_parser,
+    "-t"                            .. create_transportid_parser(),
     "-H",
     "-P",
     "-L"
