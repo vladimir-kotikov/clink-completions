@@ -39,10 +39,12 @@ end
  -- Lists remote branches based on packed-refs file from git directory
  -- @param string [dir]  Directory where to search file for
  -- @return table  List of remote branches
-local function list_packed_refs(dir)
+local function list_packed_refs(dir, kind)
     local result = w()
     local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return result end
+
+    kind = kind or "remotes"
 
     local packed_refs_file = io.open(git_dir..'/packed-refs')
     if packed_refs_file == nil then return {} end
@@ -50,7 +52,7 @@ local function list_packed_refs(dir)
     for line in packed_refs_file:lines() do
         -- SHA is 40 char length + 1 char for space
         if #line > 41 then
-            local match = line:sub(41):match('refs/remotes/(.*)')
+            local match = line:sub(41):match('refs/'..kind..'/(.*)')
             if match then table.insert(result, match) end
         end
     end
@@ -67,6 +69,22 @@ local function list_remote_branches(dir)
         --[[recursive=]]true, --[[reverse_separator=]]true))
     :concat(list_packed_refs(git_dir))
     :sort():dedupe()
+end
+
+local function list_tags(dir)
+    local git_dir = dir or git.get_git_common_dir()
+    if not git_dir then return w() end
+
+    local result = w(path_module.list_files(git_dir..'/refs/tags', '/*',
+        --[[recursive=]]true, --[[reverse_separator=]]true))
+    :concat(list_packed_refs(git_dir, 'tags'))
+
+    if string.comparematches then
+        table.sort(result, string.comparematches)
+    else
+        result = result:sort()
+    end
+    return result
 end
 
 local function list_git_status_files(token, flags) -- luacheck: no unused args
@@ -332,6 +350,8 @@ local function checkout_spec_generator_nosort(token)
         end)
     local predicted_branches_idx = make_indexed_table(predicted_branches)
 
+    local tag_names = list_tags(git_dir)
+
     local files = list_git_status_files(token, "-uno")
         :filter(function(name)
             name = path.normalise(name, '/')
@@ -342,6 +362,7 @@ local function checkout_spec_generator_nosort(token)
     local local_pre = filtered_color
     local predicted_pre = '*'
     local remote_pre = filtered_color
+    local tag_pre = color.get_clink_color('color.doskey')
     if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
         predicted_pre = color.get_clink_color('color.git.star')..predicted_pre..filtered_color
     end
@@ -351,6 +372,7 @@ local function checkout_spec_generator_nosort(token)
         local_branches:map(function(branch) return { match=branch, display=local_pre..branch, type='arg' } end),
         predicted_branches:map(function(branch) return { match=branch, display=predicted_pre..branch, type='arg' } end),
         remote_branches:map(function(branch) return { match=branch, display=remote_pre..branch, type='arg' } end),
+        tag_names:map(function(tag) return { match=tag, display=tag_pre..tag, type='arg' } end),
     }
 
     local result = {}
