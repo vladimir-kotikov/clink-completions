@@ -1,5 +1,11 @@
 # Release Notes
 
+## 0.4.1 (Aug 30, 2022)
+
+  * `d1de7d` Fix `fastboot` and `scrcpy` script errors (#158)
+  * `1e3adb` Fix `abd` script errors (#157)
+  * `8b99d9` [git] Complete tags for `git checkout` (#61)
+
 ## 0.4.0 (Aug 25, 2022)
 
 This update includes many improvements.  Using the latest version of [Clink](https://github.com/chrisant996/clink) is always recommended.  Older versions of Clink may be used, but some features will not be available.
