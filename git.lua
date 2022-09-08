@@ -965,6 +965,21 @@ local merge_flags = {
     "--rerere-autoupdate", "--no-rerere-autoupdate",
 }
 
+local stash_save_flags = {
+    { "-p", "Interactively select hunks from diffs" },
+    "--patch",
+    { "-S", "Stash only changes that are currently staged" },
+    "--staged",
+    { "-k", "Keep changes already added to the index" },
+    "--no-keep-index", "--keep-index",
+    { "-u", "Stash all untracked files also" },
+    "--include-untracked",
+    { "-a", "Stash all ignored and untracked files also" },
+    "--all",
+    { "-q", "Quiet" },
+    "--quiet",
+}
+
 local track_flags = {
     { '-t', 'Set upstream tracking for new branch' },
     '--track',
@@ -1663,24 +1678,15 @@ local show_parser = parser()
 local stash_parser = parser()
 :addarg(
     "push"..parser():_addexflags({
-        "-p", "--patch",
-        "-S", "--staged",
-        "-k", "--no-keep-index", "--keep-index",
-        "-u", "--include-untracked",
-        "-a", "--all",
-        "-q", "--quiet",
-        { "-m"..placeholder_required_arg, " message", "" },
-        { opteq=true, "--message"..placeholder_required_arg, " message", "" },
+        stash_save_flags,
+        { "-m"..placeholder_required_arg, " msg", "Use the given msg as the stash description" },
+        { opteq=true, "--message"..placeholder_required_arg, " msg", "" },
         { opteq=true, "--pathspec-from-file="..files_parser },
         "--pathspec-file-nul",
     }),
-    --[["save"..parser(
-        "-p", "--patch",
-        "-k", "--no-keep-index", "--keep-index",
-        "-q", "--quiet",
-        "-u", "--include-untracked",
-        "-a", "--all"
-        ),]]
+    "save"..parser():_addexflags({
+        stash_save_flags,
+    }),
     "list"..parser():_addexflags(commit_formatting_flags):_addexflags(diff_flags):_addexflags(log_flags),
     "show"..parser({stashes}, "-u", "--include-untracked", "--only-untracked"):_addexflags(diff_flags),
     "pop"..parser({stashes}, "--index", "-q", "--quiet"),
