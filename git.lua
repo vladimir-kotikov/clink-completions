@@ -679,6 +679,10 @@ local git_options = {
 --------------------------------------------------------------------------------
 -- Reusable groups of flags.
 
+local help_flags = {
+    "--help",
+}
+
 local log_flags = {
     "--decorate", "--decorate="..parser({"short", "full", "auto", "no"}), "--no-decorate",
     "--decorate-refs="..regex_refs_arg, "--decorate-refs-exclude="..regex_refs_arg,
@@ -1001,6 +1005,7 @@ local untracked_flags = {
 local add_parser = parser()
 :addarg(add_spec_generator)
 :_addexflags({
+    help_flags,
     { "-n", "Don't actually add files" },
     "--dry-run",
     { "-v", "Be verbose" },
@@ -1034,6 +1039,7 @@ local add_parser = parser()
 
 local apply_parser = parser()
 :_addexflags({
+    help_flags,
     "--stat",
     "--numstat",
     "--summary",
@@ -1041,13 +1047,15 @@ local apply_parser = parser()
     "--index",
     "--cached",
     "--intent-to-add",
-    "-3", "--3way",
+    { "-3", "Attempt 3-way merge" },
+    "--3way",
     { opteq=true, "--build-fake-ancestor="..files_parser, "tmpfile", "" },
-    "-R", "--reverse",
+    { "-R", "Apply the patch in reverse" },
+    "--reverse",
     "--reject",
-    "-z",
-    { "-p", "n", "" },
-    { "-C", "n", "" },
+    { "-z", "Use NUL terminated format with --numstat" },
+    { "-p", " n", "Remove <n> leading path components" },
+    { "-C", " n", "Ensure at least <n> lines of surrounding context" },
     "--unidiff-zero",
     "--apply",
     "--no-add",
@@ -1057,7 +1065,10 @@ local apply_parser = parser()
     "--ignore-space-change", "--ignore-whitespace",
     flag__whitespaceequals,
     "--inaccurate-eof",
-    "-v", "--verbose",
+    { "-v", "Be verbose" },
+    "--verbose",
+    { "-q", "Quiet; suppress stderr (no status or progress)" },
+    "--quiet",
     "--recount",
     { opteq=true, "--directory="..dirs_parser },
     "--unsafe-paths",
@@ -1067,6 +1078,7 @@ local apply_parser = parser()
 local blame_parser = parser()
 :addarg(file_matches)
 :_addexflags({
+    help_flags,
     "--incremental",
     { "-b", "Show blank SHA1 for boundary commits" },
     "--root",
@@ -1106,10 +1118,11 @@ local blame_parser = parser()
 
 local branch_parser = parser()
 :_addexflags({
+    help_flags,
     { "-v", "Be verbose" },
     "--verbose",
     { "-vv", "Be extra verbose" },
-    { "-q", "Be quiet; suppress non-error messages" },
+    { "-q", "Quiet; suppress non-error messages" },
     "--quiet",
     track_flags,
     "--set-upstream",
@@ -1154,6 +1167,7 @@ local branch_parser = parser()
 
 local catfile_parser = parser()
 :_addexflags({
+    help_flags,
     '-t',
     '-s',
     '-e',
@@ -1175,6 +1189,7 @@ local catfile_parser = parser()
 local checkout_parser = parser()
 :addarg(checkout_spec_generator)
 :_addexflags({
+    help_flags,
     { '-q', 'Quiet; suppress feedback messages' },
     '--quiet',
     --'--progress',
@@ -1212,6 +1227,7 @@ local checkout_parser = parser()
 
 local cherrypick_parser = parser()
 :_addexflags({
+    help_flags,
     "-e", "--edit",
     flagex__cleanupequals,
     "-x",
@@ -1239,6 +1255,7 @@ local cherrypick_parser = parser()
 
 local clone_parser = parser()
 :_addexflags({
+    help_flags,
     { opteq=true, '--template'..dirs_parser, ' dir', '' },
     { '-l', 'Clone from local repo (via symlinks)' },
     '--local',
@@ -1285,6 +1302,7 @@ local clone_parser = parser()
 
 local commit_parser = parser()
 :_addexflags({
+    help_flags,
     { "-a", "Auto-stage modified/deleted files" },
     "--all",
     { "-p", "Interactively select hunks from diffs" },
@@ -1348,6 +1366,7 @@ local commit_parser = parser()
 local config_parser = parser()
 :addarg(git_options)
 :_addexflags({
+    help_flags,
     "--replace-all",
     "--add",
     "--get",
@@ -1388,9 +1407,11 @@ local config_parser = parser()
 local diff_parser = parser()
 :addarg(local_or_remote_branches, file_matches)
 :_addexflags(diff_flags)
+:_addexflags(help_flags)
 
 local difftool_parser = parser()
 :_addexflags({
+    help_flags,
     '-d', '--dir-diff',
     '-y', '--no-prompt', '--prompt',
     '--rotate-to='..files_parser,
@@ -1407,6 +1428,7 @@ local difftool_parser = parser()
 local fetch_parser = parser()
 :addarg(remotes)
 :_addexflags({
+    help_flags,
     '--write-fetch-head', '--no-write-fetch-head',
     '--multiple',
     '--auto-maintenance', '--no-auto-maintenance',
@@ -1428,6 +1450,7 @@ local fetch_parser = parser()
 
 local help_parser = parser()
 :_addexflags({
+    help_flags,
     { "-a",                             "Print all available commands" },
     { "--all",                          "Print all available commands" },
     --"--verbose",
@@ -1460,10 +1483,12 @@ local log_parser = parser()
 :_addexflags(log_history_flags)
 :_addexflags(diff_flags)
 :_addexflags(commit_formatting_flags)
+:_addexflags(help_flags)
 
 local merge_parser = parser()
 :addarg(local_or_remote_branches)
 :_addexflags({
+    help_flags,
     "--commit", "--no-commit",
     { "-e", "Edit the generated message before commit" },
     "--edit",
@@ -1489,6 +1514,7 @@ local pull_parser = parser()
 :addarg(remotes)
 :addarg(branches)
 :_addexflags({
+    help_flags,
     "-q", "--quiet",
     "-v", "--verbose",
     "--recurse-submodules",
@@ -1515,6 +1541,7 @@ local push_parser = parser()
 :addarg(remotes)
 :addarg(push_branch_spec)
 :_addexflags({
+    help_flags,
     '--all',
     '--prune',
     '--mirror',
@@ -1550,6 +1577,7 @@ local rebase_parser = parser()
 :addarg(local_or_remote_branches)
 :addarg(branches)
 :_addexflags({
+    help_flags,
     { opteq=true, '--onto' .. parser({branches}), ' newbase', '' },
     '--keep-base',
     '--continue',
@@ -1612,14 +1640,16 @@ local remote_parser = parser()
     "prune"..parser("-n", "--dry-run", {remotes}),
     "update"..parser({remotes}, "-p", "--prune")
 )
-:addflags(
+:_addexflags({
+    help_flags,
     "-v",
-    "--verbose"
-)
+    "--verbose",
+})
 
 local reset_parser = parser()
 :addarg(local_or_remote_branches)   -- TODO: Add commit completions
 :_addexflags({
+    help_flags,
     "-q",
     "-p", "--patch",
     { opteq=true, "--pathspec-from-file="..files_parser }, --"--stdin",
@@ -1631,6 +1661,7 @@ local reset_parser = parser()
 local restore_parser = parser()
 :addarg(file_matches)
 :_addexflags({
+    help_flags,
     "-s", "--source",
     "-p", "--patch",
     "-W", "--worktree",
@@ -1652,6 +1683,7 @@ local restore_parser = parser()
 
 local revert_parser = parser()
 :_addexflags({
+    help_flags,
     "-e", "--edit",
     "-m", "--mainline",
     "--no-edit",
@@ -1672,6 +1704,7 @@ local revert_parser = parser()
 })
 
 local show_parser = parser()
+:_addexflags(help_flags)
 :_addexflags(diff_flags)
 :_addexflags(commit_formatting_flags)
 
@@ -1695,9 +1728,13 @@ local stash_parser = parser()
     "clear",
     "drop"..parser({stashes}, "-q", "--quiet")
 )
+:_addexflags({
+    help_flags,
+})
 
 local status_parser = parser()
 :_addexflags({
+    help_flags,
     { '-s', 'Give output in short format' },
     '--short',
     { '-b', 'Include branch info in short format' },
@@ -1766,7 +1803,10 @@ local submodule_parser = parser()
     'sync'..parser('--recursive'),
     'absorbgitdirs',
 })
-:addflags('--quiet')
+:_addexflags({
+    help_flags,
+    '--quiet',
+})
 
 local svn_parser = parser()
 :addarg(
@@ -1802,10 +1842,14 @@ local svn_parser = parser()
     "show-externals",
     "gc"
 )
+:_addexflags({
+    help_flags,
+})
 
 local switch_parser = parser()
 :addarg(local_or_remote_branches)
 :_addexflags({
+    help_flags,
     { '-c'..placeholder_required_arg, ' new-branch', 'Create new branch' },
     { opteq=true, '--create'..placeholder_required_arg, ' new-branch', '' },
     { '-C'..placeholder_required_arg, ' new-branch', 'Create or reset branch' },
@@ -1854,6 +1898,9 @@ local worktree_parser = parser()
     "remove"..parser("-f", "--force"),
     "unlock"
 )
+:_addexflags({
+    help_flags,
+})
 
 --------------------------------------------------------------------------------
 -- The main git command parser.
