@@ -1976,7 +1976,7 @@ local tag_parser = parser()
     { '--edit' },
     { '-d'..tag_d_parser, 'Delete existing tags with the given names' },
     { '--delete'..tag_d_parser },
-    { '-l'..tag_l_parser,  },
+    { '-l'..tag_l_parser, 'List tags' },
     { '--list'..tag_l_parser },
     { '-v'..tag_v_parser, 'Verify the GPG signatures of the given tag names' },
     { '--verify'..tag_v_parser },
