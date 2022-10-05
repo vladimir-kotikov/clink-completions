@@ -542,6 +542,12 @@ local stashes = function(token)  -- luacheck: no unused args
     return ret
 end
 
+local function tags()
+    local tag_names = list_tags()
+    local tag_pre = color.get_clink_color('color.doskey')
+    return tag_names:map(function(tag) return { match=tag, display=tag_pre..tag, type='arg' } end)
+end
+
 local function concept_guides()
     if clink_version.supports_display_filter_description then
         local r = io.popen("git help -g 2>nul")
@@ -1915,6 +1921,72 @@ local switch_parser = parser()
     '--recurse-submodules', '--no-recurse-submodules',
 })
 
+local tag_d_parser = parser()
+:addarg(tags)
+:loop()
+
+local tag_l_parser = parser()
+:addarg(file_matches)
+:_addexflags({
+    { '--create-reflog' },
+    { opteq=true, '--format='..pretty_formats_parser, 'format', '' },
+    { '--color' },
+    { '--color='..parser({"always", "auto", "never"}), 'when', '' },
+    { opteq=true, '--sort='..placeholder_required_arg, 'key', '' },
+    { '-i', 'Sorting and filtering are case insensitive' },
+    { '--ignore-case' },
+    { opteq=true, '--contains'..placeholder_required_arg, ' commit', '' },
+    { opteq=true, '--no-contains'..placeholder_required_arg, ' commit', '' },
+    { opteq=true, '--points-at'..placeholder_required_arg, ' object', '' },
+    { opteq=true, '--merged'..placeholder_required_arg, ' commit', '' },
+    { opteq=true, '--no-merged'..placeholder_required_arg, ' commit', '' },
+    { opteq=true, flag__columnequals, 'options', '' },
+    { '--no-column' },
+})
+:loop()
+
+local tag_v_parser = parser()
+:addarg(tags)
+:_addexflags({
+    { opteq=true, '--format='..pretty_formats_parser, 'format', '' },
+    { '--color' },
+    { '--color='..parser({"always", "auto", "never"}), 'when', '' },
+})
+:loop()
+
+local tag_parser = parser()
+:addarg(tags)           -- tag
+:addarg(file_matches)   -- commit|object
+:_addexflags({
+    help_flags,
+    { '-a', 'Make an unsigned, annotated tag object' },
+    { '--annotate' },
+    { '-s', 'Make a GPG-signed tag object' },
+    { '--sign' },
+    { '--no-sign' },
+    { '-u'..gpg_keyid_arg, ' keyid', 'Make a GPG-signed tag using the given key' },
+    { opteq=true, '--local-user='..gpg_keyid_arg, 'keyid', '' },
+    { '-f', 'Replace an existing tag (instead of failing)' },
+    { '--force' },
+    { '-m'..placeholder_required_arg, ' msg', 'Use the given tag message' },
+    { opteq=true, '--message='..placeholder_required_arg, 'msg', '' },
+    { '-F'..files_parser, ' file', 'Take tag message from the given file' },
+    { opteq=true, '--file='..files_parser, 'file', '' },
+    { '-e', 'Edit the tag message from -m or -F' },
+    { '--edit' },
+    { '-d'..tag_d_parser, 'Delete existing tags with the given names' },
+    { '--delete'..tag_d_parser },
+    { '-l'..tag_l_parser,  },
+    { '--list'..tag_l_parser },
+    { '-v'..tag_v_parser, 'Verify the GPG signatures of the given tag names' },
+    { '--verify'..tag_v_parser },
+    { '-n', '<num>', 'Implies -l; print num lines from annotation' },
+    { opteq=true, '--cleanup='..parser({'verbatim', 'whitespace', 'strip'}), 'mode', '' },
+    { opteq=true, '--format='..pretty_formats_parser, 'format', '' },
+    { '--color' },
+    { '--color='..parser({"always", "auto", "never"}), 'when', '' },
+})
+
 local worktree_parser = parser()
 :addarg(
     "add"..parser(
@@ -1982,6 +2054,7 @@ local linked_parsers = {
     ["submodule"]           = submodule_parser,
     ["svn"]                 = svn_parser,
     ["switch"]              = switch_parser,
+    ["tag"]                 = tag_parser,
     ["worktree"]            = worktree_parser,
 }
 
@@ -2020,6 +2093,7 @@ local main_commands = {
     { "status",             "Show the working tree status" },
     { "submodule",          "Initialize, update or inspect submodules" },
     { "switch",             "Switch branches" },
+    { "tag",                "Create, list, delete, or verify a tag reference" },
     { "worktree",           "Manage multiple working trees" },
 }
 
@@ -2144,7 +2218,6 @@ local other_commands = {
     "subtree",
     "svn",
     "symbolic-ref",
-    "tag",
     "tar-tree",
     "unpack-file",
     "unpack-objects",
