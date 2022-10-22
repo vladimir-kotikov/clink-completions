@@ -214,8 +214,11 @@ if not tmp._addexflags or not tmp._addexarg then
                 table.insert(list, elm)
             end
         end
+        list.delayinit = tbl.delayinit
         list.fromhistory = tbl.fromhistory
+        list.loopchars = tbl.loopchars
         list.nosort = tbl.nosort
+        list.onarg = tbl.onarg
         return list, descriptions, hide
     end
 
