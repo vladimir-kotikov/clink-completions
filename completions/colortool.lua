@@ -4,7 +4,7 @@ if not clink_version.supports_argmatcher_delayinit then
     return
 end
 
-local function init_themes(argmatcher, argindex)
+local function init_themes(argmatcher, argindex) -- luacheck: no unused
     local matches = {}
     local r = io.popen('colortool -s')
     if not r then
@@ -31,4 +31,4 @@ local function closure(argmatcher)
 end
 
 local help_parser = require('help_parser')
-local colortool = help_parser.make('colortool', '-?', 'curl', nil, closure)
+help_parser.make('colortool', '-?', 'curl', nil, closure)
