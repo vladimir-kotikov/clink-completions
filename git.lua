@@ -598,6 +598,7 @@ local mergesubtree_arg = parser({dir_matches})
 local placeholder_required_arg = parser({})
 -- Note: All these separate fromhistory parsers are necessary in order to
 -- collect from history separately.
+local abbrev_lengths = parser({5, 6, 8, 10, 12, 16, 20, 24, 32, 40})
 local batch_format_arg = parser({fromhistory=true, "%(objectname)", "%(objecttype)", "%(objectsize)", "%(objectsize:disk)", "%(deltabase)", "%(rest)"})
 local clone_filter_arg = parser({fromhistory=true})
 local color_opts = parser({"true", "false", "always"})
@@ -637,7 +638,7 @@ local summary_limit_arg = parser({fromhistory=true})
 local untracked_files_arg = parser({"no", "normal", "all"})
 local x_cmd_arg = parser({fromhistory=true})
 
-local flag__abbrevequals = "--abbrev="..parser({5, 6, 8, 10, 12, 16, 20, 24, 32, 40})
+local flag__abbrevequals = "--abbrev="..abbrev_lengths
 local flag__colorequals = "--color="..parser({"always", "auto", "never"})
 local flag__columnequals = "--column="..parser({"always", "auto", "never", "column", "row", "plain", "dense", "nodense"})
 local flag__conflictequals = '--conflict='..parser({'merge', 'diff3', 'zdiff3'})
@@ -1725,6 +1726,64 @@ local restore_parser = parser()
     "--pathspec-file-nul"
 })
 
+local revparse_parser = parser()
+:_addexflags({
+    { "--parseopt", "Use option parsing mode" },
+    { "--sq-quote", "Use shell quoting mode" },
+    { "--keep-dashdash", "With --parseopt, echo the first -- instead of skipping it" },
+    { "--stop-at-non-option", "With --parseopt, stop at the first non-option argument" },
+    { "--stuck-long", "With --parseopt, output options in their long form, and with their args stuck" },
+    { "--revs-only", "Do not output flags and parameters not meant for git rev-list" },
+    { "--no-revs", "Do not output flags and parameters meant for git rev-list" },
+    { "--flags", "Do not output non-flag parameters" },
+    { "--no-flags", "Do not output flag parameters" },
+    { opteq=true, "--default"..placeholder_required_arg, " arg", "If no parameter is given, use arg instead" },
+    { opteq=true, "--prefix"..dirs_parser, " arg", "Behave as if invoked from the arg subdirectory of the working tree" },
+    { "--verify", "Verify exactly one arg is given and can be turned in a SHA1 in the object database" },
+    { "-q", "With --verify, do not output error message if arg is not a valid object name (exit with non-zero status)" },
+    { "--quiet", "With --verify, do not output error message if arg is not a valid object name (exit with non-zero status)" },
+    { "--sq", "Output a single line, quoted for consumption by shell" },
+    { "--short", "Same as --verify, but shortens object name to a unique prefix with at least 4 characters" },
+    { "--short="..abbrev_lengths, "len", "Same as --verify, but shortens object name to a unique prefix with at least len characters" },
+    { "--not", "When showing object names, prefix them with ^ and strip from names that already have ^ prefix" },
+    { "--abbrev-ref", "A non-ambiguous short name of the object's name" },
+    { "--abbrev-ref="..parser({"strict", "loose"}), "mode", "A non-ambiguous short name of the object's name" },
+    { "--symbolic", "Output object names in a form as close to the original input as possible" },
+    { "--symbolic-full-name", "Like --symbolic, but omit input that are not refs" },
+    { "--all", "Show all refs found in refs/" },
+    { "--branches", "Show all branches (refs found in refs/heads)" },
+    { "--branches="..parser({fromhistory=true}), "pattern", "Show all branches matching pattern (refs found in refs/heads)" },
+    { "--tags", "Show all tags (refs found in refs/tags)" },
+    { "--tags="..parser({fromhistory=true}), "pattern", "Show all tags matching pattern (refs found in refs/tags)" },
+    { "--remotes", "Show all remote-tracking branches (refs found in refs/remotes)" },
+    { "--remotes="..parser({fromhistory=true}), "pattern", "Show all remote-tracking branches matching pattern (refs found in refs/remotes)" },
+    { "--glob="..parser({fromhistory=true}), "pattern", "Show all refs matching the shell glob pattern" },
+    { "--exclude="..parser({fromhistory=true}), "pattern", "Do not include refs matching pattern" },
+    { "--disambiguate="..parser({fromhistory=true}), "prefix", "Show every object whose name begins with prefix (must be at least 4 hex digits)" },
+    { "--local-env-vars", "List the GIT_* env var names that are local to the repo" },
+    { "--path-format="..parser({"absolute", "relative"}), "behavior", "Controls how paths are printed by certain other options" },
+    { "--git-dir", "Show $GIT_DIR if defined, otherwise show path to .git directory" },
+    { "--git-common-dir", "Show $GIT_COMMON_DIR if defined, otherwise show $GIT_DIR" },
+    { opteq=true, "--resolve-git-dir", " path", "Check if path is a valid repo or a gitfile that points at one" },
+    { opteq=true, "--git-path", " path", "Resolve $GIT_DIR/path, taking into account path relocation env vars" },
+    { "--show-toplevel", "Show the path of the top-level directory of the working tree" },
+    { "--show-superproject-working-tree", "Show the path of the root of the superproject's working tree" },
+    { "--shared-index-path", "Show the path to the shared index file in split index mode" },
+    { "--absolute-git-dir", "Like --git-dir, but is always the canonicalized absolute path" },
+    { "--is-inside-git-dir", "When the current working directory is below the repo directory, print true otherwise false" },
+    { "--is-inside-work-tree", "When the current working directory is inside the work tree, print true otherwise false" },
+    { "--is-bare-repository", "When the repo is bare, print true otherwise false" },
+    { "--is-shallow-repository", "When the repo is shallow, print true otherwise false" },
+    { "--show-cdup", "When invoked from a subdir, show relative path to top-level directory" },
+    { "--show-prefix", "When invoked from a subdir, show relative path from top-level directory" },
+    { "--show-object-format", "Show the object format used for the repo for storage" },
+    { "--show-object-format="..parser({"storage", "input", "output"}), "forwhat", "Show the object format used for the repo for storage, for input, or for output" },
+    { opteq=true, "--since="..placeholder_required_arg, "date", "Parse the date string and output corresponding --max-age= arg for git rev-list" },
+    { opteq=true, "--after="..placeholder_required_arg, "date", "Parse the date string and output corresponding --max-age= arg for git rev-list" },
+    { opteq=true, "--until="..placeholder_required_arg, "date", "Parse the date string and output corresponding --max-age= arg for git rev-list" },
+    { opteq=true, "--before="..placeholder_required_arg, "date", "Parse the date string and output corresponding --max-age= arg for git rev-list" },
+})
+
 local revert_parser = parser()
 :_addexflags({
     help_flags,
@@ -2047,6 +2106,7 @@ local linked_parsers = {
     ["remote"]              = remote_parser,
     ["reset"]               = reset_parser,
     ["restore"]             = restore_parser,
+    ["rev-parse"]           = revparse_parser,
     ["revert"]              = revert_parser,
     ["show"]                = show_parser,
     ["stash"]               = stash_parser,
@@ -2087,6 +2147,7 @@ local main_commands = {
     { "remote",             "Manage set of tracked repositories" },
     { "reset",              "Reset current HEAD to the specified state" },
     { "restore",            "Restore working tree files" },
+    { "rev-parse",          "Pick out and massage parameters" },
     { "revert",             "Revert some existing commits" },
     { "show",               "Show various types of objects" },
     { "stash",              "Stash the changes in a dirty working directory away" },
@@ -2202,7 +2263,6 @@ local other_commands = {
     "request-pull",
     "rerere",
     "rev-list",
-    "rev-parse",
     "rm",
     "send-email",
     "send-pack",
