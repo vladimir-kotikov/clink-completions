@@ -8,7 +8,7 @@ local clink_version = require('clink_version')
 local color = require('color')
 require('arghelper')
 local parser = function (...)
-    local p = clink.arg.new_parser(...):setendofflags()
+    local p = clink.arg.new_parser(...)
     p._deprecated = nil
     return p
 end
@@ -1018,6 +1018,7 @@ local untracked_flags = {
 -- Command parsers.
 
 local add_parser = parser()
+:setendofflags()
 :addarg(add_spec_generator)
 :_addexflags({
     help_flags,
@@ -1053,6 +1054,7 @@ local add_parser = parser()
 })
 
 local apply_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     "--stat",
@@ -1091,6 +1093,7 @@ local apply_parser = parser()
 })
 
 local blame_parser = parser()
+:setendofflags()
 :addarg(file_matches)
 :_addexflags({
     help_flags,
@@ -1132,6 +1135,7 @@ local blame_parser = parser()
 :_addexflags(commit_formatting_flags)
 
 local branch_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     { "-v", "Be verbose" },
@@ -1181,6 +1185,7 @@ local branch_parser = parser()
 })
 
 local catfile_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     { '-t', 'Show type of object instead of content' },
@@ -1202,6 +1207,7 @@ local catfile_parser = parser()
 })
 
 local checkout_parser = parser()
+:setendofflags()
 :addarg(checkout_spec_generator)
 :_addexflags({
     help_flags,
@@ -1241,6 +1247,7 @@ local checkout_parser = parser()
 })
 
 local cherrypick_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     { "-e", "Edit message before committing" },
@@ -1273,6 +1280,7 @@ local cherrypick_parser = parser()
 })
 
 local clone_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     { opteq=true, '--template'..dirs_parser, ' dir', '' },
@@ -1320,6 +1328,7 @@ local clone_parser = parser()
 })
 
 local commit_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     { "-a", "Auto-stage modified/deleted files" },
@@ -1383,6 +1392,7 @@ local commit_parser = parser()
 })
 
 local config_parser = parser()
+:setendofflags()
 :addarg(git_options)
 :_addexflags({
     help_flags,
@@ -1427,11 +1437,13 @@ local config_parser = parser()
 })
 
 local diff_parser = parser()
+:setendofflags()
 :addarg(local_or_remote_branches, file_matches)
 :_addexflags(diff_flags)
 :_addexflags(help_flags)
 
 local difftool_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     '-d', '--dir-diff',
@@ -1448,6 +1460,7 @@ local difftool_parser = parser()
 })
 
 local fetch_parser = parser()
+:setendofflags()
 :addarg(remotes)
 :_addexflags({
     help_flags,
@@ -1475,6 +1488,7 @@ local fetch_parser = parser()
 :_addexflags(fetch_flags)
 
 local help_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     { "-a",                             "Print all available commands" },
@@ -1505,6 +1519,7 @@ else
 end
 
 local log_parser = parser()
+:setendofflags()
 :_addexflags(log_flags)
 :_addexflags(log_history_flags)
 :_addexflags(diff_flags)
@@ -1512,6 +1527,7 @@ local log_parser = parser()
 :_addexflags(help_flags)
 
 local merge_parser = parser()
+:setendofflags()
 :addarg(local_or_remote_branches)
 :_addexflags({
     help_flags,
@@ -1537,6 +1553,7 @@ local merge_parser = parser()
 :_addexflags(merge_flags)
 
 local pull_parser = parser()
+:setendofflags()
 :addarg(remotes)
 :addarg(branches)
 :_addexflags({
@@ -1568,6 +1585,7 @@ local pull_parser = parser()
 :_addexflags(fetch_flags)
 
 local push_parser = parser()
+:setendofflags()
 :addarg(remotes)
 :addarg(push_branch_spec)
 :_addexflags({
@@ -1612,6 +1630,7 @@ local push_parser = parser()
 })
 
 local rebase_parser = parser()
+:setendofflags()
 :addarg(local_or_remote_branches)
 :addarg(branches)
 :_addexflags({
@@ -1653,6 +1672,7 @@ local rebase_parser = parser()
 :_addexflags(merge_flags)
 
 local remote_parser = parser()
+:setendofflags()
 :addarg(
     "add" ..parser(
         "-t"..parser({branches}),
@@ -1685,6 +1705,7 @@ local remote_parser = parser()
 })
 
 local reset_parser = parser()
+:setendofflags()
 :addarg(local_or_remote_branches)   -- TODO: Add commit completions
 :_addexflags({
     help_flags,
@@ -1698,6 +1719,7 @@ local reset_parser = parser()
 })
 
 local restore_parser = parser()
+:setendofflags()
 :addarg(file_matches)
 :_addexflags({
     help_flags,
@@ -1727,6 +1749,7 @@ local restore_parser = parser()
 })
 
 local revparse_parser = parser()
+:setendofflags()
 :_addexflags({
     { "--parseopt", "Use option parsing mode" },
     { "--sq-quote", "Use shell quoting mode" },
@@ -1785,6 +1808,7 @@ local revparse_parser = parser()
 })
 
 local revert_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     { "-e", "Edit message before committing" },
@@ -1812,11 +1836,13 @@ local revert_parser = parser()
 })
 
 local show_parser = parser()
+:setendofflags()
 :_addexflags(help_flags)
 :_addexflags(diff_flags)
 :_addexflags(commit_formatting_flags)
 
 local stash_parser = parser()
+:setendofflags()
 :addarg(
     "push"..parser():_addexflags({
         stash_save_flags,
@@ -1841,6 +1867,7 @@ local stash_parser = parser()
 })
 
 local status_parser = parser()
+:setendofflags()
 :_addexflags({
     help_flags,
     { '-s', 'Give output in short format' },
@@ -1871,6 +1898,7 @@ local status_parser = parser()
 })
 
 local submodule_parser = parser()
+:setendofflags()
 :_addexarg({
     'add'..parser():_addexflags({
         { '-b'..placeholder_required_arg, ' branch', '' },
@@ -1917,6 +1945,7 @@ local submodule_parser = parser()
 })
 
 local svn_parser = parser()
+:setendofflags()
 :addarg(
     "init"..parser("-T", "--trunk", "-t", "--tags", "-b", "--branches", "-s", "--stdlayout",
         "--no-metadata", "--use-svm-props", "--use-svnsync-props", "--rewrite-root",
@@ -1955,6 +1984,7 @@ local svn_parser = parser()
 })
 
 local switch_parser = parser()
+:setendofflags()
 :addarg(local_or_remote_branches)
 :_addexflags({
     help_flags,
@@ -1981,10 +2011,12 @@ local switch_parser = parser()
 })
 
 local tag_d_parser = parser()
+:setendofflags()
 :addarg(tags)
 :loop()
 
 local tag_l_parser = parser()
+:setendofflags()
 :addarg(file_matches)
 :_addexflags({
     { '--create-reflog' },
@@ -2005,6 +2037,7 @@ local tag_l_parser = parser()
 :loop()
 
 local tag_v_parser = parser()
+:setendofflags()
 :addarg(tags)
 :_addexflags({
     { opteq=true, '--format='..pretty_formats_parser, 'format', '' },
@@ -2014,6 +2047,7 @@ local tag_v_parser = parser()
 :loop()
 
 local tag_parser = parser()
+:setendofflags()
 :addarg(tags)           -- tag
 :addarg(file_matches)   -- commit|object
 :_addexflags({
@@ -2047,6 +2081,7 @@ local tag_parser = parser()
 })
 
 local worktree_parser = parser()
+:setendofflags()
 :addarg(
     "add"..parser(
         {dir_matches},
