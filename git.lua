@@ -791,6 +791,7 @@ local commit_formatting_flags = {
 local diff_flags = {
     "--no-index",
     "--cached",
+    "--staged",
     "--merge-base",
     { "-p", "Generate patch (this is the default)" },
     { "-u", "Generate patch (this is the default)" },
