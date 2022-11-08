@@ -40,8 +40,16 @@ local function generate_matches(command, pattern)
     end
 end
 
-local serialno_parser = clink.argmatcher():addarg({generate_matches('adb devices', '^(%w+)%s+.*$')})
-local transportid_parser = clink.argmatcher():addarg({generate_matches('adb devices -l', '^.*%s+transport_id:(%d+)%s*.*$')}) -- luacheck: no max line length
+local function serialno_matches()
+    return generate_matches('adb devices', '^(%w+)%s+.*$')
+end
+
+local function transportid_matches()
+    return generate_matches('adb devices -l', '^.*%s+transport_id:(%d+)%s*.*$')
+end
+
+local serialno_parser = clink.argmatcher():addarg({serialno_matches})
+local transportid_parser = clink.argmatcher():addarg({transportid_matches})
 
 local null_parser = clink.argmatcher():nofiles()
 

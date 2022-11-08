@@ -41,7 +41,11 @@ local function generate_matches(command, pattern)
     end
 end
 
-local serialno_parser = clink.argmatcher():addarg({generate_matches('adb devices', '^(%w+)%s+.*$')})
+local function serialno_matches()
+    return generate_matches('adb devices', '^(%w+)%s+.*$')
+end
+
+local serialno_parser = clink.argmatcher():addarg({serialno_matches})
 
 local null_parser = clink.argmatcher():nofiles()
 
