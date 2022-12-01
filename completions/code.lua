@@ -23,6 +23,29 @@ local function append_colon(word, word_index, line_state, builder, user_data) --
     builder:setappendcharacter(":")
 end
 
+local function vsix_files(match_word)
+    local word, expanded = rl.expandtilde(match_word)
+
+    local root = (path.getdirectory(word) or ""):gsub("/", "\\")
+    if expanded then
+        root = rl.collapsetilde(root)
+    end
+
+    local _, ismain = coroutine.running()
+
+    local matches = {}
+    for _, i in ipairs(os.globfiles(word.."*", true)) do
+        if i.type:find("dir") or i.name:find("%.vsix$") then
+            local m = path.join(root, i.name)
+            table.insert(matches, { match = m, type = i.type })
+            if not ismain and _ % 250 == 0 then
+                coroutine.yield()
+            end
+        end
+    end
+    return matches
+end
+
 local diff_parser = clink.argmatcher()
 :addarg(clink.filematches)
 :addarg(clink.filematches)
@@ -46,7 +69,7 @@ local list_parser = clink.argmatcher()
 })
 
 local install_parser = clink.argmatcher()
-:addarg({fromhistory=true})
+:addarg(vsix_files)
 :_addexflags({
     {"--force",         "Update extension to latest version"},
     {"--pre-relese",    "Install the pre-release version of the extension"},
