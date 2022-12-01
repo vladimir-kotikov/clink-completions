@@ -3,14 +3,16 @@
 require('arghelper')
 
 local dir_matcher = clink.argmatcher():addarg(clink.dirmatches)
-local file_matcher = clink.argmatcher():addarg(clink.filematches)
+--local file_matcher = clink.argmatcher():addarg(clink.filematches)
 local locale_matcher = clink.argmatcher():addarg({fromhistory=true})
 local profile_matcher = clink.argmatcher():addarg({fromhistory=true})
 local category_matcher = clink.argmatcher():addarg({fromhistory=true})
-local level_matcher = clink.argmatcher():addarg({nosort=true, "critical", "error", "warn", "info", "debug", "trace", "off"})
 local sync_matcher = clink.argmatcher():addarg({nosort=true, "on", "off"})
 local port_matcher = clink.argmatcher():addarg({fromhistory=true})
 local maxmemory_matcher = clink.argmatcher():addarg({fromhistory=true})
+
+local level_matcher = clink.argmatcher()
+:addarg({nosort=true, "critical", "error", "warn", "info", "debug", "trace", "off"})
 
 -- Extension ID matchers.  Could potentially merge them, but install_parser is
 -- the most interesting one to merge, and yet it can't be merged because it
