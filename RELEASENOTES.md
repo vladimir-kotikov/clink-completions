@@ -1,5 +1,17 @@
 # Release Notes
 
+## 0.4.2 (Dec 1, 2022)
+
+  * `a83181` Add completions for `code` (VSCode).
+  * `fa1873` Fix `adb` and `scrcpy` initialization (#159).
+  * `3df1c9` [git] Add `--staged` for `git diff`.
+  * `a7a430` [git] Add `--no-index`, `--cached`, `--merge-base` for `git diff`.
+  * `fca377` [common] Fix completions after a sub-parser (e.g. `git show --diff-merges=1 -`<kbd>Tab</kbd>).
+  * `a07bb2` [git] Add `git rev-parse` completions.
+  * `2cac40` Add completions for `colortool`.
+  * `7d666b` [git] Add `git tag` completions.
+  * `8d5738` [git] Add descriptions for some `git` command flags.
+
 ## 0.4.1 (Aug 30, 2022)
 
   * `d1de7d` Fix `fastboot` and `scrcpy` script errors (#158)
