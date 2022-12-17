@@ -124,4 +124,7 @@ clink.argmatcher("code")
     {"--disable-gpu"},
     {"--max-memory"..maxmemory_matcher, " memory", ""},
     {"--telemetry"},
+
+    -- Other
+    {"--trace-deprecation"},
 })
