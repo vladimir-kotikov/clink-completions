@@ -41,7 +41,7 @@ local function generate_matches(command, pattern)
 end
 
 local function serialno_matches()
-    return generate_matches('adb devices', '^(%w+)%s+.*$')
+    return generate_matches('adb devices', '^([%w:.]+)%s+.*$')
 end
 
 local function transportid_matches()
