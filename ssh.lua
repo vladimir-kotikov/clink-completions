@@ -1,12 +1,19 @@
+-- Some modifications added based on:
+-- https://github.com/dodmi/Clink-Addons
+
 local w = require('tables').wrap
 local parser = clink.arg.new_parser
 
 local function read_lines (filename)
     local lines = w({})
     local f = io.open(filename)
-    if not f then return lines end
+    if not f then
+        return lines
+    end
 
-    for line in f:lines() do table.insert(lines, line) end
+    for line in f:lines() do
+        table.insert(lines, line)
+    end
 
     f:close()
     return lines
@@ -16,7 +23,14 @@ end
 local function list_ssh_hosts()
     return read_lines(clink.get_env("userprofile") .. "/.ssh/config")
         :map(function (line)
-            return line:match('^Host%s+(.*)$')
+            local host = line:match('^Host%s+(.*)$')
+            if host then
+                for pattern in host:gmatch('([^%s]+)') do
+                    if not pattern:match('[%*|%?|/|!]') then
+                        table.insert(configHosts, pattern)
+                    end
+                end
+            end
         end)
         :filter()
 end
@@ -24,7 +38,7 @@ end
 local function list_known_hosts()
     return read_lines(clink.get_env("userprofile") .. "/.ssh/known_hosts")
         :map(function (line)
-            return line:match('^([%w-.]*).*')
+            return line:match('^([^%s,]*).*')
         end)
         :filter()
 end
@@ -34,6 +48,66 @@ local hosts = function (token)  -- luacheck: no unused args
         :concat(list_known_hosts())
 end
 
-local ssh_hosts_parser = parser({hosts})
+-- return the list of available local ips
+local function localIPs(token)
+    local assignedIPs = {}
+    local f = io.popen('2>nul wmic nicconfig list IP')
+    if f then
+        local netLine, ip
+        for line in f:lines() do
+            netLine = line:match('%{(.*)%}')
+            if netLine then
+                for ip in netLine:gmatch('%"([^,%s]*)%"') do
+                    table.insert(assignedIPs, ip)
+                end
+            end
+        end
+        f:close()
+    end
+    return assignedIPs
+end
 
-clink.arg.register_parser("ssh", ssh_hosts_parser)
+-- return the list of supported ciphers
+local function supportedCiphers(token)
+    local ciphers = {}
+    local f = io.popen('2>nul ssh -Q cipher')
+    if f then
+        for line in f:lines() do
+            table.insert(ciphers, line)
+        end
+        f:close()
+    end
+    return ciphers
+end
+
+-- return the list of supported MACs
+local function supportedMACs(token)
+    local macs = {}
+    local f = io.popen('2>nul ssh -Q mac')
+    if f then
+        for line in f:lines() do
+            table.insert(macs, line)
+        end
+        f:close()
+    end
+    return macs
+end
+
+local ssh_parser = parser({hosts},
+    "-4", "-6", "-A", "-a", "-C", "-f", "-G", "-g", "-K", "-k",
+    "-M", "-N", "-n", "-q", "-s", "-T", "-t", "-V", "-v", "-X",
+    "-x", "-Y", "-y", "-I", "-L", "-l", "-m", "-O", "-o", "-p",
+    "-R", "-w", "-B", "-c", "-D", "-e", "-S",
+    "-Q" .. parser({"cipher", "cipher_auth", "help", "mac", "kex", "kex-gss", "key", "key-cert", "key-plain", "key-sig", "protocol-version", "sig"}),
+    "-J" .. parser({hosts}),
+    "-W" .. parser({hosts}),
+    "-E" .. parser({clink.filematches}),
+    "-F" .. parser({clink.filematches}),
+    "-i" .. parser({clink.filematches}),
+    "-b" .. parser({localIPs}),
+    "-c" .. parser({supportedCiphers}),
+    "-m" .. parser({supportedMACs})
+)
+
+clink.arg.register_parser("ssh", ssh_parser)
+
