@@ -27,7 +27,7 @@ local function list_ssh_hosts()
             if host then
                 for pattern in host:gmatch('([^%s]+)') do
                     if not pattern:match('[%*|%?|/|!]') then
-                        table.insert(configHosts, pattern)
+                        return pattern
                     end
                 end
             end
@@ -49,11 +49,11 @@ local hosts = function (token)  -- luacheck: no unused args
 end
 
 -- return the list of available local ips
-local function localIPs(token)
+local function localIPs(token) -- luacheck: no unused args
     local assignedIPs = {}
     local f = io.popen('2>nul wmic nicconfig list IP')
     if f then
-        local netLine, ip
+        local netLine
         for line in f:lines() do
             netLine = line:match('%{(.*)%}')
             if netLine then
@@ -68,7 +68,7 @@ local function localIPs(token)
 end
 
 -- return the list of supported ciphers
-local function supportedCiphers(token)
+local function supportedCiphers(token) -- luacheck: no unused args
     local ciphers = {}
     local f = io.popen('2>nul ssh -Q cipher')
     if f then
@@ -81,7 +81,7 @@ local function supportedCiphers(token)
 end
 
 -- return the list of supported MACs
-local function supportedMACs(token)
+local function supportedMACs(token) -- luacheck: no unused args
     local macs = {}
     local f = io.popen('2>nul ssh -Q mac')
     if f then
@@ -98,7 +98,7 @@ local ssh_parser = parser({hosts},
     "-M", "-N", "-n", "-q", "-s", "-T", "-t", "-V", "-v", "-X",
     "-x", "-Y", "-y", "-I", "-L", "-l", "-m", "-O", "-o", "-p",
     "-R", "-w", "-B", "-c", "-D", "-e", "-S",
-    "-Q" .. parser({"cipher", "cipher_auth", "help", "mac", "kex", "kex-gss", "key", "key-cert", "key-plain", "key-sig", "protocol-version", "sig"}),
+    "-Q" .. parser({"cipher", "cipher_auth", "help", "mac", "kex", "kex-gss", "key", "key-cert", "key-plain", "key-sig", "protocol-version", "sig"}), -- luacheck: no max line length
     "-J" .. parser({hosts}),
     "-W" .. parser({hosts}),
     "-E" .. parser({clink.filematches}),

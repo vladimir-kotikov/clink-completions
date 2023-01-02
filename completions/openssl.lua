@@ -10,7 +10,6 @@ local function getOpenSSLVersion()
     local minor = 0
     local f = io.popen('2>nul openssl version')
     if f then
-        local tmp
         for line in f:lines() do
             local _maj, _min = line:match('^OpenSSL%s+(%d+)%.(%d+)%..*$')
             if _maj and _min then
@@ -40,6 +39,7 @@ local digests = {
     "SHA512-224", "SHA512-256", "SHAKE128", "SHAKE256", "SM3", "whirlpool",
 }
 
+-- luacheck: no max line length
 local openSSL10CommandLine = {
     "asn1parse" .. flags({
         "-help", "-i", "-noout", "-dump", "-strictpem",
