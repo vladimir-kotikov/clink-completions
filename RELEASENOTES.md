@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.4.3 (Jan 14, 2022)
+
+  * `d57a33` Add completions for wireless devices for `adb` and `scrcpy` (#162).
+  * `992fad` Add completions for `openssl` and enhance completions for `ssh`.
+  * `8e222c` Fix chocolatey completion script when chocolatey is not installed.
+  * `5a9b90` Add another flag for `code` completions (VSCode).
+
 ## 0.4.2 (Dec 1, 2022)
 
   * `a83181` Add completions for `code` (VSCode).
