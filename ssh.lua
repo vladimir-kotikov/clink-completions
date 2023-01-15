@@ -31,6 +31,7 @@ local function list_ssh_hosts()
                     end
                 end
             end
+            return nil
         end)
         :filter()
 end
