@@ -13,8 +13,8 @@ local function getOpenSSLVersion()
         for line in f:lines() do
             local _maj, _min = line:match('^OpenSSL%s+(%d+)%.(%d+)%..*$')
             if _maj and _min then
-                major = _maj
-                minor = _min
+                major = tonumber(_maj)
+                minor = tonumber(_min)
                 break
             end
         end
