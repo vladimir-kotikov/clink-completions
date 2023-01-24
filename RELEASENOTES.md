@@ -1,6 +1,14 @@
 # Release Notes
 
-## 0.4.3 (Jan 14, 2022)
+## 0.4.5 (Jan 25, 2023)
+
+  * `af01e4` Improve `winget` completions (#164).
+
+## 0.4.4 (Jan 14, 2023)
+
+  * `c3433f` Fix error in ssh completions (#163).
+
+## 0.4.3 (Jan 14, 2023)
 
   * `d57a33` Add completions for wireless devices for `adb` and `scrcpy` (#162).
   * `992fad` Add completions for `openssl` and enhance completions for `ssh`.
