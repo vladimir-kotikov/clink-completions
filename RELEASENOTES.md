@@ -2,6 +2,7 @@
 
 ## 0.4.5 (Jan 25, 2023)
 
+  * `af42a5` Fix error in openssl completions (#165).
   * `af01e4` Improve `winget` completions (#164).
 
 ## 0.4.4 (Jan 14, 2023)
