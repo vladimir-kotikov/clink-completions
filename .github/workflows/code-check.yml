@@ -9,11 +9,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: leafo/gh-actions-lua@v8.0.0
+      - uses: actions/checkout@v3
+      - uses: leafo/gh-actions-lua@v9.1.0
         with:
-          luaVersion: "5.1"
-      - uses: leafo/gh-actions-luarocks@v4.0.0
+          luaVersion: "5.2.4"
+      - uses: leafo/gh-actions-luarocks@v4.3.0
       - name: Install dependencies
         run: |
           luarocks install busted
@@ -23,4 +23,4 @@ jobs:
         run: |
           luacheck .
           busted
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v3.1.1
