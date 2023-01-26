@@ -1,5 +1,3 @@
-require("arghelper")
-
 -- TODO: update with new flags that winget supports now.
 
 --------------------------------------------------------------------------------
@@ -15,6 +13,7 @@ require("arghelper")
 -- completions for some things (at least when a partial word is entered, e.g.
 -- for `winget install Power` which finds package names with prefix "Power").
 
+local standalone = not clink or not clink.argmatcher
 local clink_version = require('clink_version')
 
 --------------------------------------------------------------------------------
@@ -80,7 +79,7 @@ local function winget_complete(word, index, line_state, builder) -- luacheck: no
             if f then
                 for line in f:lines() do
                     line = line:gsub('"', '')
-                    if line:sub(1,1) ~= "-" then
+                    if line ~= "" and (standalone or line:sub(1,1) ~= "-") then
                         table.insert(matches, line)
                     end
                 end
@@ -104,7 +103,38 @@ local function winget_complete(word, index, line_state, builder) -- luacheck: no
 end
 
 --------------------------------------------------------------------------------
+-- When this script is run as a standalone Lua script, it can traverse the
+-- available winget commands and flags and output the available completions.
+-- This helps when updating the completions this script supports.
+
+if standalone then
+
+    local function dump_completions(line, recursive)
+        local line_state = clink.parseline(line..' ""')[1].line_state
+        local t = winget_complete("", 0, line_state, {})
+        if #t > 0 then
+            print(line)
+            for _, match in ipairs(t) do
+                print("", match)
+            end
+            print()
+            if recursive then
+                for _, match in ipairs(t) do
+                    dump_completions(line.." "..match, not match:find("^-") )
+                end
+            end
+        end
+    end
+
+    dump_completions("winget", true)
+    return
+
+end
+
+--------------------------------------------------------------------------------
 -- Parsers for linking.
+
+require("arghelper")
 
 local empty_arg = clink.argmatcher():addarg()
 local contextual_matches = clink.argmatcher():addarg({winget_complete})
