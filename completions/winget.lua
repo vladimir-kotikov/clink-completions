@@ -109,18 +109,33 @@ end
 
 if standalone then
 
+    local function ignore_match(match)
+        if match == "--help" or
+                match == "--no-vt" or
+                match == "--rainbow" or
+                match == "--retro" or
+                match == "--verbose-logs" or
+                false then
+            return true
+        end
+    end
+
     local function dump_completions(line, recursive)
         local line_state = clink.parseline(line..' ""')[1].line_state
         local t = winget_complete("", 0, line_state, {})
         if #t > 0 then
             print(line)
             for _, match in ipairs(t) do
-                print("", match)
+                if not ignore_match(match) then
+                    print("", match)
+                end
             end
             print()
             if recursive then
                 for _, match in ipairs(t) do
-                    dump_completions(line.." "..match, not match:find("^-") )
+                    if not ignore_match(match) then
+                        dump_completions(line.." "..match, not match:find("^-") )
+                    end
                 end
             end
         end
@@ -140,23 +155,24 @@ local empty_arg = clink.argmatcher():addarg()
 local contextual_matches = clink.argmatcher():addarg({winget_complete})
 
 local add_source_matches = empty_arg
-local arch_matches = clink.argmatcher():addarg({fromhistory=true})
-local command_matches = clink.argmatcher():addarg({fromhistory=true})
+local arch_matches = contextual_matches
+local command_matches = contextual_matches
 local count_matches = clink.argmatcher():addarg({fromhistory=true, 10, 20, 40})
+local dependency_source_matches = clink.argmatcher():addarg({fromhistory=true})
 local file_matches = clink.argmatcher():addarg(clink.filematches)
 local header_matches = clink.argmatcher():addarg({fromhistory=true})
-local id_matches = clink.argmatcher():addarg({fromhistory=true})
+local id_matches = contextual_matches
 local locale_matches = clink.argmatcher():addarg({fromhistory=true})
 local location_matches = clink.argmatcher():addarg(clink.dirmatches)
-local moniker_matches = clink.argmatcher():addarg({fromhistory=true})
-local name_matches = clink.argmatcher():addarg({fromhistory=true})
+local moniker_matches = contextual_matches
+local name_matches = contextual_matches
 local override_matches = clink.argmatcher():addarg({fromhistory=true})
 local productcode_matches = clink.argmatcher():addarg({fromhistory=true})
 local query_matches = clink.argmatcher():addarg({fromhistory=true})
-local scope_matches = clink.argmatcher():addarg({fromhistory=true})
+local scope_matches = contextual_matches
 local setting_name_matches = clink.argmatcher():addarg({fromhistory=true})
 local source_matches = contextual_matches
-local tag_matches = clink.argmatcher():addarg({fromhistory=true})
+local tag_matches = contextual_matches
 local type_matches = clink.argmatcher():addarg({"Microsoft.PreIndexed.Package"})
 local url_matches = empty_arg
 local version_matches = contextual_matches
@@ -164,13 +180,22 @@ local version_matches = contextual_matches
 --------------------------------------------------------------------------------
 -- Factored flag definitions.
 
+local arch_locale_flags = {
+    { hide=true, "-a"..arch_matches },
+    { "--architecture"..arch_matches, " arch", "" },
+    { "--locale"..locale_matches, " locale", "" },
+}
+
 local common_flags = {
-    { hide=true, "--verbose-logs" },
-    { hide=true, "--no-vt" },
-    { hide=true, "--rainbow" },
-    { hide=true, "--retro" },
-    { hide=true, "-?" },
+    { "--verbose-logs" },
+    { "--no-vt" },
+    { "--rainbow" },
+    { "--retro" },
     { "--help" },
+    { hide=true, "-?" },
+    { hide=true, "--wait" },
+    { hide=true, "--disable-interactivity" },
+    { hide=true, "--verbose" },
 }
 
 local query_flags = {
@@ -179,12 +204,15 @@ local query_flags = {
     { "--id"..id_matches, " id", "" },
     { "--name"..name_matches, " name", "" },
     { "--moniker"..moniker_matches, " moniker", "" },
+    { hide=true, "-e" },
+    { "--exact" },
+}
+
+local query_flags_more = {
     { "--tag"..tag_matches, " tag", "" },
     { "--command"..command_matches, " command", "" },
     { hide=true, "-n"..count_matches, "" },
     { "--count"..count_matches, " count", "" },
-    { hide=true, "-e" },
-    { "--exact" },
 }
 
 local source_flags = {
@@ -229,6 +257,7 @@ local import_parser = clink.argmatcher():_addexflags({
     { "--import-file"..file_matches, " file", "" },
     { "--ignore-unavailable" },
     { "--ignore-versions" },
+    { "--no-upgrade" },
     { hide=true, "--accept-package-agreements" },
     { hide=true, "--accept-source-agreements" },
     common_flags,
@@ -238,27 +267,30 @@ local import_parser = clink.argmatcher():_addexflags({
 
 local install_parser = clink.argmatcher():_addexflags({
     opteq=true,
+    query_flags,
     { hide=true, "-m"..file_matches },
     { "--manifest"..file_matches, " file", "" },
     { hide=true, "-v"..version_matches },
     { "--version"..version_matches, " version", "" },
     source_flags,
     { "--scope"..scope_matches, " scope", "" },
-    { hide=true, "-a"..arch_matches },
-    { "--architecture"..arch_matches, " arch", "" },
+    arch_locale_flags,
     { hide=true, "-i" },
     { "--interactive" },
     { hide=true, "-h" },
     { "--silent" },
-    { "--locale"..locale_matches, " locale", "" },
     { hide=true, "-o"..file_matches },
     { "--log"..file_matches, " file", "" },
     { "--override"..override_matches, " string", "" },
     { hide=true, "-l"..location_matches },
     { "--location"..location_matches, " location", "" },
     { "--force" },
+    { "--ignore-security-hash" },
+    { "--ignore-local-archive-malware-scan" },
+    { "--dependency-source"..dependency_source_matches },
     { "--accept-package-agreements" },
     { "--accept-source-agreements" },
+    { "--no-upgrade" },
     { "--header"..header_matches, " header", "" },
     { hide=true, "-r"..file_matches },
     { "--rename"..file_matches, " file", "" },
@@ -267,18 +299,29 @@ local install_parser = clink.argmatcher():_addexflags({
 :addarg({winget_complete})
 :nofiles()
 
-local list_parser = clink.argmatcher():_addexflags({
-    opteq=true,
+local __search_parser_flags = {
     query_flags,
+    query_flags_more,
     source_flags,
     { hide=true, "--accept-source-agreements" },
     { "--header"..header_matches, " header", "" },
     common_flags,
+}
+
+local list_parser = clink.argmatcher():_addexflags({
+    opteq=true,
+    __search_parser_flags,
+    { "--scope"..scope_matches, " scope", "" },
 })
 :addarg({winget_complete})
 :nofiles()
 
-local search_parser = list_parser
+local search_parser = clink.argmatcher():_addexflags({
+    opteq=true,
+    __search_parser_flags,
+})
+:addarg({winget_complete})
+:nofiles()
 
 local settings_parser = clink.argmatcher():_addexflags({
     { "--enable"..setting_name_matches, " setting", "" },
@@ -293,6 +336,7 @@ local show_parser = clink.argmatcher():_addexflags({
     { hide=true, "-m"..file_matches },
     { "--manifest"..file_matches, " file", "" },
     source_flags,
+    arch_locale_flags,
     { hide=true, "-v"..version_matches },
     { "--version"..version_matches, " version", "" },
     { "--versions" },
@@ -310,9 +354,11 @@ local source_add_parser = clink.argmatcher():_addexflags({
     { "--arg"..url_matches, " url", "" },
     { hide=true, "-t"..type_matches },
     { "--type"..type_matches, " type", "" },
+    { "--header"..header_matches, " header", "" },
+    { "--accept-source-agreements" },
     common_flags,
 })
-:addarg(name_matches)
+:addarg(add_source_matches)
 :nofiles()
 
 local source_list_parser = clink.argmatcher():_addexflags({
@@ -320,7 +366,7 @@ local source_list_parser = clink.argmatcher():_addexflags({
     { "--name"..source_matches, " name", "" },
     common_flags,
 })
-:addarg(name_matches)
+:addarg(source_matches)
 :nofiles()
 
 local source_update_parser = clink.argmatcher():_addexflags({
@@ -328,7 +374,7 @@ local source_update_parser = clink.argmatcher():_addexflags({
     { "--name"..source_matches, " name", "" },
     common_flags,
 })
-:addarg(name_matches)
+:addarg(source_matches)
 :nofiles()
 
 local source_remove_parser = clink.argmatcher():_addexflags({
@@ -336,16 +382,21 @@ local source_remove_parser = clink.argmatcher():_addexflags({
     { "--name"..source_matches, " name", "" },
     common_flags,
 })
-:addarg(name_matches)
+:addarg(source_matches)
 :nofiles()
 
 local source_reset_parser = clink.argmatcher():_addexflags({
+    { hide=true, "-n"..source_matches },
+    { "--name"..source_matches, " name", "" },
     { "--force" },
     common_flags,
 })
+:addarg(source_matches)
 :nofiles()
 
 local source_export_parser = clink.argmatcher():_addexflags({
+    { hide=true, "-n"..source_matches },
+    { "--name"..source_matches, " name", "" },
     common_flags,
 })
 :addarg(source_matches)
@@ -362,21 +413,28 @@ local source_parser = clink.argmatcher():_addexflags({
     "remove"..source_remove_parser,
     "reset"..source_reset_parser,
     "export"..source_export_parser,
+    { hide=true, "ls"..source_list_parser },
+    { hide=true, "refresh"..source_update_parser },
+    { hide=true, "rm"..source_remove_parser },
 })
 :nofiles()
 
 local uninstall_parser = clink.argmatcher():_addexflags({
     opteq=true,
     query_flags,
+    query_flags_more,
     { hide=true, "-m"..file_matches },
     { "--manifest"..file_matches, " file", "" },
     { "--product-code"..productcode_matches, " code", "" },
     { hide=true, "-v"..version_matches },
     { "--version"..version_matches, " version", "" },
+    source_flags,
+    { "--scope"..scope_matches, " scope", "" },
     { hide=true, "-i" },
     { "--interactive" },
     { hide=true, "-h" },
     { "--silent" },
+    { "--force" },
     { "--purge" },
     { "--preserve" },
     { hide=true, "-o"..file_matches },
@@ -395,6 +453,7 @@ local upgrade_parser = clink.argmatcher():_addexflags({
     { "--manifest"..file_matches, " file", "" },
     { hide=true, "-v"..version_matches },
     { "--version"..version_matches, " version", "" },
+    source_flags,
     { hide=true, "-i" },
     { "--interactive" },
     { hide=true, "-h" },
@@ -405,11 +464,19 @@ local upgrade_parser = clink.argmatcher():_addexflags({
     { "--override"..override_matches, " string", "" },
     { hide=true, "-l"..location_matches },
     { "--location"..location_matches, " location", "" },
+    { "--scope"..scope_matches, " scope", "" },
+    arch_locale_flags,
+    { "--ignore-security-hash" },
+    { "--ignore-local-archive-malware-scan" },
     { "--force" },
     { "--accept-package-agreements" },
     { "--accept-source-agreements" },
     { "--header"..header_matches, " header", "" },
+    { hide=true, "-r" },
+    { hide=true, "--recurse" },
     { "--all" },
+    { hide=true, "-u" },
+    { hide=true, "--unknown" },
     { "--include-unknown" },
     common_flags,
 })
@@ -435,25 +502,63 @@ local complete_parser = clink.argmatcher():_addexflags({
 --------------------------------------------------------------------------------
 -- Define the winget argmatcher.
 
-local winget_parser = {
-    "install" .. install_parser,
-    "show" .. show_parser,
-    "source" .. source_parser,
-    "search" .. search_parser,
-    "list" .. list_parser,
-    "upgrade" .. upgrade_parser,
-    "uninstall" .. uninstall_parser,
-    "hash" .. hash_parser,
-    "validate" .. validate_parser,
-    "settings" .. settings_parser,
-    "features" .. features_parser,
-    "export" .. export_parser,
-    "import" .. import_parser,
-    { hide=true, "complete" .. complete_parser },
+local winget_command_data_table = {
+    { "install",    install_parser,     "add" },
+    { "show",       show_parser,        "view" },
+    { "source",     source_parser },
+    { "search",     search_parser,      "find" },
+    { "list",       list_parser,        "ls" },
+    { "upgrade",    upgrade_parser,     "update" },
+    { "uninstall",  uninstall_parser,   "rm", "remove" },
+    { "hash",       hash_parser },
+    { "validate",   validate_parser },
+    { "settings",   settings_parser,    "config" },
+    { "features",   features_parser },
+    { "export",     export_parser },
+    { "import",     import_parser },
+    { nil,          complete_parser,    "complete" },
 }
 
+local hidden_aliases = {}
+local winget_commands = {}
+
+for _,command in ipairs(winget_command_data_table) do
+    local i = 3
+    while command[i] do
+        if command[2] then
+            table.insert(winget_commands, command[i]..command[2])
+        else
+            table.insert(winget_commands, command[i])
+        end
+        hidden_aliases[command[i]] = true
+        i = i + 1
+    end
+    if command[1] then
+        if command[2] then
+            table.insert(winget_commands, command[1]..command[2])
+        else
+            table.insert(winget_commands, command[1])
+        end
+    end
+end
+
+local function filter_hidden_commands()
+    clink.onfiltermatches(function (matches)
+        for index = #matches, 1, -1 do
+            local m = matches[index].match
+            if hidden_aliases[m] then
+                table.remove(matches, index)
+            end
+        end
+        return matches
+    end)
+    return true
+end
+
+table.insert(winget_commands, filter_hidden_commands)
+
 clink.argmatcher("winget")
-:_addexarg(winget_parser)
+:_addexarg(winget_commands)
 :_addexflags({
     common_flags,
     { hide=true, "-v" },
