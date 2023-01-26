@@ -15,12 +15,14 @@ require("arghelper")
 -- completions for some things (at least when a partial word is entered, e.g.
 -- for `winget install Power` which finds package names with prefix "Power").
 
+local clink_version = require('clink_version')
+
 --------------------------------------------------------------------------------
 -- Helper functions.
 
 -- Clink v1.4.12 and earlier fall into a CPU busy-loop if
 -- match_builder:setvolatile() is used during an autosuggest strategy.
-local volatile_fixed = ((clink.version_encoded or 0) >= 10040013)
+local volatile_fixed = clink_version.has_volatile_matches_fix
 
 local function sanitize_word(line_state, index, info)
     if not info then
@@ -46,7 +48,6 @@ end
 
 local function sanitize_line(line_state)
     local text = ""
-    local endword = ""
     for i = 1, line_state:getwordcount() do
         local info = line_state:getwordinfo(i)
         local word
@@ -59,7 +60,7 @@ local function sanitize_line(line_state)
             text = append_word(text, word)
         end
     end
-    endword = sanitize_word(line_state, line_state:getwordcount())
+    local endword = sanitize_word(line_state, line_state:getwordcount())
     return text, endword
 end
 
@@ -74,7 +75,7 @@ local function winget_complete(word, index, line_state, builder) -- luacheck: no
         if ismain then
             winget = '"'..path.join(winget, "Microsoft\\WindowsApps\\winget.exe")..'"'
             local commandline, endword = sanitize_line(line_state)
-            local command = '2>nul '..winget..' complete --word="'..endword..'" --commandline="'..commandline..'" --position=99999'
+            local command = '2>nul '..winget..' complete --word="'..endword..'" --commandline="'..commandline..'" --position=99999' -- luacheck: no max line length
             local f = io.popen(command)
             if f then
                 for line in f:lines() do
@@ -95,7 +96,7 @@ local function winget_complete(word, index, line_state, builder) -- luacheck: no
         end
 
         -- Hack to enable quoting.
-        if clink.matches_are_files then
+        if clink.matches_are_files and not clink_version.has_quoting_fix then
             clink.matches_are_files()
         end
     end
