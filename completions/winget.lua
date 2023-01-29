@@ -1,5 +1,3 @@
--- TODO: update with new flags that winget supports now.
-
 --------------------------------------------------------------------------------
 -- It would have been great to simply use the "winget complete" command.  But
 -- it has two problems:
@@ -63,28 +61,62 @@ local function sanitize_line(line_state)
     return text, endword
 end
 
+local debug_print_query
+if tonumber(os.getenv("DEBUG_CLINK_WINGET") or "0") > 0 then
+    local query_count = 0
+    local color_index = 0
+    local color_values = { "52", "94", "100", "22", "23", "19", "53" }
+    debug_print_query = function (endword)
+        query_count = query_count + 1
+        color_index = color_index + 1
+        if color_index > #color_values then
+            color_index = 1
+        end
+        clink.print("\x1b[s\x1b[H\x1b[1;37;48;5;"..color_values[color_index].."mQUERY #"..query_count..", endword '"..endword.."'\x1b[m\x1b[K\x1b[u", NONL)
+    end
+else
+    debug_print_query = function () end
+end
+
 local function winget_complete(word, index, line_state, builder) -- luacheck: no unused args
     local matches = {}
     local winget = os.getenv("LOCALAPPDATA")
-    if winget then
-        -- Don't run `winget complete` in the background.  Since the results
-        -- have to be volatile, it would rerun and potentially hit the network
-        -- for every letter typed or deleted.
-        local _, ismain = coroutine.running()
-        if ismain then
-            winget = '"'..path.join(winget, "Microsoft\\WindowsApps\\winget.exe")..'"'
-            local commandline, endword = sanitize_line(line_state)
-            local command = '2>nul '..winget..' complete --word="'..endword..'" --commandline="'..commandline..'" --position=99999' -- luacheck: no max line length
-            local f = io.popen(command)
-            if f then
-                for line in f:lines() do
-                    line = line:gsub('"', '')
-                    if line ~= "" and (standalone or line:sub(1,1) ~= "-") then
-                        table.insert(matches, line)
-                    end
-                end
-                f:close()
+
+    -- In the background (async auto-suggest), delay `winget complete` by 200 ms
+    -- to coalesce rapid keypresses into a single query.  Overall, this improves
+    -- the responsiveness for showing auto-suggestions which involve slow
+    -- network queries.  The drawback is that all background `winget complete`
+    -- queries take 200 milliseconds longer to show results.  But it can save
+    -- many seconds, so on average it works out as feeling more responsive.
+    if winget and volatile_fixed and builder.setvolatile and rl.islineequal then
+        local co, ismain = coroutine.running()
+        if not ismain then
+            local orig_line = line_state:getline():sub(1, line_state:getcursor() - 1)
+            clink.setcoroutineinterval(co, .2)
+            coroutine.yield()
+            clink.setcoroutineinterval(co, 0)
+            if not rl.islineequal(orig_line, true) then
+                winget = nil
+                builder:setvolatile()
             end
+        end
+    end
+
+    if winget then
+        winget = '"'..path.join(winget, "Microsoft\\WindowsApps\\winget.exe")..'"'
+
+        local commandline, endword = sanitize_line(line_state)
+        debug_print_query(endword)
+        local command = '2>nul '..winget..' complete --word="'..endword..'" --commandline="'..commandline..'" --position=99999' -- luacheck: no max line length
+        local f = io.popen(command)
+        if f then
+            for line in f:lines() do
+                line = line:gsub('"', '')
+                if line ~= "" and (standalone or line:sub(1,1) ~= "-") then
+                    table.insert(matches, line)
+                end
+            end
+            f:close()
         end
 
         -- Mark the matches volatile even when generation was skipped due to
