@@ -1,6 +1,6 @@
 # Release Notes
 
-## 0.4.5 (Jan 26, 2023)
+## 0.4.5 (Jan 28, 2023)
 
   * `af42a5` Fix error in `openssl` completions (#165).
   * `af01e4` Improve `winget` completions (#164).
