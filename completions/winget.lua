@@ -72,7 +72,7 @@ if tonumber(os.getenv("DEBUG_CLINK_WINGET") or "0") > 0 then
         if color_index > #color_values then
             color_index = 1
         end
-        clink.print("\x1b[s\x1b[H\x1b[1;37;48;5;"..color_values[color_index].."mQUERY #"..query_count..", endword '"..endword.."'\x1b[m\x1b[K\x1b[u", NONL)
+        clink.print("\x1b[s\x1b[H\x1b[1;37;48;5;"..color_values[color_index].."mQUERY #"..query_count..", endword '"..endword.."'\x1b[m\x1b[K\x1b[u", NONL) -- luacheck: no max line length, no global
     end
 else
     debug_print_query = function () end
