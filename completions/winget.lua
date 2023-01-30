@@ -181,7 +181,7 @@ end
 --------------------------------------------------------------------------------
 -- Parsers for linking.
 
-require("arghelper")
+local arghelper = require("arghelper")
 
 local empty_arg = clink.argmatcher():addarg()
 local contextual_matches = clink.argmatcher():addarg({winget_complete})
@@ -562,7 +562,7 @@ for _,command in ipairs(winget_command_data_table) do
         else
             table.insert(winget_commands, command[i])
         end
-        hidden_aliases[command[i]] = true
+        table.insert(hidden_aliases, command[i])
         i = i + 1
     end
     if command[1] then
@@ -574,20 +574,7 @@ for _,command in ipairs(winget_command_data_table) do
     end
 end
 
-local function filter_hidden_commands()
-    clink.onfiltermatches(function (matches)
-        for index = #matches, 1, -1 do
-            local m = matches[index].match
-            if hidden_aliases[m] then
-                table.remove(matches, index)
-            end
-        end
-        return matches
-    end)
-    return true
-end
-
-table.insert(winget_commands, filter_hidden_commands)
+table.insert(winget_commands, arghelper.make_arg_hider_func(hidden_aliases))
 
 clink.argmatcher("winget")
 :_addexarg(winget_commands)

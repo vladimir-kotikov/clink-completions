@@ -4,7 +4,8 @@
 --      argmatcher:_addexflags()
 --      argmatcher:_addexarg()
 --
--- These accept the following format:
+-- The _addexflags()` and `_addexarg() functions accept the following format,
+-- and both functions accept the same input format.
 --
 --      local a = clink.argmatcher()
 --
@@ -31,12 +32,11 @@
 --          -- to everything nested within the table.
 --      })
 --
--- Both _addexflags() and _addexarg() accept the same input format.
---
--- This also fills in compatibility methods for any of the following argmatcher
--- methods that may be missing in older versions of Clink.  This makes backward
--- compatibility much easier, because your code can use newer APIs and they'll
--- just do nothing if the version of Clink in use doesn't actually support them.
+-- The arghelper script also fills in compatibility methods for any of the
+-- following argmatcher methods that may be missing in older versions of Clink.
+-- This makes backward compatibility much easier, because your code can use
+-- newer APIs and they'll just do nothing if the version of Clink in use doesn't
+-- actually support them.
 --
 --      argmatcher:addarg()
 --      argmatcher:addflags()
@@ -46,8 +46,59 @@
 --      argmatcher:setflagsanywhere()
 --      argmatcher:setendofflags()
 --
+-- The arghelper script also returns an export table with additional helper
+-- functions.
+--
+--      local arghelper = require("arghelper")
+--      arghelper.make_arg_hider_func()
+--
+-- Use the arghelper.make_arg_hider_func() function to create and return a match
+-- function that omits the specified matches when displaying or completing
+-- matches, while still letting input coloring apply color to them.  If 
+-- make_arg_hider_func() is used more than once in the same argument position,
+-- only the last one will take effect.
+--
+--      local arghelper = require("arghelper")
+--
+--      clink.argmatcher("foo")
+--      :addarg({
+--          "abc", "def",
+--          "Abc", "Def",
+--          arghelper.make_arg_hider_func("Abc", "Def")
+--      })
+--
+-- The arghelper.make_arg_hider_func() accepts as many arguments as you like,
+-- and the argument types can be tables, functions, and strings.
+--
+--      - Strings are added to the list of matches to hide.
+--      - Functions can return more arguments.
+--      - Tables can contain more arguments (tables, functions, and strings).
+--
+--      clink.argmatcher("foo")
+--      :addarg({
+--          "abc", "def",
+--          "Abc", "Def",
+--          "ABC", "DEF",
+--          arghelper.make_arg_hider_func({
+--              {"Abc", "ABC"},
+--              function ()
+--                  return {"Def", "DEF"}
+--              end
+--          })
+--      })
+--
 --------------------------------------------------------------------------------
 -- Changes:
+--
+--  2023/01/29
+--      - `local arghelper = require("arghelper.lua")` returns an export table.
+--      - `arghelper.make_arg_hider_func()` makes a match function that hides
+--        specified args.
+--
+--  2022/10/22
+--      - Support for `onarg=func`.
+--      - Support for `delayinit=func`.
+--      - Support for `loopchars="chars"`.
 --
 --  2022/07/30
 --      - `hide=true` hides a match.
@@ -267,3 +318,70 @@ for _,_ in pairs(interop) do -- luacheck: ignore 512
     end
     break
 end
+
+local function condense_stack_trace(skip_levels)
+    local append
+    local ret = ""
+    local stack = debug.traceback(skip_levels)
+    for _,s in string.explode(stack, "\n") do
+        s = s:gsub("^ *(.-) *$", "%1")
+        if #s > 0 then
+            if append then
+                ret = ret .. append
+            else
+                append = " / "
+            end
+            ret = ret .. s
+        end
+    end
+    return ret
+end
+
+local function make_arg_hider_func(...)
+    if not clink.onfiltermatches then
+        log.info("make_arg_hider_func requires clink.onfiltermatches; "..condense_stack_trace())
+        return
+    end
+
+    local args = {...}
+
+    local function filter_matches(matches, completion_type, filename_completion_desired)
+        local function onfilter(matches, completion_type, filename_completion_desired)
+            local index = {}
+
+            local function add_to_index(index, tbl)
+                for _,add in ipairs(tbl) do
+                    if type(add) == "table" then
+                        add_to_index(index, add)
+                    elseif type(add) == "function" then
+                        add_to_index(index, add(matches, completion_type, filename_completion_desired))
+                    elseif type(add) == "string" then
+                        index[add] = true
+                    end
+                end
+            end
+
+            add_to_index(index, args)
+
+            for j = #matches, 1, -1 do
+                local m = matches[j].match
+                if index[m] then
+                    table.remove(matches, j)
+                end
+            end
+
+            return matches
+        end
+
+        clink.onfiltermatches(onfilter)
+        return {}
+    end
+
+    return filter_matches
+end
+
+local exports = {
+    make_arg_hider_func = make_arg_hider_func
+}
+
+return exports
