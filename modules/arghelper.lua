@@ -54,7 +54,7 @@
 --
 -- Use the arghelper.make_arg_hider_func() function to create and return a match
 -- function that omits the specified matches when displaying or completing
--- matches, while still letting input coloring apply color to them.  If 
+-- matches, while still letting input coloring apply color to them.  If
 -- make_arg_hider_func() is used more than once in the same argument position,
 -- only the last one will take effect.
 --
@@ -345,23 +345,23 @@ local function make_arg_hider_func(...)
 
     local args = {...}
 
-    local function filter_matches(matches, completion_type, filename_completion_desired)
+    local function filter_matches()
         local function onfilter(matches, completion_type, filename_completion_desired)
             local index = {}
 
-            local function add_to_index(index, tbl)
+            local function add_to_index(tbl)
                 for _,add in ipairs(tbl) do
                     if type(add) == "table" then
-                        add_to_index(index, add)
+                        add_to_index(add)
                     elseif type(add) == "function" then
-                        add_to_index(index, add(matches, completion_type, filename_completion_desired))
+                        add_to_index(add(matches, completion_type, filename_completion_desired))
                     elseif type(add) == "string" then
                         index[add] = true
                     end
                 end
             end
 
-            add_to_index(index, args)
+            add_to_index(args)
 
             for j = #matches, 1, -1 do
                 local m = matches[j].match
