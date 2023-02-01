@@ -17,6 +17,8 @@ local clink_version = require('clink_version')
 --------------------------------------------------------------------------------
 -- Helper functions.
 
+-- luacheck: max line length 100
+
 -- Clink v1.4.12 and earlier fall into a CPU busy-loop if
 -- match_builder:setvolatile() is used during an autosuggest strategy.
 local volatile_fixed = clink_version.has_volatile_matches_fix
@@ -211,6 +213,8 @@ local version_matches = contextual_matches
 
 --------------------------------------------------------------------------------
 -- Factored flag definitions.
+
+-- luacheck: no max line length
 
 local arch_locale_flags = {
     { hide=true,    "-a"                .. arch_matches },
@@ -578,6 +582,8 @@ local winget_command_data_table = {
     { "import",     import_parser,                      desc="Installs all the packages in a file" },
     { nil,          complete_parser,    "complete" },
 }
+
+-- luacheck: max line length 100
 
 local hidden_aliases = {}
 local winget_commands = {}
