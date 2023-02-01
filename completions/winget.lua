@@ -183,6 +183,9 @@ end
 --------------------------------------------------------------------------------
 -- Parsers for linking.
 
+-- TODO: ideally "winget complete" could list the available settings so that
+-- setting_name_matches could list actual setting names.
+
 local arghelper = require("arghelper")
 
 local empty_arg = clink.argmatcher():addarg()
@@ -371,12 +374,21 @@ local search_parser = clink.argmatcher()
 :addarg({winget_complete})
 :nofiles()
 
+local settings_export_parser = clink.argmatcher()
+:_addexflags({
+    opteq=true,
+    common_flags,
+})
+:nofiles()
+
 local settings_parser = clink.argmatcher()
 :_addexflags({
     {               "--enable"          .. setting_name_matches, " setting",    "Enables the specific administrator setting" },
     {               "--disable"         .. setting_name_matches, " setting",    "Disables the specific administrator setting" },
 })
-:addarg(setting_name_matches)
+:_addexarg({
+    { "export" .. settings_export_parser, "Export settings as JSON" },
+})
 :nofiles()
 
 local show_parser = clink.argmatcher()
@@ -412,6 +424,12 @@ local source_add_parser = clink.argmatcher()
 })
 :addarg(add_source_matches)
 :nofiles()
+-- REVIEW: :nofiles() isn't really accurate here, but I don't see a good way to
+-- accurately support the command's syntax given that "-n" and "-a" are optional
+-- but the "name" and "arg" arguments they refer to are required.  So input like
+-- "winget source add -n name arg" is weird because "arg" ends up getting parsed
+-- as being in the argmatcher's 1st arg position, because the "name" is an
+-- argument to the "-n" flag, not an argument to the "winget add" command.
 
 local source_list_parser = clink.argmatcher()
 :_addexflags({
@@ -465,10 +483,10 @@ local source_parser = clink.argmatcher()
     common_flags,
 })
 :_addexarg({
-    { "add"         .. source_add_parser,       "Add a new source" },
-    { "list"        .. source_list_parser,      "List current sources" },
+    { "add"         .. source_add_parser,       " name arg [type]",             "Add a new source" },
+    { "list"        .. source_list_parser,      " [name]",                      "List current sources" },
     {   "ls"        .. source_list_parser },
-    { "update"      .. source_update_parser,    "Update current sources" },
+    { "update"      .. source_update_parser,    " [name]",                      "Update current sources" },
     {   "refresh"   .. source_update_parser },
     { "remove"      .. source_remove_parser,    "Remove current sources" },
     {   "rm"        .. source_remove_parser },
@@ -567,19 +585,19 @@ local complete_parser = clink.argmatcher()
 -- Define the winget argmatcher.
 
 local winget_command_data_table = {
-    { "install",    install_parser,     "add",          desc="Installs the given package" },
-    { "show",       show_parser,        "view",         desc="Shows information about a package" },
-    { "source",     source_parser,                      desc="Manage sources of packages" },
-    { "search",     search_parser,      "find",         desc="Find and show basic info of packages" },
-    { "list",       list_parser,        "ls",           desc="Display installed packages" },
-    { "upgrade",    upgrade_parser,     "update",       desc="Shows and performs available upgrades" },
-    { "uninstall",  uninstall_parser,   "rm", "remove", desc="Uninstalls the given package" },
-    { "hash",       hash_parser,                        desc="Helper to hash installer files" },
-    { "validate",   validate_parser,                    desc="Validates a manifest file" },
-    { "settings",   settings_parser,    "config",       desc="Open settings or set administrator settings" },
-    { "features",   features_parser,                    desc="Shows the status of experimental features" },
-    { "export",     export_parser,                      desc="Exports a list of the installed packages" },
-    { "import",     import_parser,                      desc="Installs all the packages in a file" },
+    { "install",    install_parser,     "add",          disp=" [query]",    desc="Installs the given package" },
+    { "show",       show_parser,        "view",         disp=" [query]",    desc="Shows information about a package" },
+    { "source",     source_parser,                      disp=" command",    desc="Manage sources of packages" },
+    { "search",     search_parser,      "find",         disp=" [query]",    desc="Find and show basic info of packages" },
+    { "list",       list_parser,        "ls",           disp=" [query]",    desc="Display installed packages" },
+    { "upgrade",    upgrade_parser,     "update",       disp=" [query]",    desc="Shows and performs available upgrades" },
+    { "uninstall",  uninstall_parser,   "rm", "remove", disp=" [query]",    desc="Uninstalls the given package" },
+    { "hash",       hash_parser,                        disp=" file",       desc="Helper to hash installer files" },
+    { "validate",   validate_parser,                    disp=" manifest",   desc="Validates a manifest file" },
+    { "settings",   settings_parser,    "config",       disp=" [command]",  desc="Open settings or set administrator settings" },
+    { "features",   features_parser,                                        desc="Shows the status of experimental features" },
+    { "export",     export_parser,                      disp=" output",     desc="Exports a list of the installed packages" },
+    { "import",     import_parser,                      disp=" importfile", desc="Installs all the packages in a file" },
     { nil,          complete_parser,    "complete" },
 }
 
@@ -588,22 +606,22 @@ local winget_command_data_table = {
 local hidden_aliases = {}
 local winget_commands = {}
 
-for _,command in ipairs(winget_command_data_table) do
+for _,c in ipairs(winget_command_data_table) do
     local i = 3
-    while command[i] do
-        if command[2] then
-            table.insert(winget_commands, command[i]..command[2])
+    while c[i] do
+        if c[2] then
+            table.insert(winget_commands, c[i]..c[2])
         else
-            table.insert(winget_commands, command[i])
+            table.insert(winget_commands, c[i])
         end
-        table.insert(hidden_aliases, command[i])
+        table.insert(hidden_aliases, c[i])
         i = i + 1
     end
-    if command[1] then
-        if command[2] then
-            table.insert(winget_commands, command[1]..command[2])
+    if c[1] then
+        if c[2] then
+            table.insert(winget_commands, { c[1]..c[2], c.disp or "", c.desc })
         else
-            table.insert(winget_commands, command[1])
+            table.insert(winget_commands, { c[1], c.disp or "", c.desc })
         end
     end
 end
