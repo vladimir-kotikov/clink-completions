@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.4.6 (Feb 1, 2023)
+
+  * `7c22a6` Add descriptions for `winget` flag and arg completions.
+  * `190f6d` (internal) Add `arghelper.make_arg_hider_func()` helper function that argmatchers can use.
+
 ## 0.4.5 (Jan 28, 2023)
 
   * `af42a5` Fix error in `openssl` completions (#165).
