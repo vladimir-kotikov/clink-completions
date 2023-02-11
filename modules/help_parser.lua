@@ -365,7 +365,8 @@ end
 -- The GNU parser recognizes this layout:
 --
 --      ... ignore lines unless they start with at least 2 spaces ...
---        -a...         description
+--        -a...         description which could be
+--                      more than one line
 --        -a...
 --                      description which could be
 --                      more than one line
@@ -388,7 +389,8 @@ end
 --
 -- Some flags have a predefined list of args:
 --
---        --foo=XYZ     description
+--        --foo=XYZ     description which could be
+--                      more than one line
 --                      XYZ is 'a', 'b', or 'c'
 --
 -- Recognizes many variations of file and dir arg types.
@@ -402,33 +404,35 @@ end
 local function gnu_parser(context, flags, descriptions, hideflags, line)
     local x = line:match('^                +([^ ].+)$')
     if x then
-        if context.arg_line_missing_desc then
-            -- The line is a description.
+        -- The line is an arg list.
+        if not context.arg_line_missing_desc and
+                context.pending and
+                context.pending.expect_args then
+            local words = string.explode(line, ' ,')
+            if clink.upper(words[1]) == words[1] and words[2] == 'is' then
+                local arglist = {}
+                for _,w in ipairs(words) do
+                    local arg = w:match("^'(.*)'$")
+                    if arg then
+                        table.insert(arglist, arg)
+                    end
+                end
+                context.pending.argmatcher = clink.argmatcher():addarg(arglist)
+                context.pending.expect_args = nil
+            end
+        else
+            -- The line is part of a description.
+            context.arg_line_missing_desc = nil
             if context.desc then
                 context.desc = context.desc .. ' '
             end
             context.desc = (context.desc or '') .. x
-        else
-            -- The line is an arg list.
-            if context.pending and context.pending.expect_args then
-                local words = string.explode(line, ' ,')
-                if clink.upper(words[1]) == words[1] and words[2] == 'is' then
-                    local arglist = {}
-                    for _,w in ipairs(words) do
-                        local arg = w:match("^'(.*)'$")
-                        if arg then
-                            table.insert(arglist, arg)
-                        end
-                    end
-                    context.pending.argmatcher = clink.argmatcher():addarg(arglist)
-                    context.pending.expect_args = nil
-                end
-            end
         end
     else
         -- Add any pending flags.
         if context.pending then
             if context.desc then
+                context.expect_args = context.desc:find(';$')
                 context.desc = context.desc:gsub('%.+$', '')
                 context.desc = context.desc:gsub(';$', '')
                 context.desc = sentence_casing(context.desc)
@@ -479,7 +483,7 @@ local function gnu_parser(context, flags, descriptions, hideflags, line)
                 -- All flags on a single line share one argmatcher.
                 local d
                 local list = string.explode(s, ',')
-                context.pending.expect_args = true
+                context.pending.expect_args = nil
                 for _,f in ipairs(list) do
                     f = f:match('^ *([^ ].*)$')
                     if f then
@@ -489,6 +493,7 @@ local function gnu_parser(context, flags, descriptions, hideflags, line)
                             if f then
                                 local feq = f .. '='
                                 context.pending.arginfo = d
+                                context.pending.expect_args = true
                                 table.insert(context.pending, { flag=f, has_arg=false })
                                 table.insert(context.pending, { flag=feq, has_arg=true, display=d })
                             end
@@ -504,6 +509,7 @@ local function gnu_parser(context, flags, descriptions, hideflags, line)
                             f,d = f:match('^([^=]+=)(.*)$')
                             if f then
                                 context.pending.arginfo = d
+                                context.pending.expect_args = true
                                 table.insert(context.pending, { flag=f, has_arg=true, display=d })
                             end
                         elseif f:find(' ') then
@@ -511,6 +517,7 @@ local function gnu_parser(context, flags, descriptions, hideflags, line)
                             f,d = f:match('^([^ ]+)( .*)$')
                             if f then
                                 context.pending.arginfo = d
+                                context.pending.expect_args = true
                                 table.insert(context.pending, { flag=f, has_arg=true, display=d })
                             end
                         else
