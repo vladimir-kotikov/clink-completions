@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.4.7 (Feb 12, 2023)
+
+  * `bdb67a` Improve completions when `sudo` from [sudo-windows](https://github.com/chrisant996/sudo-windows) is used.
+
 ## 0.4.6 (Feb 1, 2023)
 
   * `7c22a6` Add descriptions for `winget` flag and arg completions.
