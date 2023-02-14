@@ -128,8 +128,10 @@ local function winget_complete(word, index, line_state, builder) -- luacheck: no
             builder:setvolatile()
         end
 
-        -- Hack to enable quoting.
-        if clink.matches_are_files and not clink_version.has_quoting_fix then
+        -- Enable quoting.
+        if builder.setforcequoting then
+            builder:setforcequoting()
+        elseif clink.matches_are_files then
             clink.matches_are_files()
         end
     end
