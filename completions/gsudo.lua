@@ -7,6 +7,7 @@ end
 require('arghelper')
 
 -- luacheck: no max line length
+-- luacheck: globals string.equalsi
 
 local integrity = clink.argmatcher():addarg({'Untrusted', 'Low', 'Medium', 'MediumPlus', 'High', 'System' })
 local username = clink.argmatcher():addarg({fromhistory=true})
@@ -81,7 +82,7 @@ local function parse_words(line_state)
     return nw, cwi + 1
 end
 
-function gen:generate(line_state, match_builder)
+function gen:generate(line_state, match_builder) -- luacheck: no unused
     local nw, nwi = parse_words(line_state)
     if not nw then
         return
@@ -124,7 +125,7 @@ end
 
 local clf = clink.classifier(1)
 
-function clf:classify(commands)
+function clf:classify(commands) -- luacheck: no unused
     local none = settings.get('color.unexpected')
     for _, c in ipairs(commands) do
         local ls = c.line_state
