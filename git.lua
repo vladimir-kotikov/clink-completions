@@ -1043,7 +1043,7 @@ local add_parser = parser()
     "--renormalize",
     { "-N", "Record index entry without content" },
     "--intent-to-add",
-    { "-A", --[[TODO]] },
+    { "-A", "Update all; add, modify, and remove index entries to match the working tree" },
     "--all",
     "--no-all",
     "--ignore-removal",
