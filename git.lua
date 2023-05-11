@@ -35,6 +35,28 @@ else
     end
 end
 
+local function has_dot_dirs(token)
+    for _, t in ipairs(string.explode(token, '/\\')) do
+        if t == '.' or t == '..' then
+            return true
+        end
+    end
+end
+
+local function get_relative_prefix(git_dir)
+    local cwd = clink.lower(path.join(os.getcwd(), ''))
+    git_dir = clink.lower(path.join(path.toparent(git_dir), ''))
+    return cwd:sub(#git_dir + 1)
+end
+
+local function adjust_relative_prefix(dir, rel)
+    local len = string.matchlen(dir, rel)
+    if len < 0 then
+        return ''
+    end
+    return dir:sub(len + 1)
+end
+
 ---
  -- Lists remote branches based on packed-refs file from git directory
  -- @param string [dir]  Directory where to search file for
@@ -91,6 +113,7 @@ local function list_git_status_files(token, flags) -- luacheck: no unused args
     local result = w()
     local git_dir = git.get_git_common_dir()
     if git_dir then
+        local rel_pfx = get_relative_prefix(git_dir)
         local f = io.popen("git status --porcelain "..(flags or "").." ** 2>nul")
         if f then
             if string.matchlen then -- luacheck: no global
@@ -114,12 +137,12 @@ local function list_git_status_files(token, flags) -- luacheck: no unused args
                             table.insert(result, { match = m, type = (isdir and "dir" or "file") })
                         end
                         --]]
-                        table.insert(result, line)
+                        table.insert(result, adjust_relative_prefix(line, rel_pfx))
                     end
                 end
             else
                 for line in f:lines() do
-                    table.insert(result, line:sub(4))
+                    table.insert(result, adjust_relative_prefix(line:sub(4), rel_pfx))
                 end
             end
             f:close()
@@ -223,6 +246,9 @@ local function local_or_remote_branches(token)
 end
 
 local function add_spec_generator(token)
+    if has_dot_dirs(token) then
+        return file_matches(token)
+    end
     return list_git_status_files(token, "-uall"):map(map_file)
 end
 
@@ -386,6 +412,10 @@ local function checkout_spec_generator_nosort(token)
 end
 
 local function checkout_spec_generator(token)
+    if has_dot_dirs(token) then
+        return file_matches(token)
+    end
+
     if clink_version.supports_argmatcher_nosort then
         return checkout_spec_generator_nosort(token)
     elseif clink_version.supports_display_filter_description then
@@ -396,6 +426,10 @@ local function checkout_spec_generator(token)
 end
 
 local function checkout_dashdash(token)
+    if has_dot_dirs(token) then
+        return file_matches(token)
+    end
+
     local status_files = list_git_status_files(token, "-uno")
     if clink_version.supports_display_filter_description then
         return status_files:map(function(file) return { match=file, display='\x1b[m'..file, type='arg' } end)
