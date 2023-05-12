@@ -1,6 +1,8 @@
 -- By default, this omits targets with / or \ in them.  To include such targets,
 -- set %INCLUDE_PATHLIKE_MAKEFILE_TARGETS% to any non-empty string.
 
+local clink_version = require('clink_version')
+
 require('arghelper')
 
 -- Table of special targets to always ignore.
@@ -119,27 +121,27 @@ local file_matches = clink.argmatcher():addarg(clink.filematches)
 -- Definitions for flags.  This is used to build a table of / and - variants for
 -- each flag, since nmake supports both.
 local flags_def = {
-    { 'A',                                  'Build all evaluated targets' },
-    { 'B',                                  'Build if time stamps are equal' },
-    { 'C',                                  'Suppress output messages' },
-    { 'D',                                  'Display build information' },
-    { 'E',                                  'Override env-var macros' },
-    { {'ERRORREPORT:', er_parser, 'mode'},  'Report errors to Microsoft' },
-    { {'F', file_matches, ' makefile'},     'Use the specified makefile' },
-    { 'G',                                  'Display !include filenames' },
-    { 'HELP',                               'Display brief usage message' },
-    { 'I',                                  'Ignore exit codes from commands' },
-    { 'K',                                  'Build unrelated targets on error' },
-    { 'N',                                  'Display commands but do not execute' },
-    { 'NOLOGO',                             'Suppress copyright message' },
-    { 'P',                                  'Display NMAKE information' },
-    { 'Q',                                  'Check time stamps but do not build' },
-    { 'R',                                  'Ignore predefined rules/macros' },
-    { 'S',                                  'Suppress executed-commands display' },
-    { 'T',                                  'Change time stamps but do not build' },
-    { 'U',                                  'Dump inline files' },
-    { {'X', file_matches, ' stderrfile'},   'Write errors to the specified file' },
-    { 'Y',                                  'Disable batch-mode' },
+    { 'a',                                  'Build all evaluated targets' },
+    { 'b',                                  'Build if time stamps are equal' },
+    { 'c',                                  'Suppress output messages' },
+    { 'd',                                  'Display build information' },
+    { 'e',                                  'Override env-var macros' },
+    { {'errorreport:', er_parser, 'mode'},  'Report errors to Microsoft' },
+    { {'f', file_matches, ' makefile'},     'Use the specified makefile' },
+    { 'g',                                  'Display !include filenames' },
+    { 'help',                               'Display brief usage message' },
+    { 'i',                                  'Ignore exit codes from commands' },
+    { 'k',                                  'Build unrelated targets on error' },
+    { 'n',                                  'Display commands but do not execute' },
+    { 'nologo',                             'Suppress copyright message' },
+    { 'p',                                  'Display NMAKE information' },
+    { 'q',                                  'Check time stamps but do not build' },
+    { 'r',                                  'Ignore predefined rules/macros' },
+    { 's',                                  'Suppress executed-commands display' },
+    { 't',                                  'Change time stamps but do not build' },
+    { 'u',                                  'Dump inline files' },
+    { {'x', file_matches, ' stderrfile'},   'Write errors to the specified file' },
+    { 'y',                                  'Disable batch-mode' },
     { '?',                                  'Display brief usage message' },
 }
 
@@ -147,22 +149,42 @@ local flags_def = {
 -- since nmake supports both.
 local flags_table = {}
 for _, e in ipairs(flags_def) do
-    local slash, dash
-    local has_args
-    if type(e[1]) == 'table' then
-        slash = ('/'..e[1][1])..e[1][2]
-        dash = ('-'..e[1][1]:lower())..e[1][2]
-        has_args = true
-    else
-        slash = '/'..e[1]
-        dash = '-'..e[1]:lower()
-    end
-    if has_args then
-        table.insert(flags_table, { slash, e[1][3], e[2] })
-        table.insert(flags_table, { dash, e[1][3], e[2] })
-    else
-        table.insert(flags_table, { slash, e[2] })
-        table.insert(flags_table, { dash, e[2] })
+    local slash, slashentry
+    local dash, dashentry
+    local maxcasemode = (clink_version.supports_argmatcher_hideflags and 1 or 0)
+    for casemode = 0, maxcasemode, 1 do
+        local istable = type(e[1]) == 'table'
+        local flag = istable and e[1][1] or e[1]
+        local has_args
+        -- Second pass adds upper case flag variants, since nmake supports them.
+        if casemode > 0 then
+            flag = flag:upper()
+        end
+        -- Add flag character (/ or -) and optional parser.
+        if istable then
+            slash = ('/'..flag)..e[1][2]
+            dash = ('-'..flag)..e[1][2]
+            has_args = true
+        else
+            slash = '/'..flag
+            dash = '-'..flag
+        end
+        -- Build flag entries to be added to the argmatcher.
+        if has_args then
+            slashentry = { slash, e[1][3], e[2] }
+            dashentry = { dash, e[1][3], e[2] }
+        else
+            slashentry = { slash, e[2] }
+            dashentry = { dash, e[2] }
+        end
+        -- Hide upper case flag variants.
+        if casemode > 0 then
+            slashentry.hide = true
+            dashentry.hide = true
+        end
+        -- Add the flag entries.
+        table.insert(flags_table, slashentry)
+        table.insert(flags_table, dashentry)
     end
 end
 
