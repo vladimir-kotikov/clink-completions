@@ -1,5 +1,5 @@
 -- By default, this omits targets with / or \ in them.  To include such targets,
--- set %INCLUDE_NMAKE_PATHLIKE_TARGETS% to any non-empty string.
+-- set %INCLUDE_PATHLIKE_MAKEFILE_TARGETS% to any non-empty string.
 
 require('arghelper')
 
@@ -24,15 +24,9 @@ local special_targets = {
     ['.MAKE'] = true,
 }
 
--- Function to return whether to include pathlike targets, for example
--- 'debug\foo.obj' or 'release\bar.exe'.
-local function should_include_pathlike_targets()
-    return os.getenv('INCLUDE_NMAKE_PATHLIKE_TARGETS') and true
-end
-
 -- Function to parse a line of nmake output, and add any extracted target to the
 -- specified targets table.
-local function extract_target(line, last_line, targets)
+local function extract_target(line, last_line, targets, pathlike)
     -- Ignore comment lines.
     if line:find('#', 1, true) then
         return
@@ -58,7 +52,7 @@ local function extract_target(line, last_line, targets)
 
     -- Maybe ignore path-like targets.
     local mt
-    if should_include_pathlike_targets() then
+    if pathlike then
         if not p:find('[/\\]') then
             mt = 'alias'
         end
@@ -99,15 +93,16 @@ local function get_targets(_word, _word_index, line_state, builder, user_data) -
     local last_line = ''
 
     -- Extract targets to be included.
+    local pathlike = os.getenv('INCLUDE_PATHLIKE_MAKEFILE_TARGETS') and true
     for line in file:lines() do
-        extract_target(line, last_line, targets)
+        extract_target(line, last_line, targets, pathlike)
         last_line = line
     end
 
     file:close()
 
     -- If pathlike targets are allowed to be included, sort them last.
-    if string.comparematches and should_include_pathlike_targets() then
+    if pathlike and string.comparematches then
         table.sort(targets, comp_target_sort)
         if builder.setnosort then
             builder:setnosort()
