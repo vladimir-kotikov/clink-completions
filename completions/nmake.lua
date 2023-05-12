@@ -3,6 +3,7 @@
 
 require('arghelper')
 
+-- Table of special targets to always ignore.
 local special_targets = {
     ['.PHONY'] = true,
     ['.SUFFIXES'] = true,
@@ -23,10 +24,14 @@ local special_targets = {
     ['.MAKE'] = true,
 }
 
+-- Function to return whether to include pathlike targets, for example
+-- 'debug\foo.obj' or 'release\bar.exe'.
 local function should_include_pathlike_targets()
     return os.getenv('INCLUDE_NMAKE_PATHLIKE_TARGETS') and true
 end
 
+-- Function to parse a line of nmake output, and add any extracted target to the
+-- specified targets table.
 local function extract_target(line, last_line, targets)
     -- Ignore comment lines.
     if line:find('#', 1, true) then
@@ -67,6 +72,7 @@ local function extract_target(line, last_line, targets)
     table.insert(targets, {match=p, type=mt})
 end
 
+-- Sort comparator to sort pathlike targets last.
 local function comp_target_sort(a, b)
     local a_alias = (a.type == 'alias')
     local b_alias = (b.type == 'alias')
@@ -77,10 +83,11 @@ local function comp_target_sort(a, b)
     end
 end
 
+-- Function to collect available targets.
 local function get_targets(_word, _word_index, line_state, builder, user_data) -- luacheck: no unused
     local nmake_cmd = '"'..line_state:getword(line_state:getcommandwordindex())..'" /p /q /r'
     if user_data and user_data.makefile then
-        nmake_cmd = nmake_cmd..' "'..user_data.makefile..'"'
+        nmake_cmd = nmake_cmd..' /f "'..user_data.makefile..'"'
     end
 
     local file = io.popen('2>nul '..nmake_cmd)
@@ -90,12 +97,16 @@ local function get_targets(_word, _word_index, line_state, builder, user_data) -
 
     local targets = {}
     local last_line = ''
+
+    -- Extract targets to be included.
     for line in file:lines() do
         extract_target(line, last_line, targets)
         last_line = line
     end
+
     file:close()
 
+    -- If pathlike targets are allowed to be included, sort them last.
     if string.comparematches and should_include_pathlike_targets() then
         table.sort(targets, comp_target_sort)
         if builder.setnosort then
@@ -106,9 +117,12 @@ local function get_targets(_word, _word_index, line_state, builder, user_data) -
     return targets
 end
 
+-- Completions for certain flags.
 local er_parser = clink.argmatcher():addarg({'none', 'prompt', 'queue' ,'send'})
 local file_matches = clink.argmatcher():addarg(clink.filematches)
 
+-- Definitions for flags.  This is used to build a table of / and - variants for
+-- each flag, since nmake supports both.
 local flags_def = {
     { 'A',                                  'Build all evaluated targets' },
     { 'B',                                  'Build if time stamps are equal' },
@@ -134,6 +148,8 @@ local flags_def = {
     { '?',                                  'Display brief usage message' },
 }
 
+-- Use the flags_def table to build a table of / and - variants of each flag,
+-- since nmake supports both.
 local flags_table = {}
 for _, e in ipairs(flags_def) do
     local slash, dash
@@ -155,6 +171,23 @@ for _, e in ipairs(flags_def) do
     end
 end
 
+-- Function to detect the `/F` flag for overriding the default makefile.
+local function onarg_flags(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused
+    if word:match('^[-/][fF]') then
+        word = word:sub(3)
+        -- Remember the specified makefile so get_targets() can use it.
+        if word == '' then
+            user_data.makefile = line_state:getword(word_index + 1)
+        else
+            user_data.makefile = word
+        end
+    end
+end
+
+-- Add onarg function to detect when the user overrides the default makefile.
+flags_table.onarg = onarg_flags
+
+-- Create an argmatcher for nmake.
 clink.argmatcher("nmake")
 :_addexflags(flags_table)
 :addarg({get_targets})
