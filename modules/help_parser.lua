@@ -94,8 +94,8 @@ local function sentence_casing(text)
 end
 
 --------------------------------------------------------------------------------
-local _file_keywords = { 'file', 'files', 'filename', 'glob' }
-local _dir_keywords = { 'dir', 'dirs' }
+local _file_keywords = { 'file', 'files', 'filename', 'filenames', 'glob' }
+local _dir_keywords = { 'dir', 'dirs', 'directory', 'directories', 'path', 'paths' }
 
 for _, k in ipairs(_file_keywords) do
     _file_keywords[' <' .. k .. '>'] = true
