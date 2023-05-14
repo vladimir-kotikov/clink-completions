@@ -33,11 +33,9 @@ local special_targets = {
 
 -- Function to parse a line of make output, and add any extracted target to the
 -- specified targets table.
-local function extract_target(line, last_line, targets, pathlike)
-    -- Ignore comment lines.
-    if line:find('#', 1, true) then
-        return
-    end
+local function extract_target(line, last_line, targets, include_pathlike)
+    -- Strip comments.
+    line = line:gsub('(#.*)$', '')
 
     -- Ignore when not a target (is this only for GNU make?).
     if last_line:find('# Not a target') then
@@ -52,7 +50,7 @@ local function extract_target(line, last_line, targets, pathlike)
         return
     end
 
-    -- Ignore targets with pattern
+    -- Ignore pattern rule targets.
     if p:find('%%') then
         return
     end
@@ -64,7 +62,7 @@ local function extract_target(line, last_line, targets, pathlike)
 
     -- Maybe ignore path-like targets.
     local mt
-    if pathlike then
+    if include_pathlike then
         if not p:find('[/\\]') then
             mt = 'alias'
         end
@@ -91,12 +89,12 @@ end
 
 -- Function to collect available targets.
 local function get_targets(word, word_index, line_state, builder, user_data) -- luacheck: no unused
-    local make_cmd = '"'..line_state:getword(line_state:getcommandwordindex())..'" -p -q -r'
+    local command = '"'..line_state:getword(line_state:getcommandwordindex())..'" -p -q -r'
     if user_data and user_data.makefile then
-        make_cmd = make_cmd..' -f "'..user_data.makefile..'"'
+        command = command..' -f "'..user_data.makefile..'"'
     end
 
-    local file = io.popen('2>nul '..make_cmd)
+    local file = io.popen('2>nul '..command)
     if not file then
         return
     end
@@ -105,16 +103,16 @@ local function get_targets(word, word_index, line_state, builder, user_data) -- 
     local last_line = ''
 
     -- Extract targets to be included.
-    local pathlike = os.getenv('INCLUDE_PATHLIKE_MAKEFILE_TARGETS') and true
+    local include_pathlike = os.getenv('INCLUDE_PATHLIKE_MAKEFILE_TARGETS') and true
     for line in file:lines() do
-        extract_target(line, last_line, targets, pathlike)
+        extract_target(line, last_line, targets, include_pathlike)
         last_line = line
     end
 
     file:close()
 
-    -- If pathlike targets are allowed to be included, sort them last.
-    if pathlike and string.comparematches then
+    -- When including pathlike targets, sort them last.
+    if include_pathlike and string.comparematches then
         table.sort(targets, comp_target_sort)
         if builder.setnosort then
             builder:setnosort()
@@ -124,12 +122,8 @@ local function get_targets(word, word_index, line_state, builder, user_data) -- 
     return targets
 end
 
-
--- This is empty as all flags for make are parsed by help_parser
-local flags_table = {}
-
--- Function to detect the `-f` flag for overriding the default makefile.
-local function onarg_flags(arg_index, word, word_index, line_state, user_data)    -- luacheck: no unused
+-- Function to detect flags for overriding the default makefile.
+local function onarg_flags(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused
     if word == '-f' or word == '--file=' or word == '--makefile=' then
         user_data.makefile = line_state:getword(word_index + 1)
     elseif word:match('^-f.+') then
@@ -144,6 +138,7 @@ local function onarg_flags(arg_index, word, word_index, line_state, user_data)  
 end
 
 -- Add onarg function to detect when the user overrides the default makefile.
+local flags_table = {}
 flags_table.onarg = onarg_flags
 
 -- Create an argmatcher for make.
