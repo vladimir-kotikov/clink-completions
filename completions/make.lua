@@ -31,7 +31,7 @@ local special_targets = {
     ['.MAKE'] = true,
 }
 
--- Function to parse a line of nmake output, and add any extracted target to the
+-- Function to parse a line of make output, and add any extracted target to the
 -- specified targets table.
 local function extract_target(line, last_line, targets, pathlike)
     -- Ignore comment lines.
@@ -146,7 +146,7 @@ end
 -- Add onarg function to detect when the user overrides the default makefile.
 flags_table.onarg = onarg_flags
 
--- Create an argmatcher for nmake.
+-- Create an argmatcher for make.
 local make_parser = clink.argmatcher("make")
 :_addexflags(flags_table)
 :addarg({get_targets})
