@@ -1,5 +1,14 @@
 # Release Notes
 
+## 0.4.8 (May 15, 2023)
+
+  * `3e3d9e` Add completions for `nmake` and GNU `make` (#172).
+  * `792451` (internal) Add "directory" keyword in GNU help parser.
+  * `dd6767` [git] Fix `git add` completions to be relative to cwd (#171).
+  * `44937d` [scoop] Add commands "cat", "download", and "import" (#167).
+  * `0a0792` [common] Clarify installation steps in the README.
+  * `46de38` [git] Add missing description for `git add -A`.
+
 ## 0.4.7 (Feb 15, 2023)
 
   * `504a55` Add completions for `gsudo` (from [gsudo](https://github.com/gerardog/gsudo)).
