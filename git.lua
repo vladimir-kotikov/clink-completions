@@ -114,7 +114,7 @@ local function list_git_status_files(token, flags) -- luacheck: no unused args
     local git_dir = git.get_git_common_dir()
     if git_dir then
         local rel_pfx = get_relative_prefix(git_dir)
-        local f = io.popen("git status --porcelain "..(flags or "").." ** 2>nul")
+        local f = io.popen(git.make_command("status --porcelain "..(flags or "").." **"))
         if f then
             if string.matchlen then -- luacheck: no global
                 --[[
@@ -180,7 +180,7 @@ local function get_git_aliases()
     local git_dir = git.get_git_dir()
     if git_dir == nil then return res end
 
-    local f = io.popen("git config --get-regexp alias 2>nul")
+    local f = io.popen(git.make_command("config --get-regexp alias"))
     if f == nil then return res end
 
     for line in f:lines() do
@@ -584,7 +584,7 @@ end
 
 local function concept_guides()
     if clink_version.supports_display_filter_description then
-        local r = io.popen("git help -g 2>nul")
+        local r = io.popen(git.make_command("help -g"))
         if r then
             local matches = {}
             local sgr = "\x1b[1m"
@@ -604,7 +604,7 @@ end
 
 local function all_commands()
     if clink_version.supports_display_filter_description then
-        local r = io.popen("git help -a 2>nul")
+        local r = io.popen(git.make_command("help -a"))
         if r then
             local matches = {}
             local prefix = "Command: "
@@ -758,9 +758,6 @@ local log_flags = {
     "--first-parent",
     "--not",
     "--all",
-    "--branches", { "--branches="..placeholder_required_arg, "glob", "" },
-    "--tags", { "--tags="..placeholder_required_arg, "glob", "" },
-    "--remotes", { "--remotes="..placeholder_required_arg, "glob", "" },
     { opteq=true, "--glob="..placeholder_required_arg, "glob", "" },
     { opteq=true, "--exclude="..placeholder_required_arg, "glob", "" },
     "--single-worktree",
@@ -770,7 +767,8 @@ local log_flags = {
 
 local log_history_flags = {
     "--follow",
-    { "-L"..parser({fromhistory=true}), ":funcname:file|start,end:file", "Trace evolution of range or function" },
+    { "-L"..parser({fromhistory=true}), " start,end:file", "Trace evolution of range" },
+    { "-L:"..parser({fromhistory=true}), "funcname:file", "Trace evolution of function" },
     { opteq=true, "--grep-reflog="..placeholder_required_arg, "pattern", "" },
     "--remove-empty",
     --"--reflog",
@@ -1163,7 +1161,8 @@ local blame_parser = parser()
     { opteq=true, "--contents="..files_parser, "file", "" },
     { "-C", "[n]", "Detect copies; <n> is threshold %" },
     { "-M", "[n]", "Detect renames; <n> is threshold %" },
-    { "-L"..placeholder_required_arg, " :funcname|start,end", "Annotate only range or function" },
+    { "-L"..parser({fromhistory=true}), " start,end", "Annotate only range" },
+    { "-L:"..parser({fromhistory=true}), "funcname", "Annotate only function" },
     "--abbrev",
     flag__abbrevequals,
     { "-l", "Show long rev" },
@@ -2150,6 +2149,187 @@ local worktree_parser = parser()
 })
 
 --------------------------------------------------------------------------------
+-- The gitk command parser.
+--
+-- Note: gitk only supports "--flag=param" syntax; not "--flag param".
+
+local disk_usage_parser = parser():addarg("human")
+
+local gitk_parser = parser()
+:setendofflags()
+:_addexflags({
+    -- From gitk source code:
+    { hide=true, "-d" },        -- ??
+    "--date-order",
+    { hide=true, "-p" },
+    { hide=true, "--patch" },
+    { hide=true, "-u" },        -- ??
+    { hide=true, "-a" },        -- ??
+    { hide=true, "-b" },        -- ??
+    { hide=true, "-w" },        -- ??
+    { hide=true, "-c" },        -- ??
+    { hide=true, "-r" },        -- ??
+    { hide=true, "-R" },        -- ??
+    { hide=true, "-B" },        -- ??
+    { hide=true, "-M" },        -- ??
+    { hide=true, "-C" },        -- ??
+    "--no-renames",
+    "--full-index",
+    "--binary",
+    "--abbrev", flag__abbrevequals, "--no-abbrev",
+    "--find-copies-harder",
+    --{ "-l", "n", "Limit expensive rename/copy checks" }, -- argmatcher parser can't handle no space between flag and its parameters.
+    "--ext-diff",
+    "--no-ext-diff",
+    { "--src-prefix="..parser({fromhistory=true}), "prefix", "" },
+    { "--dst-prefix="..parser({fromhistory=true}), "prefix", "" },
+    "--no-prefix",
+    -- -O*          ??
+    "--text",
+    "--full-diff",
+    "--ignore-space-at-eol",
+    "--ignore-space-change",
+    -- -U*          ??
+    -- --unified=*  ??
+    { hide=true, "--raw" },     -- Seems to have no effect.
+    { hide=true, "--patch-with-raw" },  -- Seems to have no effect.
+    { hide=true, "--patch-with-stat" }, -- Seems to have no effect.
+    "--name-only",
+    "--name-status",
+    "--color",
+    "--log-size",
+    { "--pretty="..pretty_formats_parser, "format", "" },
+    "--decorate",
+    "--abbrev-commit",
+    "--cc",
+    -- -z           ??
+    "--header",
+    "--parents",
+    "--boundary",
+    "--no-color",
+    { "-g",                     "Walk reflogs, not commit ancestry" },
+    "--walk-reflogs",
+    "--no-walk",
+    "--timestamp",
+    "--relative-date",
+    { "--date="..placeholder_required_arg, "date", "" },
+    "--stdin",
+    "--objects",
+    "--objects-edge",
+    "--reverse",
+    -- --color-words=*
+    -- --word-diff=color
+    -- --word-diff*
+    { "--stat="..placeholder_required_arg, "width[,name-width[,count]]", "" },
+    --"--numstat",              -- gitk reports an error with this.
+    "--shortstat",
+    "--summary",
+    --"--check",                -- gitk reports parse errors.
+    "--exit-code",
+    "--quiet",
+    "--topo-order",
+    "--full-history",
+    "--left-right",
+    flag__encoding,
+    { "--diff-filter="..diff_filter_arg, "[ACDMRTUXB...*]", "" },
+    "--no-merges",
+    "--unpacked",
+    { "--max-count="..placeholder_required_arg, "number", "" },
+    { "--skip="..placeholder_required_arg, "number", "" },
+    { "--since="..placeholder_required_arg, "date", "" },
+    { "--after="..placeholder_required_arg, "date", "" },
+    { "--until="..placeholder_required_arg, "date", "" },
+    { "--before="..placeholder_required_arg, "date", "" },
+    -- --max-age=<epoch>
+    -- --min-age=<epoch>
+    { "--author="..person_arg },
+    { "--committer="..person_arg },
+    { "--grep="..placeholder_required_arg },
+    { "-i", "Case insensitive regex matching" },
+    { "-E", "Use extended regex patterns" },
+    "--remove-empty",
+    "--first-parent",
+    "--cherry-pick",
+    --{ "-S", "string", "" },
+    --{ "-G", "regex", "" },
+    "--pickaxe-all",
+    "--pickaxe-regex",
+    "--simplify-by-decoration",
+    { "-L"..parser({fromhistory=true}), "start,end:file", "Trace evolution of range" },
+    { "-L:"..parser({fromhistory=true}), "funcname:file", "Trace evolution of function" },
+    { "-n"..placeholder_required_arg, " number", "Limit number of commits to output" },
+    "--not",
+    "--all",
+    "--merge",
+    "--no-replace-objects",
+
+    -- Specific to gitk:
+    { "--argscmd="..parser({fromhistory=true}), "command", "" },
+    { "--select-commit="..placeholder_required_arg, "ref", "" },
+
+    -- From gitk documentation:
+    "--branches", { "--branches="..placeholder_required_arg, "glob", "" },
+    "--tags", { "--tags="..placeholder_required_arg, "glob", "" },
+    "--remotes", { "--remotes="..placeholder_required_arg, "glob", "" },
+    "--simplify-merges",
+    "--ancestry-path",
+
+    -- From git rev-list help:
+    "--sparse",
+    { "--min-parents="..placeholder_required_arg, "number", "" }, "--no-min-parents",
+    { "--max-parents="..placeholder_required_arg, "number", "" }, "--no-max-parents",
+    -- --exclude-hidden=[receive|uploadpack]
+    "--children",
+    { hide=true, "--disk-usage" },
+    { hide=true, "--disk-usage="..disk_usage_parser, "format", "" },
+    "--pretty",
+    "--object-names",
+    "--no-object-names",
+    "--count",
+    "--bisect",
+    "--bisect-vars",
+    "--bisect-all",
+    "--regexp-ignore-case",
+    "--basic-regexp",
+    "--extended-regexp",
+    "--dirstat",
+    -- TODO: add others from git rev-list documentation.
+})
+:addarg() -- Revision range.
+-- Followed by zero or more path patterns.
+
+if clink.classifier then
+    local gitk_classifier = clink.classifier()
+
+    function gitk_classifier:classify(commands)
+        local flag_color, input_color
+        for i = 1, #commands do
+            local line_state = commands[i].line_state
+            local classifications = commands[i].classifications
+            local cwi = line_state:getcommandwordindex()
+            if path.getbasename(line_state:getword(cwi)) == "gitk" then
+                local word = line_state:getendword()
+                if word:find("^%-L[^%:]") then
+                    local info = line_state:getwordinfo(line_state:getwordcount())
+                    if not flag_color then
+                        flag_color = settings.get("color.flag")
+                    end
+                    if not input_color then
+                        input_color = settings.get("color.input")
+                    end
+                    if flag_color then
+                        classifications:applycolor(info.offset, 2, flag_color)
+                    end
+                    if input_color then
+                        classifications:applycolor(info.offset + 2, #word - 2, input_color)
+                    end
+                end
+            end
+        end
+    end
+end
+
+--------------------------------------------------------------------------------
 -- The main git command parser.
 
 -- This is the set of git commands with custom parsers.  It exists as a separate
@@ -2473,3 +2653,4 @@ if git_parser.setdelayinit then
 end
 
 clink.arg.register_parser("git", git_parser)
+clink.arg.register_parser("gitk", gitk_parser)
