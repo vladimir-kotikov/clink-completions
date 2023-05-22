@@ -2301,7 +2301,7 @@ local gitk_parser = parser()
 if clink.classifier then
     local gitk_classifier = clink.classifier()
 
-    function gitk_classifier:classify(commands)
+    function gitk_classifier:classify(commands) -- luacheck: no unused
         local flag_color, input_color
         for i = 1, #commands do
             local line_state = commands[i].line_state

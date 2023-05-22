@@ -25,7 +25,7 @@ local function can_take_optional_locks(command) -- luacheck: no unused
             return true
         end
     end
-    
+
     return false
 end
 
