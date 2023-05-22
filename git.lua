@@ -121,7 +121,7 @@ local function list_git_status_files(token, flags) -- luacheck: no unused args
                 token = path.normalise(token)
                 --]]
                 for line in f:lines() do
-                    line = line:match("^.. (.+)$")
+                    line = line:match("^.[^ ] (.+)$")
                     if line then
                         line = path.normalise(line)
                         --[[
