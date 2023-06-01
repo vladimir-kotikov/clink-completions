@@ -2295,7 +2295,7 @@ local gitk_parser = parser()
     "--dirstat",
     -- TODO: add others from git rev-list documentation.
 })
-:addarg() -- Revision range.
+-- Optional revision range.
 -- Followed by zero or more path patterns.
 
 if clink.classifier then
