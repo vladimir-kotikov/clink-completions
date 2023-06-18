@@ -659,6 +659,7 @@ local merge_recursive_options = parser():_addexarg({
     "no-renames",
 })
 local merge_strategies = parser({"resolve", "recursive", "ours", "octopus", "subtree"})
+local number_commits_arg = parser({"10", "25", "50"})
 local origin_arg = parser({fromhistory=true})
 local person_arg = parser({fromhistory=true})
 local pretty_formats_parser = parser({"oneline", "short", "medium", "full", "fuller", "reference", "email", "mboxrd", "raw", "format:"})
@@ -2257,7 +2258,7 @@ local gitk_parser = parser()
     "--simplify-by-decoration",
     { "-L"..parser({fromhistory=true}), "start,end:file", "Trace evolution of range" },
     { "-L:"..parser({fromhistory=true}), "funcname:file", "Trace evolution of function" },
-    { "-n"..placeholder_required_arg, " number", "Limit number of commits to output" },
+    { "-n"..number_commits_arg, " number", "Limit number of commits to output" },
     "--not",
     "--all",
     "--merge",
