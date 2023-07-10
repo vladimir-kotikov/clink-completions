@@ -1,5 +1,17 @@
 # Release Notes
 
+## 0.4.9 (Jun 10, 2023)
+
+  * `9c16b1` [git] Add `--no-optional-locks` when invoking git.
+  * `9c16b1` [git] Add completions for `gitk`.
+  * `beffd8` [git] Fix `git add` completions to not list staged files (#173).
+  * `59fe66` Add completions for `ping`.
+  * `7a6e05` Update `ssh` and `ping` completions (#175).
+  * `06ae0b` Add completions for `signtool`.
+  * `50b2bc` [git] Fix script error when directory name in a git repo contains a `%` character.
+  * `bb6758` [git] Add a global DISABLE_GIT_REMOTE_IN_PROMPT variable that can disable adding " -> {remote}" after a branch name.
+  * `bcfcfa` [git] Small performance improvement in repos with very large git config files.
+
 ## 0.4.8 (May 15, 2023)
 
   * `3e3d9e` Add completions for `nmake` and GNU `make` (#172).
