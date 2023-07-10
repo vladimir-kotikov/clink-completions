@@ -3,12 +3,14 @@ local gitutil = require('gitutil')
 
 -- TODO: cache config based on some modification indicator (system mtime, hash)
 
+-- luacheck: globals clink.promptcoroutine io.popenyield
+
 ---
 -- Forward/backward compatibility for Clink asynchronous prompt filtering.
 -- With Clink v1.2.10 and higher this lets git status run in the background and
 -- refresh the prompt when it finishes, to eliminate waits in large git repos.
 ---
-local io_popenyield
+local io_popenyield -- luacheck: no unused
 local clink_promptcoroutine
 local cached_info = {}
 if clink.promptcoroutine and io.popenyield then
@@ -124,11 +126,23 @@ local function git_prompt_filter()
     -- Replace "(branch" with "(branch -> remote".
     local info = get_git_remote(git_dir, branch)
     if info.branch and info.remote then
-      clink.prompt.value = clink.prompt.value:gsub(escape_find_arg('('..info.branch), '%1 -> '..escape_replace_arg(info.remote))
+        local find = escape_find_arg('('..info.branch)
+        local replace = '%1 -> '..escape_replace_arg(info.remote)
+        clink.prompt.value = clink.prompt.value:gsub(find, replace)
     end
 
     return false
 end
+
+clink.prompt.register_filter(function()
+    local git_dir = gitutil.get_git_dir()
+    if not git_dir then clink.prompt.value = os.getcwd()..">" return end
+
+    local branch = gitutil.get_git_branch(git_dir)
+    if not branch then clink.prompt.value = os.getcwd()..">" return end
+
+    clink.prompt.value = os.getcwd().."("..branch..")>"
+end, 50)
 
 -- Register filter with priority 60 which is greater than
 -- Cmder's git prompt filters to override them
