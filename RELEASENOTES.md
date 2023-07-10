@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.4.10 (Jun 10, 2023)
+
+  * `22ebe4` [git] Fix to remove leftover test code (#176).
+
 ## 0.4.9 (Jun 10, 2023)
 
   * `9c16b1` [git] Add `--no-optional-locks` when invoking git.
