@@ -673,19 +673,19 @@ local summary_limit_arg = parser({fromhistory=true})
 local untracked_files_arg = parser({"no", "normal", "all"})
 local x_cmd_arg = parser({fromhistory=true})
 
-local flag__abbrevequals = "--abbrev="..abbrev_lengths
 local flag__colorequals = "--color="..parser({"always", "auto", "never"})
 local flag__columnequals = "--column="..parser({"always", "auto", "never", "column", "row", "plain", "dense", "nodense"})
 local flag__conflictequals = '--conflict='..parser({'merge', 'diff3', 'zdiff3'})
 local flag__dateequals = "--date="..parser({"relative", "local", "iso", "iso-strict", "rfc", "short", "raw", "human", "unix", "default", "format:", "format-local:"})
-local flag__encoding = "--encoding="..parser({fromhistory=true}) --parser("UTF-8", "none")
 local flag__ignore_submodules = "--ignore-submodules="..parser({"none", "untracked", "dirty", "all"})
 local flag__whitespaceequals = "--whitespace="..parser({"nowarn", "warn", "fix", "error", "error-all"})
 
+local flagex__abbrevequals = { '--abbrev='..abbrev_lengths, 'n', '' }
 local flagex__cleanupequals = { opteq=true, "--cleanup="..parser({"strip", "whitespace", "verbatim", "scissors", "default"}), 'option', '' }
 local flagex_c_config = { '-c'..config_arg, ' key=value', 'Set config variable' }
 local flagex__config = { '--config'..config_arg, ' key=value', '' }
 local flagex__depthdepth = { opteq=true, '--depth'..depth_arg, ' depth', '' }
+local flagex__encoding = { opteq=true, '--encoding='..parser({fromhistory=true, "ASCII", "UTF-8", "UTF-16", "UTF-16BE", "UTF-16LE", "UTF-32", "UTF-32BE", "UTF-32LE"}), 'encoding', '' }
 local flagex__gpgsignequals = { '--gpg-sign='..gpg_keyid_arg, 'keyid', '' }
 local flagex_s_mergestrategy = { '-s' .. merge_strategies, ' strategy', 'Use the given merge strategy' }
 local flagex__strategy = { opteq=true, '--strategy' .. merge_strategies, ' strategy', '' }
@@ -739,9 +739,9 @@ local log_flags = {
     { opteq=true, "--after="..placeholder_required_arg, "date", "" },
     { opteq=true, "--until="..placeholder_required_arg, "date", "" },
     { opteq=true, "--before="..placeholder_required_arg, "date", "" },
-    { opteq=true, "--author="..person_arg },
-    { opteq=true, "--committer="..person_arg },
-    { opteq=true, "--grep="..placeholder_required_arg },
+    { opteq=true, "--author="..person_arg, "pattern", "" },
+    { opteq=true, "--committer="..person_arg, "pattern", "" },
+    { opteq=true, "--grep="..placeholder_required_arg, "pattern", "" },
     "--all-match",
     "--invert-grep",
     { "-i", "Case insensitive regex matching" },
@@ -804,7 +804,7 @@ local commit_formatting_flags = {
     "--oneline",
     "--abbrev-commit",
     "--no-abbrev-commit",
-    flag__encoding,
+    flagex__encoding,
     { "--expand-tabs="..placeholder_required_arg, "n", "" },
     "--expand-tabs",
     "--no-expand-tabs",
@@ -882,7 +882,7 @@ local diff_flags = {
     "--full-index",
     "--binary",
     "--abbrev",
-    flag__abbrevequals,
+    flagex__abbrevequals,
     { "-B", "[n][/m]", "Break rewrites into delete+create" },
     "--break-rewrites",
     { "--break-rewrites="..placeholder_required_arg, "[n]/[/m]", "" },
@@ -1165,7 +1165,7 @@ local blame_parser = parser()
     { "-L"..parser({fromhistory=true}), " start,end", "Annotate only range" },
     { "-L:"..parser({fromhistory=true}), "funcname", "Annotate only function" },
     "--abbrev",
-    flag__abbrevequals,
+    flagex__abbrevequals,
     { "-l", "Show long rev" },
     { "-t", "Show raw timestamp" },
     { opteq=true, "--reverse="..placeholder_required_arg, "rev..rev", "" },
@@ -1191,7 +1191,7 @@ local branch_parser = parser()
     "--remotes",
     { opteq=true, "--contains"..placeholder_required_arg, " commit", "" },
     { opteq=true, "--no-contains"..placeholder_required_arg, " commit", "" },
-    "--abbrev", flag__abbrevequals, "--no-abbrev",
+    "--abbrev", flagex__abbrevequals, "--no-abbrev",
     { "-a", "List local and remote tracking branches" },
     "--all",
     { "-d" .. parser({branches}):loop(1), " branch", "Delete a branch" },
@@ -1388,7 +1388,7 @@ local commit_parser = parser()
     "--null",
     { "-F"..files_parser, " file", "Take commit message from the given file" },
     { opteq=true, "--file="..files_parser, "file", "" },
-    { opteq=true, "--author="..person_arg },
+    { opteq=true, "--author="..person_arg, "author", "" },
     { opteq=true, "--date="..placeholder_required_arg, "date", "" },
     { "-m"..placeholder_required_arg, " msg", "Use the given msg as the commit message" },
     { opteq=true, "--message="..placeholder_required_arg, "msg", "" },
@@ -2177,7 +2177,7 @@ local gitk_parser = parser()
     "--no-renames",
     "--full-index",
     "--binary",
-    "--abbrev", flag__abbrevequals, "--no-abbrev",
+    "--abbrev", flagex__abbrevequals, "--no-abbrev",
     "--find-copies-harder",
     --{ "-l", "n", "Limit expensive rename/copy checks" }, -- argmatcher parser can't handle no space between flag and its parameters.
     "--ext-diff",
@@ -2231,21 +2231,21 @@ local gitk_parser = parser()
     "--topo-order",
     "--full-history",
     "--left-right",
-    flag__encoding,
+    flagex__encoding,
     { "--diff-filter="..diff_filter_arg, "[ACDMRTUXB...*]", "" },
     "--no-merges",
     "--unpacked",
-    { "--max-count="..placeholder_required_arg, "number", "" },
-    { "--skip="..placeholder_required_arg, "number", "" },
+    { "--max-count="..placeholder_required_arg, "n", "" },
+    { "--skip="..placeholder_required_arg, "n", "" },
     { "--since="..placeholder_required_arg, "date", "" },
     { "--after="..placeholder_required_arg, "date", "" },
     { "--until="..placeholder_required_arg, "date", "" },
     { "--before="..placeholder_required_arg, "date", "" },
     -- --max-age=<epoch>
     -- --min-age=<epoch>
-    { "--author="..person_arg },
-    { "--committer="..person_arg },
-    { "--grep="..placeholder_required_arg },
+    { "--author="..person_arg, "pattern", "" },
+    { "--committer="..person_arg, "pattern", "" },
+    { "--grep="..placeholder_required_arg, "pattern", "" },
     { "-i", "Case insensitive regex matching" },
     { "-E", "Use extended regex patterns" },
     "--remove-empty",
@@ -2277,8 +2277,8 @@ local gitk_parser = parser()
 
     -- From git rev-list help:
     "--sparse",
-    { "--min-parents="..placeholder_required_arg, "number", "" }, "--no-min-parents",
-    { "--max-parents="..placeholder_required_arg, "number", "" }, "--no-max-parents",
+    { "--min-parents="..placeholder_required_arg, "n", "" }, "--no-min-parents",
+    { "--max-parents="..placeholder_required_arg, "n", "" }, "--no-max-parents",
     -- --exclude-hidden=[receive|uploadpack]
     "--children",
     { hide=true, "--disk-usage" },
