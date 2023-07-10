@@ -134,16 +134,6 @@ local function git_prompt_filter()
     return false
 end
 
-clink.prompt.register_filter(function()
-    local git_dir = gitutil.get_git_dir()
-    if not git_dir then clink.prompt.value = os.getcwd()..">" return end
-
-    local branch = gitutil.get_git_branch(git_dir)
-    if not branch then clink.prompt.value = os.getcwd()..">" return end
-
-    clink.prompt.value = os.getcwd().."("..branch..")>"
-end, 50)
-
 -- Register filter with priority 60 which is greater than
 -- Cmder's git prompt filters to override them
 clink.prompt.register_filter(git_prompt_filter, 60)
