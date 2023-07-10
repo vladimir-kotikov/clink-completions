@@ -32,12 +32,15 @@ end
 ---
  -- Escapes every non-alphanumeric character in string with % symbol. This is required
  -- because string.gsub treats plain strings with some symbols (e.g. dashes) as regular
- -- expressions (taken from http://stackoverflow.com/a/34953646)
+ -- expressions. See "Patterns" (https://www.lua.org/manual/5.2/manual.html#6.4.1).
  -- @param {string} text Text to escape
  -- @returns {string} Escaped text
 ---
-local function escape(text)
-    return text and text:gsub("([^%w])", "%%%1") or ""
+local function escape_find_arg(text)
+    return text and text:gsub("([-+*?.%%()%[%]$^])", "%%%1") or ""
+end
+local function escape_replace_arg(text)
+    return text and text:gsub("%%", "%%%%") or ""
 end
 
 local function get_git_config_value(git_config, section, param)
@@ -67,10 +70,8 @@ local function git_prompt_filter()
     local text = remote_to_push
     if (remote_ref) then text = text..'/'..remote_ref end
 
-    if (text == '') then
-      clink.prompt.value = clink.prompt.value:gsub(escape('('..branch), '%1'..text)
-    else
-      clink.prompt.value = clink.prompt.value:gsub(escape('('..branch), '%1 -> '..text)
+    if (text ~= '') then
+      clink.prompt.value = clink.prompt.value:gsub(escape_find_arg('('..branch), '%1 -> '..escape_replace_arg(text))
     end
 
     return false
