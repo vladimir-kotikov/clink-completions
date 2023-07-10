@@ -54,6 +54,15 @@ local function git_prompt_filter()
     -- Check for Cmder configured Git Status Opt In/Out - See: https://github.com/cmderdev/cmder/issues/2484
     if cmderGitStatusOptIn == false then return false end  -- luacheck: globals cmderGitStatusOptIn
 
+    -- PROBLEM: This was intended for use with Cmder, but it also runs against
+    -- non-Cmder prompts, which can potentially cause problems.  So, the
+    -- following provides a way to disable this prompt replacement behavior
+    -- without needing to delete this file.
+    -- Use a Lua script to set the global variable
+    --      DISABLE_GIT_REMOTE_IN_PROMPT = true
+    -- and that will turn off the replacement feature.
+    if DISABLE_GIT_REMOTE_IN_PROMPT then return false end  -- luacheck: globals DISABLE_GIT_REMOTE_IN_PROMPT
+
     local git_dir = gitutil.get_git_dir()
     if not git_dir then return false end
 
