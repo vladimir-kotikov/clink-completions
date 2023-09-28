@@ -512,7 +512,7 @@ local function push_branch_spec(token)
     end
 end
 
-local stashes = function(token)  -- luacheck: no unused args
+local stashes = function(token, _, _, builder)  -- luacheck: no unused args
 
     local git_dir = git.get_git_dir()
     if not git_dir then return w() end
@@ -565,6 +565,10 @@ local stashes = function(token)  -- luacheck: no unused args
 
     local function filter()
         return ret_filter
+    end
+
+    if builder and builder.setforcequoting then
+        builder:setforcequoting()
     end
 
     if clink_version.supports_display_filter_description then
