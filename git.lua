@@ -1125,7 +1125,7 @@ local untracked_flags = {
 
 local add_parser = parser()
 :setendofflags()
-:addarg(add_spec_generator)
+:addarg(add_spec_generator):loop()
 :_addexflags({
     help_flags,
     { "-n", "Don't actually add files" },
