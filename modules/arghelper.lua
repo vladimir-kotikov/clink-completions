@@ -4,7 +4,7 @@
 --      argmatcher:_addexflags()
 --      argmatcher:_addexarg()
 --
--- The _addexflags()` and `_addexarg() functions accept the following format,
+-- The _addexflags() and _addexarg() functions accept the following format,
 -- and both functions accept the same input format.
 --
 --      local a = clink.argmatcher()
