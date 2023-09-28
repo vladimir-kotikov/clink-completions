@@ -2307,22 +2307,24 @@ if clink.classifier then
         for i = 1, #commands do
             local line_state = commands[i].line_state
             local classifications = commands[i].classifications
-            local cwi = line_state:getcommandwordindex()
-            if path.getbasename(line_state:getword(cwi)) == "gitk" then
-                local word = line_state:getendword()
-                if word:find("^%-L[^%:]") then
-                    local info = line_state:getwordinfo(line_state:getwordcount())
-                    if not flag_color then
-                        flag_color = settings.get("color.flag")
-                    end
-                    if not input_color then
-                        input_color = settings.get("color.input")
-                    end
-                    if flag_color then
-                        classifications:applycolor(info.offset, 2, flag_color)
-                    end
-                    if input_color then
-                        classifications:applycolor(info.offset + 2, #word - 2, input_color)
+            if line_state.getcommandwordindex then
+                local cwi = line_state:getcommandwordindex()
+                if path.getbasename(line_state:getword(cwi)) == "gitk" then
+                    local word = line_state:getendword()
+                    if word:find("^%-L[^%:]") then
+                        local info = line_state:getwordinfo(line_state:getwordcount())
+                        if not flag_color then
+                            flag_color = settings.get("color.flag")
+                        end
+                        if not input_color then
+                            input_color = settings.get("color.input")
+                        end
+                        if flag_color then
+                            classifications:applycolor(info.offset, 2, flag_color)
+                        end
+                        if input_color then
+                            classifications:applycolor(info.offset + 2, #word - 2, input_color)
+                        end
                     end
                 end
             end
