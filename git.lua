@@ -177,9 +177,6 @@ end
 local function get_git_aliases()
     local res = w()
 
-    local git_dir = git.get_git_dir()
-    if git_dir == nil then return res end
-
     local f = io.popen(git.make_command("config --get-regexp alias"))
     if f == nil then return res end
 
@@ -196,7 +193,13 @@ local function get_git_aliases()
 end
 
 -- Function to generate completions for alias
+local cached_aliases
+local index_aliases = {}
 local function alias(token) -- luacheck: no unused args
+    if cached_aliases then
+        return cached_aliases
+    end
+
     local res = w()
 
     local aliases = get_git_aliases()
@@ -210,6 +213,43 @@ local function alias(token) -- luacheck: no unused args
         end
     end
 
+    index_aliases = {}
+    for _, a in ipairs(aliases) do
+        index_aliases[a.name] = true
+    end
+
+    if clink.onbeginedit then
+        cached_aliases = res
+    end
+    return res
+end
+
+-- Function to generate completions for all command names
+local cached_commands
+local function catchall(token) -- luacheck: no unused args
+    if cached_commands then
+        return cached_commands
+    end
+
+    local res = w()
+
+    local f = io.popen(git.make_command("help -a --no-aliases"))
+    if f then
+        for line in f:lines() do
+            local name, desc = line:match("^   ([^ ]+) *(.*)$") -- luacheck: no unused
+            if name then
+                -- Currently the descriptions are discarded; only the main
+                -- commands will list descriptions, so that more columns can
+                -- fit on the screen.
+                table.insert(res, name)
+            end
+        end
+        f:close()
+    end
+
+    if clink.onbeginedit then
+        cached_commands = res
+    end
     return res
 end
 
@@ -586,47 +626,72 @@ local function tags()
     return tag_names:map(function(tag) return { match=tag, display=tag_pre..tag, type='arg' } end)
 end
 
+local cached_guides
 local function concept_guides()
-    if clink_version.supports_display_filter_description then
-        local r = io.popen(git.make_command("help -g"))
-        if r then
-            local matches = {}
-            local sgr = "\x1b[1m"
-            local mark = " \x1b[22;32m*"
-            for line in r:lines() do
-                local guide, desc = line:match("^   ([^ ]+) +(.+)$")
-                if guide then
+    if cached_guides then
+        return cached_guides
+    end
+
+    local matches = {}
+    local r = io.popen(git.make_command("help -g"))
+    if r then
+        local sgr = "\x1b[m"
+        local mark = " \x1b[22;32m*"
+        for line in r:lines() do
+            local guide, desc = line:match("^   ([^ ]+) *(.*)$")
+            if guide then
+                if clink_version.supports_display_filter_description then
                     table.insert(matches, { match=guide, display=sgr..guide..mark, description="Guide: "..desc } )
+                else
+                    table.insert(matches, guide)
                 end
             end
-            r:close()
-            return matches
         end
+        r:close()
     end
-    return {}
+
+    if clink.onbeginedit then
+        cached_guides = matches
+    end
+    return matches
 end
 
+local cached_all_commands
+local index_main_commands = {}
 local function all_commands()
-    if clink_version.supports_display_filter_description then
-        local r = io.popen(git.make_command("help -a"))
-        if r then
-            local matches = {}
-            local prefix = "Command: "
-            local sgr = ""
-            for line in r:lines() do
-                local command, desc = line:match("^   ([^ ]+) +(.+)$")
-                if command then
-                    table.insert(matches, { match=command, display=sgr..command, description=prefix..desc } )
-                elseif line == "Command aliases" then
-                    prefix = "Alias: "
-                    sgr = "\x1b["..settings.get("color.doskey").."m"
-                end
-            end
-            r:close()
-            return matches
-        end
+    if cached_all_commands then
+        return cached_all_commands
     end
-    return {}
+
+    local matches = {}
+    local r = io.popen(git.make_command("help -a"))
+    if r then
+        local prefix = "Command: "
+        local mode = {}
+        for line in r:lines() do
+            local command, desc = line:match("^   ([^ ]+) *(.*)$")
+            if command then
+                if clink_version.supports_display_filter_description then
+                    local mtype = (mode.aliases and "alias") or (index_main_commands[command] and "cmd")
+                    table.insert(matches, { match=command, description=prefix..desc, type=mtype } )
+                else
+                    table.insert(matches, command)
+                end
+            elseif line == "Command aliases" then
+                prefix = "Alias: "
+                mode = { aliases=true }
+            elseif line == "External commands" then
+                prefix = "External command"
+                mode = { external=true }
+            end
+        end
+        r:close()
+    end
+
+    if clink.onbeginedit then
+        cached_all_commands = matches
+    end
+    return matches
 end
 
 -- luacheck: push
@@ -1546,6 +1611,12 @@ local help_parser = parser()
     { "--man",                          "Display manual page for the command in the man format" },
     { "-w",                             "Display manual page for the command in HTML format" },
     { "--web",                          "Display manual page for the command in HTML format" },
+    { "--aliases",                      "Show aliases in --all (the default)" },
+    { "--no-aliases",                   "Don't show aliases in --all" },
+    { "--external-commands",            "Show external commands in --all (the default)" },
+    { "--no-external-commands",         "Don't show external commands in --all" },
+    { "--user-interfaces",              "Print a list of user-facing repository, command and file interfaces" },
+    { "--developer-interfaces",         "Print a list of file formats, protocols and other developer interfaces" },
 })
 if help_parser.setdelayinit then
     help_parser:addarg({delayinit=function (argmatcher) -- luacheck: no unused args
@@ -2418,6 +2489,10 @@ local main_commands = {
     { "worktree",           "Manage multiple working trees" },
 }
 
+for _, c in ipairs(main_commands) do
+    index_main_commands[c[1]] = true
+end
+
 -- Commands without descriptions.
 -- This is a table of just command name strings.
 --
@@ -2582,6 +2657,22 @@ local git_flags = {
 
 -- luacheck: pop
 
+local function command_display_filter()
+    if clink.ondisplaymatches then
+        clink.ondisplaymatches(function(matches)
+            for _, m in ipairs(matches) do
+                if index_aliases[m.match] then
+                    m.type = "alias"
+                elseif index_main_commands[m.match] then
+                    m.type = "cmd"
+                end
+            end
+            return matches
+        end)
+    end
+    return {}
+end
+
 -- Initialize the argmatcher.  This may be called repeatedly.
 local function init(argmatcher, full_init)
     -- When doing a full init, must reset in order to maintain the sort order.
@@ -2592,7 +2683,7 @@ local function init(argmatcher, full_init)
     end
 
     -- Build a table that will be used to (re)initialize the git parser.
-    local commands = { nosort=true }
+    local commands = { nosort=true, command_display_filter }
 
     -- First the main commands, with descriptions.
     for _,x in ipairs(main_commands) do
@@ -2632,6 +2723,7 @@ local function init(argmatcher, full_init)
             table.insert(commands, x)
         end
     end
+    table.insert(commands, catchall)
 
     -- Initialize the argmatcher.
     argmatcher:_addexarg(commands)
@@ -2661,3 +2753,12 @@ end
 
 clink.arg.register_parser("git", git_parser)
 clink.arg.register_parser("gitk", gitk_parser)
+
+if clink.onbeginedit then
+    clink.onbeginedit(function()
+        cached_aliases = nil
+        cached_commands = nil
+        cached_guides = nil
+        cached_all_commands = nil
+    end)
+end
