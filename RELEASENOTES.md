@@ -1,5 +1,18 @@
 # Release Notes
 
+## 0.4.11 (Oct 1, 2023)
+
+  * `4e40a6` [ssh] Add option completions (#179).
+  * `4e89a8` [git] Improve completions for git:
+    * Use colors to categorize git command names (common, aliases, other).
+    * Add more flag completions for the `git help` command.
+	* Fix `git add` completions to work for the 2nd, 3rd, etc arguments.
+    * Fix to include git external commands when generating command completions.
+    * Fix to include aliases even when current directory is outside a repo.
+    * Fix to generate completions for `git help` even when using older versions of Clink.
+  * `836a66` [git] Fix completing stash names (need quotes).
+  * `367bb4` [git] Fix compatibility with older versions of Clink.
+
 ## 0.4.10 (Jun 10, 2023)
 
   * `22ebe4` [git] Fix to remove leftover test code (#176).
