@@ -27,11 +27,19 @@ local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(clin
 local map_file
 if rl.getmatchcolor then
     map_file = function (file)
-        return { match=file, display='\x1b[m'..rl.getmatchcolor(file, 'file')..file, type='arg' }
+        if type(file) == "table" then
+            return file
+        else
+            return { match=file, display='\x1b[m'..rl.getmatchcolor(file, 'file')..file, type='arg' }
+        end
     end
 else
     map_file = function (file)
-        return { match=file, display='\x1b[m'..file, type='arg' }
+        if type(file) == "table" then
+            return file
+        else
+            return { match=file, display='\x1b[m'..file, type='arg' }
+        end
     end
 end
 
