@@ -162,26 +162,28 @@ end
 
 -- return the list of supported options
 local function supportedOptions(token) -- luacheck: no unused args
--- curl --silent https://raw.githubusercontent.com/openssh/openssh-portable/master/ssh_config.5 | awk '$1==".It" && $2=="Cm" && $3!="Host" && $3!="Match" {print "        "$3}' | sort
-    local options = {"AddKeysToAgent", "AddressFamily", "BatchMode", "BindAddress", "BindInterface",
-                     "CanonicalDomains", "CanonicalizeFallbackLocal", "CanonicalizeHostname", "CanonicalizeMaxDots",
-                     "CanonicalizePermittedCNAMEs", "CASignatureAlgorithms", "CertificateFile", "CheckHostIP",
-                     "Ciphers", "ClearAllForwardings", "Compression", "ConnectionAttempts", "ConnectTimeout",
-                     "ControlMaster", "ControlPath", "ControlPersist", "DynamicForward", "EnableEscapeCommandline",
-                     "EnableSSHKeysign", "EscapeChar", "ExitOnForwardFailure", "FingerprintHash", "ForkAfterAuthentication",
-                     "ForwardAgent", "ForwardX11", "ForwardX11Timeout", "ForwardX11Trusted", "GatewayPorts",
-                     "GlobalKnownHostsFile", "GSSAPIAuthentication", "GSSAPIDelegateCredentials", "HashKnownHosts",
-                     "HostbasedAcceptedAlgorithms", "HostbasedAuthentication", "HostKeyAlgorithms", "HostKeyAlias",
-                     "Hostname", "IdentitiesOnly", "IdentityAgent", "IdentityFile", "IgnoreUnknown", "Include",
-                     "IPQoS", "KbdInteractiveAuthentication", "KbdInteractiveDevices", "KexAlgorithms", "KnownHostsCommand",
-                     "LocalCommand", "LocalForward", "LogLevel", "LogVerbose", "MACs", "NoHostAuthenticationForLocalhost",
-                     "NumberOfPasswordPrompts", "ObscureKeystrokeTiming", "PasswordAuthentication", "PermitLocalCommand",
-                     "PermitRemoteOpen", "PKCS11Provider", "Port", "PreferredAuthentications", "ProxyCommand", "ProxyJump",
-                     "ProxyUseFdpass", "PubkeyAcceptedAlgorithms", "PubkeyAuthentication", "RekeyLimit", "RemoteCommand",
-                     "RemoteForward", "RequestTTY", "RequiredRSASize", "RevokedHostKeys", "SecurityKeyProvider", "SendEnv",
-                     "ServerAliveCountMax", "ServerAliveInterval", "SessionType", "SetEnv", "StdinNull", "StreamLocalBindMask",
-                     "StreamLocalBindUnlink", "StrictHostKeyChecking", "SyslogFacility", "Tag", "TCPKeepAlive", "Tunnel",
-                     "TunnelDevice", "UpdateHostKeys", "User", "UserKnownHostsFile", "VerifyHostKeyDNS", "VisualHostKey", "XAuthLocation"}
+--[[ curl --silent https://raw.githubusercontent.com/openssh/openssh-portable/master/ssh_config.5 | awk '$1==".It" && $2=="Cm" && $3!="Host" && $3!="Match" {print "        "$3}' | sort ]] -- luacheck: no max line length
+    local options = {
+        "AddKeysToAgent", "AddressFamily", "BatchMode", "BindAddress", "BindInterface", "CanonicalDomains",
+        "CanonicalizeFallbackLocal", "CanonicalizeHostname", "CanonicalizeMaxDots", "CanonicalizePermittedCNAMEs",
+        "CASignatureAlgorithms", "CertificateFile", "CheckHostIP", "Ciphers", "ClearAllForwardings", "Compression",
+        "ConnectionAttempts", "ConnectTimeout", "ControlMaster", "ControlPath", "ControlPersist", "DynamicForward",
+        "EnableEscapeCommandline", "EnableSSHKeysign", "EscapeChar", "ExitOnForwardFailure", "FingerprintHash",
+        "ForkAfterAuthentication", "ForwardAgent", "ForwardX11", "ForwardX11Timeout", "ForwardX11Trusted",
+        "GatewayPorts", "GlobalKnownHostsFile", "GSSAPIAuthentication", "GSSAPIDelegateCredentials", "HashKnownHosts",
+        "HostbasedAcceptedAlgorithms", "HostbasedAuthentication", "HostKeyAlgorithms", "HostKeyAlias", "Hostname",
+        "IdentitiesOnly", "IdentityAgent", "IdentityFile", "IgnoreUnknown", "Include", "IPQoS",
+        "KbdInteractiveAuthentication", "KbdInteractiveDevices", "KexAlgorithms", "KnownHostsCommand", "LocalCommand",
+        "LocalForward", "LogLevel", "LogVerbose", "MACs", "NoHostAuthenticationForLocalhost",
+        "NumberOfPasswordPrompts", "ObscureKeystrokeTiming", "PasswordAuthentication", "PermitLocalCommand",
+        "PermitRemoteOpen", "PKCS11Provider", "Port", "PreferredAuthentications", "ProxyCommand", "ProxyJump",
+        "ProxyUseFdpass", "PubkeyAcceptedAlgorithms", "PubkeyAuthentication", "RekeyLimit", "RemoteCommand",
+        "RemoteForward", "RequestTTY", "RequiredRSASize", "RevokedHostKeys", "SecurityKeyProvider", "SendEnv",
+        "ServerAliveCountMax", "ServerAliveInterval", "SessionType", "SetEnv", "StdinNull", "StreamLocalBindMask",
+        "StreamLocalBindUnlink", "StrictHostKeyChecking", "SyslogFacility", "Tag", "TCPKeepAlive", "Tunnel",
+        "TunnelDevice", "UpdateHostKeys", "User", "UserKnownHostsFile", "VerifyHostKeyDNS", "VisualHostKey",
+        "XAuthLocation",
+    }
     return options
 end
 
