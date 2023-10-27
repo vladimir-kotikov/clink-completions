@@ -229,6 +229,7 @@ local arch_locale_flags = {
 
 local common_flags = {
     {               "--verbose-logs",                                           "Enables verbose logging for WinGet" },
+    {               "--logs",                                                   "Opens the default logs location" },
     { hide=true,    "--no-vt" },
     { hide=true,    "--rainbow" },
     { hide=true,    "--retro" },
@@ -237,6 +238,7 @@ local common_flags = {
     { hide=true,    "--wait",                                                   "Prompts the user to press any key before exiting" },
     { hide=true,    "--disable-interactivity",                                  "Disable interactive prompts" },
     { hide=true,    "--verbose",                                                "Enables verbose logging for WinGet" },
+    { hide=true,    "--open-logs",                                              "Opens the default logs location" },
 }
 
 local source_name_flags = {
