@@ -90,6 +90,9 @@
 --------------------------------------------------------------------------------
 -- Changes:
 --
+--  2023/11/11
+--      - Support for `onadvance=func`.
+--
 --  2023/01/29
 --      - `local arghelper = require("arghelper.lua")` returns an export table.
 --      - `arghelper.make_arg_hider_func()` makes a match function that hides
@@ -269,6 +272,7 @@ if not tmp._addexflags or not tmp._addexarg then
         list.fromhistory = tbl.fromhistory
         list.loopchars = tbl.loopchars
         list.nosort = tbl.nosort
+        list.onadvance = tbl.onadvance
         list.onarg = tbl.onarg
         return list, descriptions, hide
     end
