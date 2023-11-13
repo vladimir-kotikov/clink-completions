@@ -79,8 +79,31 @@ local function delayinit(argmatcher)
     end
     table.insert(rashcneto_chars, { 'O', 'Offline' })
 
+    local copy_flag_chars = {
+        nosort=true,
+        caseless=true,
+        { 'D', 'Data' },
+        { 'A', 'Attributes' },
+        { 'T', 'Timestamps' },
+        { 'S', 'NTFS ACLs' },
+        { 'O', 'Owner info' },
+        { 'U', 'aUditing info' },
+        { 'X', 'Skip alt data streams' },
+    }
+    local dcopy_flag_chars = {
+        nosort=true,
+        caseless=true,
+        { 'D', 'Data' },
+        { 'A', 'Attributes' },
+        { 'T', 'Timestamps' },
+        { 'E', 'EAs' },
+        { 'X', 'Skip alt data streams' },
+    }
+
     local rashcnet = mcf.addcharflagsarg(clink.argmatcher(), rashcnet_chars)
     local rashcneto = mcf.addcharflagsarg(clink.argmatcher(), rashcneto_chars)
+    local copy_flags = mcf.addcharflagsarg(clink.argmatcher(), copy_flag_chars)
+    local dcopy_flags = mcf.addcharflagsarg(clink.argmatcher(), dcopy_flag_chars)
 
     for line in r:lines() do
         if unicode.fromcodepage then -- luacheck: no global
@@ -103,6 +126,10 @@ local function delayinit(argmatcher)
                         add_match(a, b, d, rashcnet)
                     elseif a == "/IA:" or a == "/XA:" then
                         add_match(a, b, d, rashcneto)
+                    elseif a == "/COPY:" then
+                        add_match(a, b, d, copy_flags)
+                    elseif a == "/DCOPY:" then
+                        add_match(a, b, d, dcopy_flags)
                     else
                         add_match(a, b, d)
                     end
