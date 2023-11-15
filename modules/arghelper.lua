@@ -90,8 +90,8 @@
 --------------------------------------------------------------------------------
 -- Changes:
 --
---  2023/11/11
---      - Support for `onadvance=func`.
+--  2023/11/14
+--      - Support for `onadvance=func` and `onlink=func`.
 --
 --  2023/01/29
 --      - `local arghelper = require("arghelper.lua")` returns an export table.
@@ -273,6 +273,7 @@ if not tmp._addexflags or not tmp._addexarg then
         list.loopchars = tbl.loopchars
         list.nosort = tbl.nosort
         list.onadvance = tbl.onadvance
+        list.onlink = tbl.onlink
         list.onarg = tbl.onarg
         return list, descriptions, hide
     end
