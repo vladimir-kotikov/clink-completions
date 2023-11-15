@@ -323,6 +323,13 @@ local function for__repeat_unless_close_paren(_, _, word_index, line_state, _)
     end
 end
 
+local for__color_options = {}
+for__color_options["eol="] = true
+for__color_options["skip="] = true
+for__color_options["delims="] = true
+for__color_options["tokens="] = true
+for__color_options["usebackq"] = true
+
 local function for__classifier(arg_index, word, word_index, line_state, classifications)
     local zap, zapafter
 
@@ -332,6 +339,50 @@ local function for__classifier(arg_index, word, word_index, line_state, classifi
     elseif arg_index == 3 then
         local info = line_state:getwordinfo(word_index)
         zap = not info.quoted and #word > 0
+        if not zap then
+            local arg_color
+            local line = line_state:getline()
+            local info = line_state:getwordinfo(word_index)
+            local word = line:sub(info.offset, info.offset + info.length - 1)
+            if #word then
+                local trailing
+                local start
+                local text = ""
+                local j = 0
+                local iter = unicode.iter(word)
+                while true do
+                    local s = iter()
+                    local apply
+                    if s == " " or not s then
+                        apply = (text == "usebackq")
+                        trailing = nil
+                        if s and not apply then
+                            start = nil
+                            text = ""
+                        end
+                    elseif not trailing then
+                        start = start or j
+                        text = text..s
+                        if s == "=" then
+                            trailing = true
+                            apply = for__color_options[text]
+                        end
+                    end
+                    if apply then
+                        if not arg_color then
+                            arg_color = settings.get("color.arg")
+                        end
+                        classifications:applycolor(info.offset + start, #text, arg_color)
+                        start = nil
+                        text = ""
+                    end
+                    if not s then
+                        break
+                    end
+                    j = j + #s
+                end
+            end
+        end
     elseif arg_index == 4 then
         word = for__get_full_word(line_state, word_index, true)
         if not word or not word:find("^%%") then
@@ -435,12 +486,14 @@ function for__generator:generate(line_state, builder) -- luacheck: no unused
     local is, sq = for__is_f_options(line_state, true)
     if is then
         builder:setsuppressquoting(sq)
+        builder:setsuppressappend()
+        builder:setnosort()
         builder:addmatches({
-            { match="eol=", suppressappend=true },
-            { match="skip=", suppressappend=true },
-            { match="delims=", suppressappend=true },
-            { match="tokens=", suppressappend=true },
-            { match="usebackq ", suppressappend=true },
+            { match="eol=", arginfo="c",            description="Specifies an end of line comment character (just one)" },
+            { match="skip=", arginfo="n",           description="Specifies the number of lines to skip at the beginning of the file" },
+            { match="delims=", arginfo="xxx",       description="Specifies a delimiter set (default is space and tab)" },
+            { match="tokens=", arginfo="x,y,m-n",   description="Specifies which tokens from each line go in the %a variables" },
+            { match="usebackq ",                    description="Uses new semantics (back quote executes as a command)" },
         })
         return true
     end
@@ -451,67 +504,6 @@ function for__generator:getwordbreakinfo(line_state) -- luacheck: no unused
         local last_space = word:find(" [^ ]*$")
         if last_space then
             return last_space, 0
-        end
-    end
-end
-
-local for__color_options = {}
-for__color_options["eol="] = true
-for__color_options["skip="] = true
-for__color_options["delims="] = true
-for__color_options["tokens="] = true
-for__color_options["usebackq"] = true
-
--- TODO: This can probably be folded into for__classifier...
-local for__options_classifier = clink.classifier(20)
-function for__options_classifier:classify(commands) -- luacheck: no unused
-    local arg_color
-    for i = 1, #commands do
-        local line_state = commands[i].line_state
-        local is = for__is_f_options(line_state)
-        if is then
-            local line = line_state:getline()
-            local info = line_state:getwordinfo(is)
-            local word = line:sub(info.offset, info.offset + info.length - 1)
-            if #word then
-                local classifications = commands[i].classifications
-                local trailing
-                local start
-                local text = ""
-                local j = 0
-                local iter = unicode.iter(word)
-                while true do
-                    local s = iter()
-                    local apply
-                    if s == " " or not s then
-                        apply = (text == "usebackq")
-                        trailing = nil
-                        if s and not apply then
-                            start = nil
-                            text = ""
-                        end
-                    elseif not trailing then
-                        start = start or j
-                        text = text..s
-                        if s == "=" then
-                            trailing = true
-                            apply = for__color_options[text]
-                        end
-                    end
-                    if apply then
-                        if not arg_color then
-                            arg_color = settings.get("color.arg")
-                        end
-                        classifications:applycolor(info.offset + start, #text, arg_color)
-                        start = nil
-                        text = ""
-                    end
-                    if not s then
-                        break
-                    end
-                    j = j + #s
-                end
-            end
         end
     end
 end
