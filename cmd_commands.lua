@@ -32,6 +32,9 @@ local function __parse_descriptions(argmatcher, command, descriptions, is_arg_fu
                     :gsub("%s+$", "")
                 local t = descriptions[pending.flag]
                 if t then
+                    if pending.arginfo then
+                        t[1] = pending.arginfo
+                    end
                     table.insert(t, desc)
                 end
                 if pending.choices then
@@ -40,15 +43,44 @@ local function __parse_descriptions(argmatcher, command, descriptions, is_arg_fu
                 end
             end
             pending.flag = nil
+            pending.arginfo = nil
             pending.choices = nil
             pending.desc = nil
         end
 
+        local sort_quirks = command:find("sort")
         for line in f:lines() do
-            local flag, text
+            line = line:gsub("[\r\n]+$", "")
+            local flag, arginfo, text
             text = line:match("^%s%s%s%s%s%s%s%s%s%s%s%s+([^%s].*)$")
             if not text then
                 flag, text = line:match("^%s%s+(/?[A-Za-z0-9]+)%s+([^%s].*)$")
+                if sort_quirks and not flag then
+                    -- E.g. "  /+n " or "  /REC["
+                    flag = line:match("^%s%s+(/[+A-Za-z]+)[%[ ]")
+                    if flag then
+                        if flag:find("^/%+") then
+                            -- E.g. "  /+n                         Specifies blah blah"
+                            flag = "/+"
+                            arginfo = flag:match("^/%+(.+)$")
+                        end
+                        text = line:match("^%s%s+/[+A-Za-z_0-9%[%]]+%s%s+([^ ].+)$")
+                        if not text then
+                            -- E.g. "  /L[OCALE] locale            Specifies blah blah"
+                            arginfo, text = line:match("^%s%s+/[+A-Za-z_0-9%[%]]+%s([^ ]+)%s+([^ ].+)$")
+                            if arginfo then
+                                arginfo = " "..arginfo
+                            end
+                        end
+                    else
+                        -- E.g. "    [drive2:][path2]          Specifies blah blah"
+                        arginfo, text = line:match("^%s%s+(%[[^ ]+)%s+([^ ].*)$")
+                        if arginfo then
+                            arginfo = arginfo:gsub("[1-3](:?)%]", "%1]"):gsub("[1-3]$", "")
+                            pending.arginfo = " "..arginfo
+                        end
+                    end
+                end
             end
 
             if flag and is_arg_func then
@@ -64,8 +96,9 @@ local function __parse_descriptions(argmatcher, command, descriptions, is_arg_fu
                 if not seen[flag] and descriptions[flag] then
                     seen[flag] = true
                     pending.flag = flag
+                    pending.arginfo = arginfo
                     pending.choices = nil
-                    pending.desc = text
+                    pending.desc = text or ""
                 end
             elseif not text then
                 finish_pending()
@@ -119,6 +152,8 @@ local function dir__classifier(arg_index, word, word_index, line_state, classifi
 end
 
 local function dir__delayinit(argmatcher)
+    argmatcher:setdelayinit(nil)
+
     local descriptions = {
     ["/a"]           = { "attributes" },
     ["/b"]           = {},
@@ -342,8 +377,7 @@ local function for__classifier(arg_index, word, word_index, line_state, classifi
         if not zap then
             local arg_color
             local line = line_state:getline()
-            local info = line_state:getwordinfo(word_index)
-            local word = line:sub(info.offset, info.offset + info.length - 1)
+            word = line:sub(info.offset, info.offset + info.length - 1)
             if #word then
                 local trailing
                 local start
@@ -489,11 +523,14 @@ function for__generator:generate(line_state, builder) -- luacheck: no unused
         builder:setsuppressappend()
         builder:setnosort()
         builder:addmatches({
+            -- luacheck: push
+            -- luacheck: no max line length
             { match="eol=", arginfo="c",            description="Specifies an end of line comment character (just one)" },
             { match="skip=", arginfo="n",           description="Specifies the number of lines to skip at the beginning of the file" },
             { match="delims=", arginfo="xxx",       description="Specifies a delimiter set (default is space and tab)" },
             { match="tokens=", arginfo="x,y,m-n",   description="Specifies which tokens from each line go in the %a variables" },
             { match="usebackq ",                    description="Uses new semantics (back quote executes as a command)" },
+            -- luacheck: pop
         })
         return true
     end
@@ -507,6 +544,149 @@ function for__generator:getwordbreakinfo(line_state) -- luacheck: no unused
         end
     end
 end
+
+end -- Version check.
+
+--------------------------------------------------------------------------------
+-- SORT.EXE
+--
+-- This includes the /UNIQ[UE] flag on Windows 10 and later, even though it is
+-- missing from the help text.
+
+if (clink.version_encoded or 0) >= 10050014 then
+
+local function get_sort_exe()
+    return path.join(os.getenv("SystemRoot"), "System32\\sort.exe")
+end
+
+local _win10
+local function is_win10()
+    if _win10 == nil then
+        _win10 = false
+        local f = io.popen("ver")
+        if f then
+            for line in f:lines() do
+                local major = line:match(" ([0-9]+)%.[0-9]+%.[0-9]+%.[0-9]+")
+                if major then
+                    _win10 = (tonumber(major) >= 10)
+                    break
+                end
+            end
+            f:close()
+        end
+    end
+    return _win10
+end
+
+local function sort__is_slashplus(arg_index, word, word_index, line_state)
+    if arg_index == 0 and word == "/" then
+        local info = line_state:getwordinfo(word_index)
+        local char_index = info.offset + info.length
+        if line_state:getline():sub(char_index, char_index) == "+" then
+            return info.offset, 2
+        end
+    end
+end
+
+local sort__slashplus_parser = clink.argmatcher():addarg({fromhistory=true})
+local function slashplus_link(link, arg_index, word, word_index, line_state)
+    if sort__is_slashplus(arg_index, word, word_index, line_state) then
+        return sort__slashplus_parser
+    end
+end
+
+local function slashplus_quirks(_, _, _, builder)
+    builder:setsuppressquoting()
+    return {}
+end
+
+local function sort__classifier(arg_index, word, word_index, line_state, classifications)
+    local offset, len = sort__is_slashplus(arg_index, word, word_index, line_state)
+    if offset then
+        local color = settings.get("color.flag")
+        classifications:applycolor(offset, len, color)
+    end
+end
+
+local function sort__delayinit(argmatcher)
+    argmatcher:setdelayinit(nil)
+
+    local descriptions = {
+    ["/+"]      = { "n" },
+    ["/l"]      = { " locale" },
+    ["/m"]      = { " kilobytes" },
+    ["/rec"]    = { " characters" },
+    ["/r"]      = {},
+    ["/t"]      = { " [drive:][path]" },
+    ["/o"]      = { " [drive:][path]" },
+    ["/uniq"]   = {},
+    }
+
+    __parse_descriptions(argmatcher, get_sort_exe(), descriptions)
+
+    if #descriptions["/r"] > 1 then
+        table.remove(descriptions["/r"], 1)
+    end
+    if #descriptions["/uniq"] < 1 then
+        table.insert(descriptions["/uniq"], "Discard all but one of identical lines")
+    end
+    for _, flag in ipairs({"/+", "/l", "/m", "/rec", "/t", "/o"}) do
+        if #descriptions[flag] < 2 then
+            table.insert(descriptions[flag], "")
+        end
+    end
+
+    local locale_matches = { { match="C", description="The fastest collating sequence" } }
+
+    local locales_parser = clink.argmatcher():addarg({locale_matches, "C"})
+    local memory_parser = clink.argmatcher():addarg({fromhistory=true})
+    local record_maximum_parser = clink.argmatcher():addarg({fromhistory=true})
+    local dirs = clink.argmatcher():addarg(clink.dirmatches)
+    local files = clink.argmatcher():addarg(clink.filematches)
+
+    local flags_list = {
+        nosort=true,
+        onlink=slashplus_link,
+        slashplus_quirks,
+        "/?",
+        { match="/+", arginfo=descriptions["/+"][1], description=descriptions["/+"][2], type="flag", suppressappend=true },
+        "/l"..locales_parser,           "/locale"..locales_parser,
+        "/L"..locales_parser,           "/LOCALE"..locales_parser,
+        "/m"..memory_parser,            "/memory"..memory_parser,
+        "/M"..memory_parser,            "/MEMORY"..memory_parser,
+        "/rec"..record_maximum_parser,  "/record_maximum"..record_maximum_parser,
+        "/REC"..record_maximum_parser,  "/RECORD_MAXIMUM"..record_maximum_parser,
+        "/r",                           "/reverse",
+        "/R",                           "/REVERSE",
+        "/t"..dirs,                     "/temporary"..dirs,
+        "/T"..dirs,                     "/TEMPORARY"..dirs,
+        "/o"..files,                    "/output"..files,
+        "/O"..files,                    "/OUTPUT"..files,
+    }
+
+    if not is_win10() then
+        descriptions["/uniq"] = nil
+    else
+        table.insert(flags_list, "/uniq")
+        table.insert(flags_list, "/UNIQ")
+        table.insert(flags_list, "/unique")
+        table.insert(flags_list, "/UNIQUE")
+    end
+
+    argmatcher
+    :addarg(clink.filematches)
+    :addflags(flags_list)
+    :adddescriptions(descriptions)
+    :hideflags({
+        "/?",
+        "/locale", "/memory", "/record_maximum", "/reverse", "/temporary", "/output", "/unique",
+        "/L", "/M", "/REC", "/R", "/T", "/O", "/UNIQ",
+        "/LOCALE", "/MEMORY", "/RECORD_MAXIMUM", "/REVERSE", "/TEMPORARY", "/OUTPUT", "/UNIQUE",
+    })
+    :setclassifier(sort__classifier)
+end
+
+clink.argmatcher(get_sort_exe()):setdelayinit(sort__delayinit)
 
 end -- Version check.
 
@@ -527,6 +707,8 @@ local function start__maybe_title(_, _, word_index, line_state, _)
 end
 
 local function start__delayinit(argmatcher)
+    argmatcher:setdelayinit(nil)
+
     local descriptions = {
     ["/d"]           = { " dir" },
     ["/b"]           = {},
