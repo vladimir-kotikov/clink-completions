@@ -143,7 +143,7 @@ local function delayinit(argmatcher)
     local section = 'text'
     for line in f:lines() do
         -- delta has no way to suppress escape codes in --help output?
-        line = console.plaintext(line)
+        line = console.plaintext(line) -- luacheck: no global
 
         local short, long = line:match('^  (%-.), (%-%-%g+)')
         if not short then

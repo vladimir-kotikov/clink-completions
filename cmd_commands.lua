@@ -589,7 +589,7 @@ local function sort__is_slashplus(arg_index, word, word_index, line_state)
 end
 
 local sort__slashplus_parser = clink.argmatcher():addarg({fromhistory=true})
-local function slashplus_link(link, arg_index, word, word_index, line_state)
+local function slashplus_link(_, arg_index, word, word_index, line_state)
     if sort__is_slashplus(arg_index, word, word_index, line_state) then
         return sort__slashplus_parser
     end
@@ -644,12 +644,13 @@ local function sort__delayinit(argmatcher)
     local dirs = clink.argmatcher():addarg(clink.dirmatches)
     local files = clink.argmatcher():addarg(clink.filematches)
 
+    local desc_slpl = descriptions["/+"]
     local flags_list = {
         nosort=true,
         onlink=slashplus_link,
         slashplus_quirks,
         "/?",
-        { match="/+", arginfo=descriptions["/+"][1], description=descriptions["/+"][2], type="flag", suppressappend=true },
+        { match="/+", arginfo=desc_slpl[1], description=desc_slpl[2], type="flag", suppressappend=true },
         "/l"..locales_parser,           "/locale"..locales_parser,
         "/L"..locales_parser,           "/LOCALE"..locales_parser,
         "/m"..memory_parser,            "/memory"..memory_parser,
