@@ -33,7 +33,7 @@ local wt = clink.argmatcher("wt")
     { "--focus",                        "Launch the window in focus mode" },
     { "--pos"..pos_args, " x,y",        "Specify the position for the terminal" },
     { "--size"..size_args, " cols,rows", "Specify the number of columns and rows for the terminal" },
-    { "--window"..window_args, " num",  "Specify a terminal window to run the commandline in ('0' for current)" },
+    { "--window"..window_args, " text", "Specify a terminal window to run the commandline in ('0' for current)" },
 })
 
 if (clink.version_encoded or 0) >= 10050014 then
