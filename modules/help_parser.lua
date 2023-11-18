@@ -74,7 +74,7 @@
 -- NOTE:  This script can be run as a standalone script for debugging purposes:
 --
 -- The following usage:
--- 
+--
 --      clink lua help_parser {parser_name} {command_line}
 --
 -- Prints the results of:
@@ -693,12 +693,12 @@ if not clink.argmatcher then
     ----------------------------------------------------------------------------
     local parser, command = ...
     local markansi = require("modules/markansi")
-    require("modules/dumpvar")
+    local dv = require("modules/dumpvar")
 
     local parser_name = parser
     parser_name = _parsers[parser_name:lower()] and parser_name:lower() or "basic"
     parser = _parsers[parser_name]
-    clink.print(markansi.mark("\n{32}*Running '#@@@"..parser_name:lower().."@@{32}' parser on*#@ `@@"..command.."@@`{32}*...*"))
+    clink.print(markansi.mark("\n{32}*Running '#@@@"..parser_name:lower().."@@{32}' parser on*#@ `@@"..command.."@@`{32}*...*")) -- luacheck: no max line length
 
     local flags = {}
     local descriptions = {}
@@ -722,13 +722,13 @@ if not clink.argmatcher then
     parser(context, flags, descriptions, hideflags, "")
 
     clink.print(markansi.mark("\n`*@@ Flags @@*`"))
-    dumpvar(flags, 99)
+    dv.dumpvar(flags, 99)
 
     clink.print(markansi.mark("\n`*@@ Descriptions @@*`"))
-    dumpvar(descriptions, 99)
+    dv.dumpvar(descriptions, 99)
 
     clink.print(markansi.mark("\n`*@@ HideFlags @@*`"))
-    dumpvar(hideflags, 99)
+    dv.dumpvar(hideflags, 99)
 end
 
 --------------------------------------------------------------------------------
