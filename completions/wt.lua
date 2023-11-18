@@ -59,5 +59,3 @@ end
 if argmatcher.chaincommand then
     argmatcher:chaincommand()
 end
-
-end
