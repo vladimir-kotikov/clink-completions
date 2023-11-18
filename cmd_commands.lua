@@ -717,6 +717,32 @@ local function start__maybe_title(_, _, word_index, line_state, _)
     end
 end
 
+local dir__last_maybe_dir__name
+local dir__last_maybe_dir__isdir
+local function start__maybe_dir(_, word, _, _, user_data)
+    local isdir
+    if word == dir__last_maybe_dir__name then
+        isdir = dir__last_maybe_dir__isdir
+    else
+        isdir = os.isdir(word)
+        dir__last_maybe_dir__name = word
+        dir__last_maybe_dir__isdir = isdir
+    end
+
+    if isdir then
+        user_data.isdir = true
+    else
+        return 1
+    end
+end
+
+local start__deadend = clink.argmatcher():nofiles()
+local function start__maybe_link(_, _, _, _, _, user_data)
+    if user_data.isdir then
+        return start__deadend
+    end
+end
+
 local function start__delayinit(argmatcher)
     argmatcher:setdelayinit(nil)
 
@@ -749,6 +775,10 @@ local function start__delayinit(argmatcher)
     :addarg({
         onadvance=start__maybe_title,
         fromhistory=true,
+    })
+    :addarg({
+        onadvance=start__maybe_dir,
+        onlink=start__maybe_link,
     })
     :addflags({
         nosort=true,
