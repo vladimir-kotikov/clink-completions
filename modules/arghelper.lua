@@ -126,6 +126,24 @@ local tmp = clink.argmatcher and clink.argmatcher() or clink.arg.new_parser()
 local meta = getmetatable(tmp)
 local interop = {}
 
+local function condense_stack_trace(skip_levels)
+    local append
+    local ret = ""
+    local stack = debug.traceback(skip_levels)
+    for _,s in string.explode(stack, "\n") do
+        s = s:gsub("^ *(.-) *$", "%1")
+        if #s > 0 then
+            if append then
+                ret = ret .. append
+            else
+                append = " / "
+            end
+            ret = ret .. s
+        end
+    end
+    return ret
+end
+
 local function make_arg_hider_func(...)
     if not clink.onfiltermatches then
         log.info("make_arg_hider_func requires clink.onfiltermatches; "..condense_stack_trace())
@@ -368,24 +386,6 @@ for _,_ in pairs(interop) do -- luacheck: ignore 512
         end
     end
     break
-end
-
-local function condense_stack_trace(skip_levels)
-    local append
-    local ret = ""
-    local stack = debug.traceback(skip_levels)
-    for _,s in string.explode(stack, "\n") do
-        s = s:gsub("^ *(.-) *$", "%1")
-        if #s > 0 then
-            if append then
-                ret = ret .. append
-            else
-                append = " / "
-            end
-            ret = ret .. s
-        end
-    end
-    return ret
 end
 
 local exports = {
