@@ -4,7 +4,7 @@
 
 local clink_version = require('clink_version')
 if not clink_version.supports_argmatcher_delayinit then
-    print("robocopy.lua argmatcher requires a newer version of Clink; please upgrade.")
+    log.info("robocopy.lua argmatcher requires a newer version of Clink; please upgrade.")
     return
 end
 

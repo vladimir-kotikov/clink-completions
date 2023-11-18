@@ -1,6 +1,6 @@
 local clink_version = require('clink_version')
 if not clink_version.supports_argmatcher_chaincommand then
-    print("gsudo.lua argmatcher requires a newer version of Clink; please upgrade.")
+    log.info("gsudo.lua argmatcher requires a newer version of Clink; please upgrade.")
     return
 end
 

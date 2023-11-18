@@ -6,7 +6,7 @@
 
 local clink_version = require('clink_version')
 if not clink_version.supports_argmatcher_delayinit then
-    print("less.lua argmatcher requires a newer version of Clink; please upgrade.")
+    log.info("less.lua argmatcher requires a newer version of Clink; please upgrade.")
     return
 end
 

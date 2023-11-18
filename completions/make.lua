@@ -2,13 +2,12 @@
 -- set %INCLUDE_PATHLIKE_MAKEFILE_TARGETS% to any non-empty string.
 
 local clink_version = require('clink_version')
-
-require('arghelper')
-
 if not clink_version.supports_argmatcher_delayinit then
-    print("make.lua argmatcher requires a newer version of Clink; please upgrade.")
+    log.info("make.lua argmatcher requires a newer version of Clink; please upgrade.")
     return
 end
+
+require('arghelper')
 
 -- Table of special targets to always ignore.
 local special_targets = {
