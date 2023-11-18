@@ -14,7 +14,7 @@ local subcommands = {
     ["fp"]=true, ["focus-pane"]=true,
 }
 
-local function classify_but_never_generate(arg_index, word, word_index, line_state)
+local function classify_but_never_generate(arg_index, word)
     if arg_index == 1 and not subcommands[word] then
         return 1 -- Ignore this arg index.
     end
@@ -22,7 +22,7 @@ end
 
 local single_char_flags = { "-?", "-h", "-v", "-M", "-F", "-f" }
 
-clink.argmatcher("wt")
+local wt = clink.argmatcher("wt")
 :addflags(single_char_flags, "-w"..window_args)
 :hideflags(single_char_flags, "-w")
 :_addexflags({
@@ -37,7 +37,7 @@ clink.argmatcher("wt")
 })
 
 if (clink.version_encoded or 0) >= 10050014 then
-    argmatcher:_addexarg({
+    wt:_addexarg({
         onadvance=classify_but_never_generate,
         { hide=true, "nt" },
         { "new-tab",                        "Create a new tab" },
@@ -56,6 +56,6 @@ if (clink.version_encoded or 0) >= 10050014 then
     })
 end
 
-if argmatcher.chaincommand then
-    argmatcher:chaincommand()
+if wt.chaincommand then
+    wt:chaincommand()
 end
