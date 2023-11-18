@@ -90,6 +90,9 @@
 --------------------------------------------------------------------------------
 -- Changes:
 --
+--  2023/11/18
+--      - Support for `hide=true` in _addexarg().
+--
 --  2023/11/14
 --      - Support for `onadvance=func` and `onlink=func`.
 --
@@ -122,6 +125,49 @@ end
 local tmp = clink.argmatcher and clink.argmatcher() or clink.arg.new_parser()
 local meta = getmetatable(tmp)
 local interop = {}
+
+local function make_arg_hider_func(...)
+    if not clink.onfiltermatches then
+        log.info("make_arg_hider_func requires clink.onfiltermatches; "..condense_stack_trace())
+        return
+    end
+
+    local args = {...}
+
+    local function filter_matches()
+        local function onfilter(matches, completion_type, filename_completion_desired)
+            local index = {}
+
+            local function add_to_index(tbl)
+                for _,add in ipairs(tbl) do
+                    if type(add) == "table" then
+                        add_to_index(add)
+                    elseif type(add) == "function" then
+                        add_to_index(add(matches, completion_type, filename_completion_desired))
+                    elseif type(add) == "string" then
+                        index[add] = true
+                    end
+                end
+            end
+
+            add_to_index(args)
+
+            for j = #matches, 1, -1 do
+                local m = matches[j].match
+                if index[m] then
+                    table.remove(matches, j)
+                end
+            end
+
+            return matches
+        end
+
+        clink.onfiltermatches(onfilter)
+        return {}
+    end
+
+    return filter_matches
+end
 
 if not tmp.addarg then
     interop.addarg = function(parser, ...)
@@ -293,8 +339,8 @@ if not tmp._addexflags or not tmp._addexarg then
     end
     if not tmp._addexarg then
         interop._addexarg = function(parser, tbl)
-            local args, descriptions = build_lists(tbl)
-            parser:addarg(args)
+            local args, descriptions, hide = build_lists(tbl)
+            parser:addarg(args, make_arg_hider_func(hide))
             if descriptions then
                 parser:adddescriptions(descriptions)
             end
@@ -340,49 +386,6 @@ local function condense_stack_trace(skip_levels)
         end
     end
     return ret
-end
-
-local function make_arg_hider_func(...)
-    if not clink.onfiltermatches then
-        log.info("make_arg_hider_func requires clink.onfiltermatches; "..condense_stack_trace())
-        return
-    end
-
-    local args = {...}
-
-    local function filter_matches()
-        local function onfilter(matches, completion_type, filename_completion_desired)
-            local index = {}
-
-            local function add_to_index(tbl)
-                for _,add in ipairs(tbl) do
-                    if type(add) == "table" then
-                        add_to_index(add)
-                    elseif type(add) == "function" then
-                        add_to_index(add(matches, completion_type, filename_completion_desired))
-                    elseif type(add) == "string" then
-                        index[add] = true
-                    end
-                end
-            end
-
-            add_to_index(args)
-
-            for j = #matches, 1, -1 do
-                local m = matches[j].match
-                if index[m] then
-                    table.remove(matches, j)
-                end
-            end
-
-            return matches
-        end
-
-        clink.onfiltermatches(onfilter)
-        return {}
-    end
-
-    return filter_matches
 end
 
 local exports = {
