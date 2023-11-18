@@ -10,7 +10,7 @@
 --      help_parser.make('curl "--help all" curl')
 --      help_parser.make('xcopy /?')
 --
--- function run(argmatcher, parser, command, config)
+--  function run(argmatcher, parser, command, config)
 --
 --      Runs parser on the command output to initialize argmatcher.
 --
@@ -30,7 +30,7 @@
 --                                      -- (add /x for -x, etc).
 --                  }
 --
--- function make(command, help_flag, parser, config, closure)
+--  function make(command, help_flag, parser, config, closure)
 --
 --      Makes a delayinit argmatcher for the command.  A completion script can
 --      be a single line, using this:
@@ -48,7 +48,7 @@
 --
 -- Parser functions:
 --
---      function parser(context, flags, descriptions, hideflags, line)
+--  function parser(context, flags, descriptions, hideflags, line)
 --
 --      context         A container table for use by the parser function.
 --      flags           Use add_pending() to update flags.
@@ -56,7 +56,8 @@
 --      hideflags       A table of flag names to hide (table of strings).
 --      line            The help text line to be parsed.
 --
--- function add_pending(context, flags, descriptions, hideflags, pending)
+--  function add_pending(context, flags, descriptions, hideflags, pending)
+--
 --      context         Pass the context table from the parser() function.
 --      flags           Pass the flags table from the parser() function.
 --      descriptions    Pass the descriptions table from the parser() function.
@@ -68,6 +69,18 @@
 --                          display=" file",    -- Arg info label to show.
 --                          desc="Description text.",   -- Description.
 --                      }
+
+--------------------------------------------------------------------------------
+-- NOTE:  This script can be run as a standalone script for debugging purposes:
+--
+-- The following usage:
+-- 
+--      clink lua help_parser {parser_name} {command_line}
+--
+-- Prints the results of:
+--
+--      local help_parser = require('help_parser')
+--      help_parser.run(argmatcher, 'parser_name', 'command_line')
 
 --------------------------------------------------------------------------------
 if not clink then
@@ -647,6 +660,75 @@ local function make(command, help_flag, parser, config, closure)
             end
         end
     end)
+end
+
+--------------------------------------------------------------------------------
+if not clink.argmatcher then
+
+    ----------------------------------------------------------------------------
+    local _argmatcher = {}
+    _argmatcher.__index = _argmatcher
+    setmetatable(_argmatcher, { __call = function (x, ...) return x._new(...) end })
+
+    function _argmatcher._new()
+        return setmetatable({}, _argmatcher)
+    end
+
+    function _argmatcher:addarg(...)
+        self._args = self._args or {}
+        table.insert(self._args, {...})
+        return self
+    end
+
+    function _argmatcher:addflags(...)
+        self._flags = self._flags or {}
+        table.insert(self._flags, {...})
+        return self
+    end
+
+    clink.argmatcher = function()
+        return _argmatcher()
+    end
+
+    ----------------------------------------------------------------------------
+    local parser, command = ...
+    local markansi = require("modules/markansi")
+    require("modules/dumpvar")
+
+    local parser_name = parser
+    parser_name = _parsers[parser_name:lower()] and parser_name:lower() or "basic"
+    parser = _parsers[parser_name]
+    clink.print(markansi.mark("\n{32}*Running '#@@@"..parser_name:lower().."@@{32}' parser on*#@ `@@"..command.."@@`{32}*...*"))
+
+    local flags = {}
+    local descriptions = {}
+    local hideflags = {}
+    local context = { pending={} }
+
+    do
+        local r = io.popen('2>nul ' .. command)
+        if not r then
+            return
+        end
+
+        for line in r:lines() do
+            if unicode.fromcodepage then -- luacheck: no global
+                line = unicode.fromcodepage(line) -- luacheck: no global
+            end
+            parser(context, flags, descriptions, hideflags, line)
+        end
+        r:close()
+    end
+    parser(context, flags, descriptions, hideflags, "")
+
+    clink.print(markansi.mark("\n`*@@ Flags @@*`"))
+    dumpvar(flags, 99)
+
+    clink.print(markansi.mark("\n`*@@ Descriptions @@*`"))
+    dumpvar(descriptions, 99)
+
+    clink.print(markansi.mark("\n`*@@ HideFlags @@*`"))
+    dumpvar(hideflags, 99)
 end
 
 --------------------------------------------------------------------------------
