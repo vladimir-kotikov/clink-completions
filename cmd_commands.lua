@@ -17,6 +17,13 @@ local function __get_delimiter_after(line_state, word_index)
     return s or ""
 end
 
+local fromcodepage
+if unicode and unicode.fromcodepage then
+    fromcodepage = unicode.fromcodepage
+else
+    fromcodepage = function(text) return text end
+end
+
 local function __parse_descriptions(argmatcher, command, descriptions, is_arg_func, parse_arg_choices)
     local f = io.popen("2>nul "..command.." /?")
     if f then
@@ -51,6 +58,7 @@ local function __parse_descriptions(argmatcher, command, descriptions, is_arg_fu
         local sort_quirks = command:find("sort")
         for line in f:lines() do
             line = line:gsub("[\r\n]+$", "")
+            line = fromcodepage(line)
             local flag, arginfo, text
             text = line:match("^%s%s%s%s%s%s%s%s%s%s%s%s+([^%s].*)$")
             if not text then
@@ -237,10 +245,11 @@ local function dir__delayinit(argmatcher)
     descriptions["/t:"] = descriptions["/t"]
     descriptions["/o"] = descriptions["/o"][2]
 
-    argmatcher:adddescriptions(descriptions)
-    argmatcher:hideflags("/?", dir__upper_case_flags, "/a", "/t", "/A:", "/O:", "/T:")
-
-    argmatcher:setclassifier(dir__classifier)
+    argmatcher
+    :adddescriptions(descriptions)
+    :hideflags("/?", dir__upper_case_flags, "/a", "/t", "/A:", "/O:", "/T:")
+    :setclassifier(dir__classifier)
+    :setcmdcommand()
 end
 
 clink.argmatcher("dir"):setdelayinit(dir__delayinit)
@@ -494,6 +503,7 @@ clink.argmatcher("for")
 :addarg("do"..clink.argmatcher():chaincommand())
 :nofiles()
 :setclassifier(for__classifier)
+:setcmdcommand()
 
 local function for__is_f_options(line_state, only_endword)
     local cwi = line_state:getcommandwordindex()
@@ -735,11 +745,12 @@ local function start__delayinit(argmatcher)
         table.insert(descriptions["/d"], "Starting directory")
     end
 
-    argmatcher:addarg({
+    argmatcher
+    :addarg({
         onadvance=start__maybe_title,
         fromhistory=true,
     })
-    argmatcher:addflags({
+    :addflags({
         nosort=true,
         "/?",
         "/d"..clink.argmatcher():addarg(clink.dirmatches),
@@ -750,9 +761,10 @@ local function start__delayinit(argmatcher)
         "/node"..clink.argmatcher():addarg({fromhistory=true}),
         "/affinity"..clink.argmatcher():addarg({fromhistory=true}),
     })
-    argmatcher:adddescriptions(descriptions)
-    argmatcher:hideflags("/?")
-    argmatcher:chaincommand()
+    :adddescriptions(descriptions)
+    :hideflags("/?")
+    :chaincommand()
+    :setcmdcommand()
 end
 
 clink.argmatcher("start"):setdelayinit(start__delayinit)
