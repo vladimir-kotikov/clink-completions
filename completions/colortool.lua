@@ -25,8 +25,15 @@ local function init_themes(argmatcher, argindex) -- luacheck: no unused
     return matches
 end
 
+local function forcequoting(_, _, _, builder)
+    if builder.setforcequoting then
+        builder:setforcequoting()
+    end
+    return {}
+end
+
 local function closure(argmatcher)
-    argmatcher:addarg({delayinit=init_themes})
+    argmatcher:addarg({delayinit=init_themes, forcequoting})
     argmatcher:nofiles()
 end
 
