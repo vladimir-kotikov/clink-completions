@@ -717,19 +717,40 @@ local function start__maybe_title(_, _, word_index, line_state, _)
     end
 end
 
-local dir__last_maybe_dir__name
-local dir__last_maybe_dir__isdir
-local function start__maybe_dir(_, word, _, _, user_data)
-    local isdir
-    if word == dir__last_maybe_dir__name then
-        isdir = dir__last_maybe_dir__isdir
-    else
-        isdir = os.isdir(word)
-        dir__last_maybe_dir__name = word
-        dir__last_maybe_dir__isdir = isdir
+local isdir_cache = {}
+local isdir_order = {}
+local function reset_isdir_cache()
+    isdir_cache = {}
+    isdir_order = {}
+end
+
+local function isdir_with_caching(name)
+    local isdir = isdir_cache[name]
+    if isdir ~= nil then
+        return isdir
     end
 
+    isdir = os.isdir(name) and true or false
+    isdir_cache[name] = isdir
+    table.insert(isdir_order, 1, name)
+    local num = #isdir_order
+    while num > 10 do
+        table.remove(isdir_order, num)
+        num = num - 1
+    end
+
+    return isdir
+end
+
+local start__classify_dirs = {}
+
+local function start__maybe_dir(_, word, word_index, line_state, user_data)
+    local isdir = isdir_with_caching(word)
     if isdir then
+        local info = line_state:getwordinfo(word_index)
+        table.insert(start__classify_dirs, { word=word, offset=info.offset, length=info.length })
+    end
+    if isdir and word_index < line_state:getwordcount() then
         user_data.isdir = true
     else
         return 1
@@ -798,6 +819,36 @@ local function start__delayinit(argmatcher)
 end
 
 clink.argmatcher("start"):setdelayinit(start__delayinit)
+
+clink.onbeginedit(reset_isdir_cache)
+
+local start__resetclassifier = clink.classifier(-999999999)
+function start__resetclassifier:classify()
+    start__classify_dirs = {}
+end
+
+local start__prio = (clink.argmatcher_generator_priority or 24) + 1
+local start__classifier = clink.classifier(start__prio)
+function start__classifier:classify(commands) -- luacheck: no unused
+    if start__classify_dirs[1] then
+        local mismatch
+        local line = commands[1].line_state:getline()
+        local classifications = commands[1].classifications
+        local color = settings.get("color.input")
+        for _,dir in ipairs(start__classify_dirs) do
+            local word = line:sub(dir.offset, dir.offset + dir.length - 1)
+            if word ~= dir.word then
+                log.info("'start' classifier -- MISMATCH! -- expected '"..dir.word.."', actual '"..word.."'")
+                if not mismatch then
+                    clink.print("\x1b[s\x1b[H\x1b[91;7m MISMATCH! -- expected '"..dir.word.."', actual '"..word.."' \x1b[m\x1b[K\x1b[u")
+                    mismatch = true
+                end
+            else
+                classifications:applycolor(dir.offset, dir.length, color)
+            end
+        end
+    end
+end
 
 end -- Version check.
 
