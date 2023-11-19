@@ -552,6 +552,11 @@ local _parsers = {
 }
 
 --------------------------------------------------------------------------------
+local function get_parser(parser)
+    return _parsers[parser:lower()]
+end
+
+--------------------------------------------------------------------------------
 local function run(argmatcher, parser, command, config)
     if type(parser) ~= "function" then
         parser = parser and _parsers[parser:lower()] or basic_parser
@@ -663,77 +668,9 @@ local function make(command, help_flag, parser, config, closure)
 end
 
 --------------------------------------------------------------------------------
-if not clink.argmatcher then
-
-    ----------------------------------------------------------------------------
-    local _argmatcher = {}
-    _argmatcher.__index = _argmatcher
-    setmetatable(_argmatcher, { __call = function (x, ...) return x._new(...) end })
-
-    function _argmatcher._new()
-        return setmetatable({}, _argmatcher)
-    end
-
-    function _argmatcher:addarg(...)
-        self._args = self._args or {}
-        table.insert(self._args, {...})
-        return self
-    end
-
-    function _argmatcher:addflags(...)
-        self._flags = self._flags or {}
-        table.insert(self._flags, {...})
-        return self
-    end
-
-    clink.argmatcher = function()
-        return _argmatcher()
-    end
-
-    ----------------------------------------------------------------------------
-    local parser, command = ...
-    local markansi = require("modules/markansi")
-    local dv = require("modules/dumpvar")
-
-    local parser_name = parser
-    parser_name = _parsers[parser_name:lower()] and parser_name:lower() or "basic"
-    parser = _parsers[parser_name]
-    clink.print(markansi.mark("\n{32}*Running '#@@@"..parser_name:lower().."@@{32}' parser on*#@ `@@"..command.."@@`{32}*...*")) -- luacheck: no max line length
-
-    local flags = {}
-    local descriptions = {}
-    local hideflags = {}
-    local context = { pending={} }
-
-    do
-        local r = io.popen('2>nul ' .. command)
-        if not r then
-            return
-        end
-
-        for line in r:lines() do
-            if unicode.fromcodepage then -- luacheck: no global
-                line = unicode.fromcodepage(line) -- luacheck: no global
-            end
-            parser(context, flags, descriptions, hideflags, line)
-        end
-        r:close()
-    end
-    parser(context, flags, descriptions, hideflags, "")
-
-    clink.print(markansi.mark("\n`*@@ Flags @@*`"))
-    dv.dumpvar(flags, 99)
-
-    clink.print(markansi.mark("\n`*@@ Descriptions @@*`"))
-    dv.dumpvar(descriptions, 99)
-
-    clink.print(markansi.mark("\n`*@@ HideFlags @@*`"))
-    dv.dumpvar(hideflags, 99)
-end
-
---------------------------------------------------------------------------------
 return {
     run=run,
     make=make,
     add_pending=add_pending,
+    get_parser=get_parser,
 }
