@@ -1,5 +1,18 @@
 # Release Notes
 
+## 0.5.0 (Nov 26, 2023)
+
+  * `b192f9` Improve syntax handling for `doskey` completions.
+  * `35296a` Fix quoting scheme names when using `colortool`.
+  * `d4ef79` Add completions for Windows Terminal (`wt`).
+  * `d10a4a` Add completions for the Windows `sort` command (including its undocumented `/uniq` flag).
+  * `09aaaf` Add completions for CMD's built-in `dir` command.
+  * `4e897a` Add completions for `robocopy`'s `/copy:` and `/dcopy:` flags.
+  * `f5fe5b` Completions work within the `doskey` macro definition when using recent versions of Clink (e.g. `doskey macroname=completions_work_here`).
+  * `932ce8` Add completions for CMD's built-in `for` and `start` commands.
+  * `6ebf67` Add completions for `winget`'s logging flags.
+  * `57722e` Add completions for [`bat`](https://github.com/sharkdp/bat), [`cmdkey`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/cmdkey), and [`delta`](https://github.com/dandavison/delta).
+
 ## 0.4.11 (Oct 1, 2023)
 
   * `4e40a6` [ssh] Add option completions (#179).
