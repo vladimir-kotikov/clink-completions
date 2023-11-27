@@ -1,8 +1,14 @@
 require("arghelper")
+local clink_version = require("clink_version")
 
-local pos_args = clink.argmatcher():addarg({fromhistory=true, loopchars=","})
-local size_args = clink.argmatcher():addarg({fromhistory=true, loopchars=","})
+local pos_args = clink.argmatcher():addarg({fromhistory=true, nowordbreakchars=","})
+local size_args = clink.argmatcher():addarg({fromhistory=true, nowordbreakchars=","})
 local window_args = clink.argmatcher():addarg({fromhistory=true})
+
+if not clink_version.supports_argmatcher_nowordbreakchars then
+    pos_args:addarg({fromhistory=true})
+    size_args:addarg({fromhistory=true})
+end
 
 local subcommands = {
     ["nt"]=true, ["new-tab"]=true,
