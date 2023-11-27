@@ -19,5 +19,8 @@ exports.supports_argmatcher_hideflags = (clink_version_encoded >= 10030003)
 exports.supports_argmatcher_delayinit = (clink_version_encoded >= 10030010)
 exports.supports_argmatcher_chaincommand = (clink_version_encoded >= 10030013)
 exports.has_volatile_matches_fix = (clink_version_encoded >= 10040013)
+exports.supports_argmatcher_onlink = (clink_version_encoded >= 10050014)
+exports.has_linked_setdelayinit_fix = (clink_version_encoded >= 10050016)
+exports.supports_argmatcher_nowordbreakchars = (clink_version_encoded >= 10050017)
 
 return exports

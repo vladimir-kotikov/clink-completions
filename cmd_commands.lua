@@ -1,5 +1,6 @@
 require("arghelper")
 local mcf = require("multicharflags")
+local clink_version = require("clink_version")
 
 --------------------------------------------------------------------------------
 -- General helper functions.
@@ -122,9 +123,10 @@ local function __parse_descriptions(argmatcher, command, descriptions, is_arg_fu
     end
 end
 
-
 --------------------------------------------------------------------------------
 -- DIR
+
+if clink_version.supports_argmatcher_delayinit then
 
 local accepted_chars_list = {}
 accepted_chars_list["/a"] = "^[-dhslraio]"
@@ -254,6 +256,7 @@ end
 
 clink.argmatcher("dir"):setdelayinit(dir__delayinit)
 
+end -- Version check.
 
 --------------------------------------------------------------------------------
 -- FOR
@@ -265,7 +268,7 @@ clink.argmatcher("dir"):setdelayinit(dir__delayinit)
 --      - The /f "options" allows multiple keywords in a single quoted string.
 --      - The (...) set must be surrounded by parentheses.
 
-if (clink.version_encoded or 0) >= 10050014 then
+if clink_version.supports_argmatcher_onlink then
 
 local function for__is_flag(word)
     local flag = word:match("^/[dDrRlLfF?]$")
@@ -563,7 +566,7 @@ end -- Version check.
 -- This includes the /UNIQ[UE] flag on Windows 10 and later, even though it is
 -- missing from the help text.
 
-if (clink.version_encoded or 0) >= 10050014 then
+if clink_version.supports_argmatcher_onlink then
 
 local function get_sort_exe()
     return path.join(os.getenv("SystemRoot"), "System32\\sort.exe")
@@ -707,53 +710,86 @@ end -- Version check.
 -- This argmatcher for the START command requires Clink v1.5.14 or higher.
 -- It handles the fact that a quoted title is optional.
 
-if (clink.version_encoded or 0) >= 10050014 then
+if clink_version.supports_argmatcher_onlink then
 
-local function start__maybe_title(_, _, word_index, line_state, _)
-    local info = line_state:getwordinfo(word_index)
-    if not info.quoted then
-        return 1    -- Advance; this arg position only accepts a quoted string.
-                    -- Anything else should get handled by the next position.
-    end
+local start__generating
+
+local start__generator = clink.generator(1)
+function start__generator:generate() -- luacheck: no unused
+    start__generating = true
+end
+
+local start__resetclassifier = clink.classifier(1)
+function start__resetclassifier:classify() -- luacheck: no unused
+    start__generating = false
 end
 
 local isdir_cache = {}
 local isdir_order = {}
-local function reset_isdir_cache()
+
+clink.onbeginedit(function()
     isdir_cache = {}
     isdir_order = {}
-end
+end)
 
 local function isdir_with_caching(name)
-    local isdir = isdir_cache[name]
-    if isdir ~= nil then
-        return isdir
+    -- Async check whether it's an executable.
+    local r, ready = clink.recognizecommand(name)
+    if not ready then
+        return
+    end
+    if r == "x" then
+        return
     end
 
-    isdir = os.isdir(name) and true or false
-    isdir_cache[name] = isdir
-    table.insert(isdir_order, 1, name)
-    local num = #isdir_order
-    while num > 10 do
-        table.remove(isdir_order, num)
-        num = num - 1
+    -- Not an executable, so check if it's a dir.  This is to accurately
+    -- indicate what "start {dir}" will do.  The result is cached for optimal
+    -- performance.
+    local expanded = os.expandenv(name)
+    local isdir = isdir_cache[expanded]
+    if isdir == nil then
+        isdir = os.isdir(expanded) and true or false
+        isdir_cache[expanded] = isdir
+        table.insert(isdir_order, 1, expanded)
+        local num = #isdir_order
+        while num > 10 do
+            table.remove(isdir_order, num)
+            num = num - 1
+        end
     end
 
     return isdir
 end
 
-local start__classify_dirs = {}
+local function start__maybe_title(_, _, word_index, line_state, user_data)
+    local info = line_state:getwordinfo(word_index)
+    if not info.quoted then
+        return 1    -- Advance; this arg position only accepts a quoted string.
+                    -- Anything else should get handled by the next position.
+    end
+    user_data.hastitle = true
+end
 
 local function start__maybe_dir(_, word, word_index, line_state, user_data)
-    local isdir = isdir_with_caching(word)
-    if isdir then
-        local info = line_state:getwordinfo(word_index)
-        table.insert(start__classify_dirs, { word=word, offset=info.offset, length=info.length })
-    end
-    if isdir and word_index < line_state:getwordcount() then
-        user_data.isdir = true
-    else
+    if user_data.hastitle or not isdir_with_caching(word) then
+        -- Not a dir, so chain to a new command.
         return 1
+    end
+    if word_index < line_state:getwordcount() then
+        -- It's a directory and there are more words.  Let this arg index handle
+        -- the arg (coloring it as generic input), and set a flag to link to a
+        -- nofiles parser to block further parsing.
+        user_data.isdir = true
+    elseif start__generating then
+        -- This is the last word and the context is match generation (not
+        -- classifying), so chain to a new command for generating matches.
+        return 1
+    end
+end
+
+local function start__classifier(arg_index, _, word_index, _, classifications)
+    if arg_index == 2 then
+        classifications:classifyword(word_index, "a")
     end
 end
 
@@ -815,40 +851,11 @@ local function start__delayinit(argmatcher)
     :adddescriptions(descriptions)
     :hideflags("/?")
     :chaincommand()
+    :setclassifier(start__classifier)
     :setcmdcommand()
 end
 
 clink.argmatcher("start"):setdelayinit(start__delayinit)
-
-clink.onbeginedit(reset_isdir_cache)
-
-local start__resetclassifier = clink.classifier(-999999999)
-function start__resetclassifier:classify()
-    start__classify_dirs = {}
-end
-
-local start__prio = (clink.argmatcher_generator_priority or 24) + 1
-local start__classifier = clink.classifier(start__prio)
-function start__classifier:classify(commands) -- luacheck: no unused
-    if start__classify_dirs[1] then
-        local mismatch
-        local line = commands[1].line_state:getline()
-        local classifications = commands[1].classifications
-        local color = settings.get("color.input")
-        for _,dir in ipairs(start__classify_dirs) do
-            local word = line:sub(dir.offset, dir.offset + dir.length - 1)
-            if word ~= dir.word then
-                log.info("'start' classifier -- MISMATCH! -- expected '"..dir.word.."', actual '"..word.."'")
-                if not mismatch then
-                    clink.print("\x1b[s\x1b[H\x1b[91;7m MISMATCH! -- expected '"..dir.word.."', actual '"..word.."' \x1b[m\x1b[K\x1b[u")
-                    mismatch = true
-                end
-            else
-                classifications:applycolor(dir.offset, dir.length, color)
-            end
-        end
-    end
-end
 
 end -- Version check.
 
