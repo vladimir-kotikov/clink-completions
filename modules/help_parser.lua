@@ -88,7 +88,7 @@ if not clink then
     return
 end
 if (clink.version_encoded or 0) < 10030010 then -- Requires _argmatcher:setdelayinit().
-    if log.info then
+    if log and log.info then
         log.info('The help_parser.lua module requires a newer version of Clink; please upgrade.')
     end
     return
@@ -147,6 +147,7 @@ local function add_pending(context, flags, descriptions, hideflags, pending) -- 
             if not pending.flag:match('[:=]$') and not pending.display:match('^[ \t]') then -- luacheck: ignore 542
                 -- -x<n> or -x[n] or -Tn or etc.  Argmatchers must be separated
                 -- from flag by : or = or space.  So, no argmatcher.
+                --TODO: The onadvance and onlink callbacks make this possible.
             else
                 local args = clink.argmatcher()
                 if is_file_arg(pending.display) then
@@ -455,6 +456,7 @@ local function gnu_parser(context, flags, descriptions, hideflags, line)
             for _,f in ipairs(context.pending) do
                 if f.flag == '-NUM' then -- luacheck: ignore 542
                     -- Clink can't represent minus followed by any number.
+                    --TODO:  This is possible with onarg and onlink callbacks.
                 else
                     context.pending.flag = f.flag
                     context.pending.has_arg = f.has_arg or (f.has_arg == nil and context.pending.arginfo)

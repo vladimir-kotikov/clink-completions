@@ -146,7 +146,9 @@ end
 
 local function make_arg_hider_func(...)
     if not clink.onfiltermatches then
-        log.info("make_arg_hider_func requires clink.onfiltermatches; "..condense_stack_trace())
+        if log and log.info then
+            log.info("make_arg_hider_func requires clink.onfiltermatches; "..condense_stack_trace())
+        end
         return
     end
 

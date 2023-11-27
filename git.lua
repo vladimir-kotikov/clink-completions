@@ -25,7 +25,7 @@ local dirs_parser = parser({dir_matches})
 local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(clink.filematches):loop()
 
 local map_file
-if rl.getmatchcolor then
+if rl and rl.getmatchcolor then
     map_file = function (file)
         if type(file) == "table" then
             return file
