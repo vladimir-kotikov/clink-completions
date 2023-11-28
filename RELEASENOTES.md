@@ -1,6 +1,6 @@
 # Release Notes
 
-## 0.5.0 (Nov 26, 2023)
+## 0.5.0 (Nov 28, 2023)
 
   * `b192f9` Improve syntax handling for `doskey` completions.
   * `35296a` Fix quoting scheme names when using `colortool`.
