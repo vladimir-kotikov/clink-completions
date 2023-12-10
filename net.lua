@@ -44,6 +44,12 @@ else
     time_parser = flags("/domain", "/rtsdomain", "/set", "/?")
 end
 
+local use_flags = flags("/user:", "/u:", "/smartcard", "/savecred", "/delete", "/d",
+                        "/persistent:yes", "/p:yes", "/persistent:no", "/p:no")
+if use_flags.hideflags then
+    use_flags:hideflags("/u:", "/d", "/p:yes", "/p:no")
+end
+
 local net_table =
 {
     "accounts" .. flags("/forcelogoff:", "/forcelogoff:no", "/domain",
@@ -63,8 +69,7 @@ local net_table =
     "statistics" .. args("server", "workstation"),
     "stop" .. helpflag,
     "time" .. time_parser,
-    "use" .. flags("/user:", "/smartcard", "/savecred", "/delete",
-                   "/persistent:yes", "/persistent:no"),
+    "use" .. use_flags,
     "user" .. helpflag,
     "view" .. flags("/cache", "/all", "/domain")
 }
