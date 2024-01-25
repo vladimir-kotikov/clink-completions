@@ -733,6 +733,11 @@ clink.onbeginedit(function()
 end)
 
 local function isdir_with_caching(name)
+    -- Filter out weird case.
+    if name:find("/") and not name:find("\\") then
+        return
+    end
+
     -- Async check whether it's an executable.
     local r, ready = clink.recognizecommand(name)
     if not ready then
@@ -850,7 +855,7 @@ local function start__delayinit(argmatcher)
     })
     :adddescriptions(descriptions)
     :hideflags("/?")
-    :chaincommand()
+    :chaincommand("start")
     :setclassifier(start__classifier)
     :setcmdcommand()
 end
