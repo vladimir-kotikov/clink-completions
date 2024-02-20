@@ -4,8 +4,11 @@ require("arghelper")
 
 local cols = clink.argmatcher():addarg({fromhistory=true})
 local field = clink.argmatcher():addarg("all", "age", "size")
+local levels = clink.argmatcher():addarg({fromhistory=true, "1", "2", "3", "4"})
 local mode = clink.argmatcher():addarg("gradient", "fixed")
-local sort_field = clink.argmatcher():addarg("name", "Name", "extension", "Extension", "size", "type", "modified", "accessed", "created", "inode", "none", "date", "time", "old", "new")
+local sortfield = clink.argmatcher():addarg("name", "Name", "extension", "Extension", "size", "type", "modified", "accessed", "created", "inode", "none", "date", "time", "old", "new")
+local timefield = clink.argmatcher():addarg("modified", "accessed", "created")
+local timestyles = clink.argmatcher():addarg({nosort=true, "default", "iso", "long-iso", "full-iso", "relative", '"+%Y-%m-%d %H:%M"'})
 local when = clink.argmatcher():addarg("always", "auto", "never")
 
 clink.argmatcher("eza")
@@ -62,11 +65,12 @@ clink.argmatcher("eza")
     { hide=true, "--almost-all" },
     { "-d",                             "list directories as files; don't list their contents" },
     { "--list-dirs" },
-    -- -L, --level DEPTH                limit the depth of recursion
+    { opteq=true, "-L"..levels, " DEPTH", "limit the depth of recursion" },
+    { opteq=true, "--levels="..levels, "DEPTH", "" },
     { "-r",                             "reverse the sort order" },
     { "--reverse" },
-    { opteq=true, "-s="..sort_field, "SORT_FIELD", "which field to sort by" },
-    { opteq=true, "--sort="..sort_field, "SORT_FIELD", "" },
+    { opteq=true, "-s="..sortfield, "SORT_FIELD", "which field to sort by" },
+    { opteq=true, "--sort="..sortfield, "SORT_FIELD", "" },
     { "--group-directories-first" },        --"list directories before other files"
     { "-D",                             "list only directories" },
     { "--only-dirs" },
@@ -89,19 +93,24 @@ clink.argmatcher("eza")
     -- -m, --modified                   use the modified timestamp field
     -- -M, --mounts                     show mount details (Linux and Mac only)
     -- -n, --numeric                    list numeric user and group IDs
-    -- -O, --flags                      list file flags (Mac, BSD, and Windows only)
-    -- -S, --blocksize                  show size of allocated file system blocks
-    -- -t, --time FIELD                 which timestamp field to list (modified, accessed, created)
-    -- -u, --accessed                   use the accessed timestamp field
-    -- -U, --created                    use the created timestamp field
-    -- --changed                        use the changed timestamp field
-    -- --time-style                     how to format timestamps (default, iso, long-iso, full-iso, relative, or a custom style '+<FORMAT>' like '+%Y-%m-%d %H:%M')
+    { "-O",                             "list file flags (Mac, BSD, and Windows only)" },
+    { "--flags" },
+    { "-S",                             "show size of allocated file system blocks" },
+    { "--blocksize" },
+    { opteq=true, "-t"..timefield, " FIELD", "which timestamp field to list" },
+    { opteq=true, "--time="..timefield, "FIELD", "" },
+    { "-u",                             "use the accessed timestamp field" },
+    { "--accessed" },
+    { "-U",                             "use the created timestamp field" },
+    { "--created" },
+    { "--changed" },
+    { "--time-style="..timestyles, "STYLE", "how to format timestamps" },
     -- --total-size                     show the size of a directory as the size of all files and directories inside (unix only)
-    -- --no-permissions                 suppress the permissions field
+    { "--no-permissions" },
     -- -o, --octal-permissions          list each file's permission in octal format
-    -- --no-filesize                    suppress the filesize field
+    { "--no-filesize" },
     -- --no-user                        suppress the user field
-    -- --no-time                        suppress the time field
+    { "--no-time" },
     -- --stdin                          read file names from stdin, one per line or other separator specified in environment
     { "--git" },                            --"list each file's Git status, if tracked or ignored"
     { "--no-git" },                         --"suppress Git status"
