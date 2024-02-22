@@ -13,6 +13,8 @@ local parser = function (...)
     return p
 end
 
+-- luacheck: globals matchicons
+
 if clink_version.supports_color_settings then
     settings.add('color.git.star', 'bright green', 'Color for preferred branch completions')
 end
@@ -23,6 +25,37 @@ local files_parser = parser({file_matches})
 local dirs_parser = parser({dir_matches})
 
 local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(clink.filematches):loop()
+
+local function extract_sgr(c)
+    return c and c:match("^\x1b%[(.*)m$") or c
+end
+
+local color_git = "38;2;240;80;50" -- the git orange
+
+local function addicon(m, icon, c)
+    if matchicons and matchicons.addicontomatch then
+        if not c and m.type and m.type:find("file") then
+            if rl.getmatchcolor then
+                c = extract_sgr(rl.getmatchcolor(m.match, m.type))
+            end
+        end
+        return matchicons.addicontomatch(m, icon, c)
+    else
+        return m
+    end
+end
+
+local function addicons(matches)
+    if matchicons and matchicons.addicontomatch then
+        for _, m in ipairs(matches) do
+            local old_type = m.type
+            m.type = "file"
+            addicon(m)
+            m.type = old_type
+        end
+    end
+    return matches
+end
 
 local map_file
 if rl and rl.getmatchcolor then
@@ -295,9 +328,9 @@ end
 
 local function add_spec_generator(token)
     if has_dot_dirs(token) then
-        return file_matches(token)
+        return addicons(file_matches(token))
     end
-    return list_git_status_files(token, "-uall"):map(map_file)
+    return addicons(list_git_status_files(token, "-uall"):map(map_file))
 end
 
 local function checkout_spec_generator_049(token)
@@ -385,10 +418,24 @@ local function checkout_spec_generator_usedisplay(token)
         if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
             star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
         end
-        return files:map(function(file) return '\x1b[m'..file end)
-            :concat(local_branches:map(function(branch) return { match=branch } end))
-            :concat(predicted_branches:map(function(branch) return { match=branch, display=star..branch } end))
-            :concat(remote_branches:map(function(branch) return { match=branch } end))
+        local matches
+        if clink_version.supports_display_filter_description then
+            matches = files:map(function(file)
+                return addicon({ match=file, display='\x1b[m'..file }, "", color_git)
+            end)
+        else
+            matches = files:map(function(file) return '\x1b[m'..file end)
+        end
+        return matches
+            :concat(local_branches:map(function(branch)
+                return addicon({ match=branch }, "", color_git)
+            end))
+            :concat(predicted_branches:map(function(branch)
+                return addicon({ match=branch, display=star..branch }, "", color_git)
+            end))
+            :concat(remote_branches:map(function(branch)
+                return addicon({ match=branch }, "", color_git)
+            end))
     end
 
     return files
@@ -442,11 +489,19 @@ local function checkout_spec_generator_nosort(token)
     end
 
     local mapped = {
-        files:map(map_file),
-        local_branches:map(function(branch) return { match=branch, display=local_pre..branch, type='arg' } end),
-        predicted_branches:map(function(branch) return { match=branch, display=predicted_pre..branch, type='arg' } end),
-        remote_branches:map(function(branch) return { match=branch, display=remote_pre..branch, type='arg' } end),
-        tag_names:map(function(tag) return { match=tag, display=tag_pre..tag, type='arg' } end),
+        files:map(map_file):map(function (match) return addicon(match, "", color_git) end),
+        local_branches:map(function(branch)
+            return addicon({ match=branch, display=local_pre..branch, type='arg' }, "", color_git)
+        end),
+        predicted_branches:map(function(branch)
+            return addicon({ match=branch, display=predicted_pre..branch, type='arg' }, "", color_git)
+        end),
+        remote_branches:map(function(branch)
+            return addicon({ match=branch, display=remote_pre..branch, type='arg' }, "", color_git)
+        end),
+        tag_names:map(function(tag)
+            return addicon({ match=tag, display=tag_pre..tag, type='arg' }, "", extract_sgr(tag_pre))
+        end),
     }
 
     local result = {}
