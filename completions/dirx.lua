@@ -173,6 +173,8 @@ local list_of_flags = {
 
     -- Filtering and sorting options.
     { "-a:", attrs, "attrs",    "Filter files by attributes" },
+    { "-A",                     "Display all files, except hide . and .." },
+    { "--almost-all" },
     { "-h",                     "Hide . and .. directories" },
     { "-I", globs, " glob",     "Glob patterns of files to ignore" },
     { "--ignore-glob=", globs, "glob", "" },
