@@ -234,6 +234,8 @@ local list_of_flags = {
     { opteq=true, "--width=", cols, "cols", "" },
     { "-Y",                     "Abbreviate times" },
     { "-Z",                     "Abbreviate file sizes" },
+    { "--bare-relative" },
+    { "--no-bare-relative" },
     { "--classify" },
     { "--no-classify" },
     { "--compact" },
