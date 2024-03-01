@@ -117,6 +117,9 @@ local list_of_flags = {
     { "-V",                     "Display version information" },
     { "--version" },
     { "--nix" },            --  "Use Unix-y default options"
+    { "--no-nix" },
+    { "--debug" },
+    { "--no-debug" },
 
     -- Display options.
     { "-1",                     "Display one column per line" },
@@ -158,6 +161,7 @@ local list_of_flags = {
     { "-R",                     "Synonym for --recurse" },
     { "-s",                     "Subdirectories; recursively list files" },
     { "-u",                     "Usage mode; directory size info" },
+    { "--usage" },
     { "-v",                     "Sort columns vertically" },
     { "--vertical" },
     { "--horizontal" },
@@ -170,6 +174,8 @@ local list_of_flags = {
     { opteq=true, "--color-scale-mode=", args("fixed", "gradient"), "mode", "" },
     { "--hyperlinks" },
     { "--no-hyperlinks" },
+    { "--tree" },
+    { "--no-tree" },
 
     -- Filtering and sorting options.
     { "-a:", attrs, "attrs",    "Filter files by attributes" },
@@ -184,6 +190,8 @@ local list_of_flags = {
     { "-X",                     "Reset skipped types" },
     { "-X:", skips, "types",    "Skip types during -s" },
     { opteq=true, "--skip=", skips, "types", "" },
+    { "--git-ignore" },
+    { "--no-git-ignore" },
     { "--hide-dot-files" },
     { "--no-hide-dot-files" },
     { "--reverse" },
@@ -222,7 +230,7 @@ local list_of_flags = {
 
     -- Formatting options.
     { "-,",                     "Show thousands separator (default)" },
-    { "-f:", pictures, "picture", "Specify format picture" },
+    { "-f", pictures, " picture", "Specify format picture" },
     { "-F",                     "Show full file paths" },
     { "--full-paths" },
     { "-j",                     "Justify names in FAT list format" },
