@@ -1178,6 +1178,7 @@ local track_flags = {
 local untracked_flags = {
     { "-u", "Show untracked files recursively" },
     { "-uno", "Show no untracked files" },
+    { "-unormal", "Show untracked files and directories" },
     { "-uall", "Show untracked files recursively" },
     "--untracked-files",
     "--untracked-files="..untracked_files_arg,
