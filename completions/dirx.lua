@@ -75,6 +75,7 @@ local sorts = mcf.addcharflagsarg(clink.argmatcher(), {
 local helps = clink.argmatcher():_addexarg({
     { "colors",     "Help on color coding the file list" },
     { "colorsamples", "Display ANSI color codes" },
+    { "defaultcolors", "Print the default color string" },
     { "icons",      "Help on icons and Nerd Fonts" },
     { "pictures",   "Help on format pictures" },
     { "regex",      "Help on regular expression syntax" },
@@ -120,6 +121,7 @@ local list_of_flags = {
     { "--no-nix" },
     { "--debug" },
     { "--no-debug" },
+    { hide=true, "--",          "" },
 
     -- Display options.
     { "-1",                     "Display one column per line" },
@@ -147,7 +149,7 @@ local list_of_flags = {
     { "--icons=", when, "when", "" },
     { "--no-icons" },
     { "-k",                     "Highlight with color scale" },
-    { hide=true, "--color-scale" },
+    { "--color-scale" },
     { opteq=true, "--color-scale=", args("all", "size", "time"), "which", "" },
     { "--no-color-scale" },
     { "-l",                     "Long mode; one file per line" },
@@ -160,6 +162,7 @@ local list_of_flags = {
     { opteq=true, "--quash=", quash, "types", "" },
     { "-R",                     "Synonym for --recurse" },
     { "-s",                     "Subdirectories; recursively list files" },
+    { "--recurse" },
     { "-u",                     "Usage mode; directory size info" },
     { "--usage" },
     { "-v",                     "Sort columns vertically" },
@@ -186,6 +189,7 @@ local list_of_flags = {
     { "--ignore-glob=", globs, "glob", "" },
     { "-L", levels, " depth",   "Limit depth of recursion with -s" },
     { opteq=true, "--levels=", levels, "depth", "" },
+    { hide=true, opteq=true, "--level=", levels, "depth", "" },
     { "-o:", sorts, "options",  "List files in sorted order" },
     { "-X",                     "Reset skipped types" },
     { "-X:", skips, "types",    "Skip types during -s" },

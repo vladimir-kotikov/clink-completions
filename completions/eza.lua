@@ -66,7 +66,7 @@ clink.argmatcher("eza")
     { "-d",                             "list directories as files; don't list their contents" },
     { "--list-dirs" },
     { opteq=true, "-L"..levels, " DEPTH", "limit the depth of recursion" },
-    { opteq=true, "--levels="..levels, "DEPTH", "" },
+    { opteq=true, "--level="..levels, "DEPTH", "" },
     { "-r",                             "reverse the sort order" },
     { "--reverse" },
     { opteq=true, "-s="..sortfield, "SORT_FIELD", "which field to sort by" },
