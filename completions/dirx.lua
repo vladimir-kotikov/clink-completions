@@ -211,6 +211,7 @@ local list_of_flags = {
     { "--owner" },
     { "--no-owner" },
     { "-r",                     "Display alternate data streams" },
+    { hide=true, "-:",          "" },
     { "--streams" },
     { "--no-streams" },
     { "-S",                     "List file size in wide modes" },
