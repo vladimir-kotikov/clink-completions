@@ -1,5 +1,16 @@
 # Release Notes
 
+## 0.5.1 (Mar 8, 2024)
+
+  * Add completions for [`dirx`](https://github.com/chrisant996/dirx).
+  * Add completions for [`eza`](https://github.com/eza-community/eza).
+  * Add completions for [`fd`](https://github.com/sharkdp/fd).
+  * Add completions for [`rg`](https://github.com/BurntSushi/ripgrep) (ripgrep).
+  * Update many of the completion scripts to support icons when [Icons in File Completions](https://github.com/chrisant996/clink-gizmos#setting-up-icons-in-file-completions) from [clink-gizmos](https://github.com/chrisant966/clink-gizmos) is loaded and enabled.
+  * Update `git status` to include `-unormal`.
+  * Update `net` completions to support `net use /d`.
+  * Update `wt` and `start` completions so that completions also work while inputing the commands for `wt` or `start` to launch.
+
 ## 0.5.0 (Nov 28, 2023)
 
   * `b192f9` Improve syntax handling for `doskey` completions.
