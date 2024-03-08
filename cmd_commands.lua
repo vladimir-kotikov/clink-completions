@@ -251,10 +251,11 @@ local function dir__delayinit(argmatcher)
     :adddescriptions(descriptions)
     :hideflags("/?", dir__upper_case_flags, "/a", "/t", "/A:", "/O:", "/T:")
     :setclassifier(dir__classifier)
-    :setcmdcommand()
 end
 
-clink.argmatcher("dir"):setdelayinit(dir__delayinit)
+clink.argmatcher("dir")
+:setdelayinit(dir__delayinit)
+:setcmdcommand()
 
 end -- Version check.
 
@@ -857,10 +858,11 @@ local function start__delayinit(argmatcher)
     :hideflags("/?")
     :chaincommand("start")
     :setclassifier(start__classifier)
-    :setcmdcommand()
 end
 
-clink.argmatcher("start"):setdelayinit(start__delayinit)
+clink.argmatcher("start")
+:setdelayinit(start__delayinit)
+:setcmdcommand()
 
 end -- Version check.
 

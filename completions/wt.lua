@@ -63,5 +63,5 @@ if (clink.version_encoded or 0) >= 10050014 then
 end
 
 if wt.chaincommand then
-    wt:chaincommand("process")
+    wt:chaincommand("run")
 end
