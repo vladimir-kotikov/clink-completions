@@ -18,12 +18,22 @@
 --          { "-d", " date",  "List newer than date" },
 --                                          -- Adds string "-d", arginfo " date", and
 --                                             description "List newer than date".
+--          { "-D", " date",  "" },         -- Adds string "-D" and arginfo " date",
+--                                             without a description.
 --          {                               -- Nested table, following the same format.
 --              { "-e" },
 --              { "-f" },
 --          },
+--          { "-o" },
+--          { "--option" },
+--
 --          -- Add hide=true to hide the match.
 --          { "-x", hide=true },
+--
+--          -- Use hide_unless="list of flags" to hide the match unless any of
+--          -- the specified flags are present.
+--          { hide_unless="-o --option", "--no-option" },
+--
 --          -- Add opteq=true when there's a linked argmatcher to also add a
 --          -- hidden opposite style:
 --          { "-x"..argmatcher, opteq=true },   -- Adds "-x"..argmatcher, and a hidden "-x="..argmatcher.
@@ -247,7 +257,42 @@ if not tmp._addexflags or not tmp._addexarg then
         return getmetatable(x) == meta_link
     end
 
-    local function add_elm(elm, list, descriptions, hide, in_opteq)
+    local function onarg_hide_unless(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused
+        if arg_index == 0 then
+            local present = user_data.present
+            if not present then
+                present = {}
+                user_data.present = present
+            end
+            word = word:gsub("[:=].*$", "")
+            present[word] = true
+        end
+    end
+
+    local function do_filter(matches, conditions, user_data)
+        local ret = {}
+        local present = user_data.present or {}
+        for _,m in ipairs(matches) do
+            local test_list = conditions[m.match]
+            if test_list then
+                local ok
+                for _,test in ipairs(test_list) do
+                    if present[test] then
+                        ok = true
+                        break
+                    end
+                end
+                if not ok then
+                    goto continue
+                end
+            end
+            table.insert(ret, m)
+    ::continue::
+        end
+        return ret
+    end
+
+    local function add_elm(elm, list, descriptions, hide, hide_unless, in_opteq)
         local arg
         local opteq = in_opteq
         if elm[1] then
@@ -306,11 +351,20 @@ if not tmp._addexflags or not tmp._addexarg then
                 local name = arglinked and arg._key or arg
                 table.insert(hide, name)
             end
+            if hide_unless and elm.hide_unless then
+                local unless = {}
+                for _,u in ipairs(string.explode(elm.hide_unless)) do
+                    table.insert(unless, u)
+                end
+                if unless[1] then
+                    hide_unless[arg] = unless
+                end
+            end
         elseif t == "function" then
             table.insert(list, arg)
         elseif t == "nested" then
             for _,sub_elm in ipairs(elm) do
-                add_elm(sub_elm, list, descriptions, hide, opteq)
+                add_elm(sub_elm, list, descriptions, hide, hide_unless, opteq)
             end
         else
             pause("unrecognized input table format.")
@@ -318,10 +372,11 @@ if not tmp._addexflags or not tmp._addexarg then
         end
     end
 
-    local function build_lists(tbl)
+    local function build_lists(tbl, is_flags)
         local list = {}
         local descriptions = (not ARGHELPER_DISABLE_DESCRIPTIONS) and {} -- luacheck: no global
         local hide = {}
+        local hide_unless = is_flags and {}
         if type(tbl) ~= "table" then
             pause('table expected.')
             error('table expected.')
@@ -329,7 +384,7 @@ if not tmp._addexflags or not tmp._addexarg then
         for _,elm in ipairs(tbl) do
             local t = type(elm)
             if t == "table" then
-                add_elm(elm, list, descriptions, hide, tbl.opteq)
+                add_elm(elm, list, descriptions, hide, hide_unless, tbl.opteq)
             elseif t == "string" or t == "number" or t == "function" then
                 table.insert(list, elm)
             end
@@ -341,12 +396,38 @@ if not tmp._addexflags or not tmp._addexarg then
         list.onadvance = tbl.onadvance
         list.onlink = tbl.onlink
         list.onarg = tbl.onarg
-        return list, descriptions, hide
+        if hide_unless then
+            local any = false
+            for k,v in pairs(hide_unless) do
+                any = true
+                break
+            end
+            if not any then
+                hide_unless = nil
+            end
+        end
+        return list, descriptions, hide, hide_unless
     end
 
     if not tmp._addexflags then
         interop._addexflags = function(parser, tbl)
-            local flags, descriptions, hide = build_lists(tbl)
+            local flags, descriptions, hide, hide_unless = build_lists(tbl, true--[[is_flags]])
+            if hide_unless then
+                if tbl.onarg then
+                    local fwd = tbl.onarg
+                    flags.onarg = function(arg_index, word, word_index, line_state, user_data)
+                        fwd(arg_index, word, word_index, line_state, user_data)
+                        onarg_hide_unless(arg_index, word, word_index, line_state, user_data)
+                    end
+                else
+                    flags.onarg = onarg_hide_unless
+                end
+                table.insert(flags, function (word, word_index, line_state, match_builder, user_data) -- luacheck: no unused
+                    clink.onfiltermatches(function (matches)
+                        return do_filter(matches, hide_unless, user_data)
+                    end)
+                end)
+            end
             parser:addflags(flags)
             if descriptions then
                 parser:adddescriptions(descriptions)

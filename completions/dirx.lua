@@ -118,9 +118,9 @@ local list_of_flags = {
     { "-V",                     "Display version information" },
     { "--version" },
     { "--nix" },            --  "Use Unix-y default options"
-    { "--no-nix" },
+    { hide_unless="--nix", "--no-nix" },
     { "--debug" },
-    { "--no-debug" },
+    { hide_unless="--debug", "--no-debug" },
     { hide=true, "--",          "" },
 
     -- Display options.
@@ -131,30 +131,30 @@ local list_of_flags = {
     { "--all" },
     { "-b",                     "Bare mode; only display names" },
     { "--bare" },
-    { "--no-bare" },
+    { hide_unless="/b -b --bare", "--no-bare" },
     { "-c",                     "Display with colors" },
     { "--color" },
-    { "--no-color" },
+    { hide_unless="/c -c --color", "--no-color" },
     { "-g",                     "Show git file status" },
     { "-gg",                    "Show git repo status" },
     { "--git" },
-    { "--no-git" },
+    { hide_unless="/g -g /gg -gg --git --git-repos", "--no-git" },
     { "--git-repos" },
-    { "--no-git-repos" },
+    { hide_unless="/g -g /gg -gg --git --git-repos", "--no-git-repos" },
     { "-G",                     "Synonym for --wide" },
     { "--grid" },
-    { "--no-grid" },
+    { hide_unless="/G -G /w -w --grid --wide --nix", "--no-grid" },
     { "-i",                     "Display file icons" },
     { "--icons" },
     { "--icons=", when, "when", "" },
-    { "--no-icons" },
+    { hide_unless="/i -i --icons", "--no-icons" },
     { "-k",                     "Highlight with color scale" },
     { "--color-scale" },
     { opteq=true, "--color-scale=", args("all", "size", "time"), "which", "" },
-    { "--no-color-scale" },
+    { hide_unless="/k -k --color-scale", "--no-color-scale" },
     { "-l",                     "Long mode; one file per line" },
     { "--long" },
-    { "--no-long" },
+    { hide_unless="/l -l --long", "--no-long" },
     { "-n",                     "Use normal list format" },
     { "-p",                     "Paginate output" },
     { "-Q",                     "Reset quashed output types" },
@@ -170,15 +170,15 @@ local list_of_flags = {
     { "--horizontal" },
     { "-w",                     "Wide list mode" },
     { "--wide" },
-    { "--no-wide" },
+    { hide_unless="/w -w /G -G --wide --grid --nix", "--no-wide" },
     { "-z",                     "Use FAT list format" },
     { "--fat" },
-    { "--no-fat" },
+    { hide_unless="/z -z --fat", "--no-fat" },
     { opteq=true, "--color-scale-mode=", args("fixed", "gradient"), "mode", "" },
     { "--hyperlinks" },
-    { "--no-hyperlinks" },
+    { hide_unless="--hyperlinks", "--no-hyperlinks" },
     { "--tree" },
-    { "--no-tree" },
+    { hide_unless="--tree", "--no-tree" },
 
     -- Filtering and sorting options.
     { "-a:", attrs, "attrs",    "Filter files by attributes" },
@@ -195,43 +195,43 @@ local list_of_flags = {
     { "-X:", skips, "types",    "Skip types during -s" },
     { opteq=true, "--skip=", skips, "types", "" },
     { "--git-ignore" },
-    { "--no-git-ignore" },
+    { hide_unless="--git-ignore", "--no-git-ignore" },
     { "--hide-dot-files" },
-    { "--no-hide-dot-files" },
+    { hide_unless="--hide-dot-files --nix", "--no-hide-dot-files" },
     { "--reverse" },
-    { "--no-reverse" },
+    { hide_unless="--reverse", "--no-reverse" },
     { "--string-sort" },
     { "--word-sort" },
 
     -- Field options.
     { "-C",                     "Display compression ratio" },
     { "--ratio" },
-    { "--no-ratio" },
+    { hide_unless="/C -C --ratio", "--no-ratio" },
     { "-q",                     "Display owner of the file" },
     { "--owner" },
-    { "--no-owner" },
+    { hide_unless="/q -q --owner", "--no-owner" },
     { "-r",                     "Display alternate data streams" },
     { hide=true, "-:",          "" },
     { "--streams" },
-    { "--no-streams" },
+    { hide_unless="/r -r /: -: --streams", "--no-streams" },
     { "-S",                     "List file size in wide modes" },
     { "--size" },
-    { "--no-size" },
+    { hide_unless="/f -f --size /S -S /Sa -Sa /Sc -Sc /Sf -Sf /SS -SS /z -z --fat /Z -Z /l -l --long", "--no-size" },
     { "-Sa",                    "Use the Allocation size" },
     { "-Sc",                    "Use the Compressed size" },
     { "-Sf",                    "Use the File size (default)" },
     { "-t",                     "Display file attributes" },
     { "--attributes" },
-    { "--no-attributes" },
+    { hide_unless="/t -t --attributes --nix", "--no-attributes" },
     { "-T",                     "List file time in wide modes" },
     { "--time" },
-    { "--no-time" },
+    { hide_unless="/f -f --time /T -T /Ta -Ta /Tc -Tc /Tw -Tw /TT -TT /z -z --fat /Y -Y /l -l --long", "--no-time" },
     { "-Ta",                    "Use the Access time" },
     { "-Tc",                    "Use the Creation time" },
     { "-Tw",                    "Use the Write time (default)" },
     { "-x",                     "Display 8.3 short file names" },
     { "--short-names" },
-    { "--no-short-names" },
+    { hide_unless="/x -x --short-names", "--no-short-names" },
 
     -- Formatting options.
     { "-,",                     "Show thousands separator (default)" },
@@ -250,29 +250,29 @@ local list_of_flags = {
     { "-Y",                     "Abbreviate times" },
     { "-Z",                     "Abbreviate file sizes" },
     { "--bare-relative" },
-    { "--no-bare-relative" },
+    { hide_unless="--bare-relative", "--no-bare-relative" },
     { "--classify" },
-    { "--no-classify" },
+    { hide_unless="--classify", "--no-classify" },
     { "--compact" },
-    { "--no-compact" },
+    { hide_unless="--compact", "--no-compact" },
     { "--escape-codes" },
     { "--escape-codes=", when, "when", "" },
-    { "--fit-columns" },
+    { hide_unless="--no-fit-columns", "--fit-columns" },
     { "--no-fit-columns" },
     { "--mini-bytes" },
-    { "--no-mini-bytes" },
+    { hide_unless="--mini-bytes", "--no-mini-bytes" },
     { "--mini-header" },
-    { "--no-mini-header" },
+    { hide_unless="--mini-header --nix", "--no-mini-header" },
     { "--more-colors=", morec, "list", "" },
     { opteq=true, "--nerd-fonts=", args("2", "3"), "ver", "" },
     { opteq=true, "--pad-icons=", args("1", "2", "3", "4"), "spaces", "" },
     { "--relative" },
-    { "--no-relative" },
+    { hide_unless="--relative", "--no-relative" },
     { opteq=true, "--size-style=", sizestyles, "style", "" },
     { opteq=true, "--time-style=", timestyles, "style", "" },
     { opteq=true, "--truncate-char=", hexcode, "hexchar", "" },
     { "--utf8" },
-    { "--no-utf8" },
+    { hide_unless="--utf8", "--no-utf8" },
 
     { hide=true, "-,-",         "" },
     { hide=true, "-a-",         "" },
@@ -304,8 +304,28 @@ local list_of_flags = {
     { hide=true, "-Z-",         "" },
 }
 
-local minus_flags = {}
+local function onarg_dirxcmd(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused
+    if arg_index == 0 and not user_data.done_dirxcmd then
+        user_data.done_dirxcmd = true
+        user_data.present = user_data.present or {} -- Cooperates with arghelper.lua!
+        for _,w in ipairs(string.explode(os.getenv("DIRXCMD") or "")) do
+            user_data.present[w] = true
+        end
+    end
+end
+
+-- IMPORTANT: If slash_flags has an onarg callback, then it will replace the one
+-- from minus_flags, which would mess up both the DIRXCMD processing and also
+-- the hide_unless stuff in general.
+local minus_flags = { onarg=onarg_dirxcmd }
 local slash_flags = {}
+
+local function copy_vars(entry, tbl)
+    tbl.hide = entry.hide
+    tbl.hide_unless = entry.hide_unless
+    tbl.opteq = entry.opteq
+    return tbl
+end
 
 for _, entry in ipairs(list_of_flags) do
     local minus = entry[1]
@@ -314,16 +334,16 @@ for _, entry in ipairs(list_of_flags) do
 
     local num = #entry
     if num == 2 or num == 3 then
-        table.insert(minus_flags, { hide=entry.hide, minus, entry[2] })
-        table.insert(slash_flags, { hide=entry.hide, slash, entry[2] })
+        table.insert(minus_flags, copy_vars(entry, { minus, entry[2] }))
+        table.insert(slash_flags, copy_vars(entry, { slash, entry[2] }))
     elseif num == 4 or long then
         if entry[2] then
-            table.insert(minus_flags, { minus..entry[2], entry[3], entry[4] })
+            table.insert(minus_flags, copy_vars(entry, { minus..entry[2], entry[3], entry[4] }))
         else
-            table.insert(minus_flags, { minus, entry[3], entry[4] })
+            table.insert(minus_flags, copy_vars(entry, { minus, entry[3], entry[4] }))
         end
         if not long then
-            table.insert(slash_flags, { slash..entry[2], entry[3], entry[4] })
+            table.insert(slash_flags, copy_vars(entry, { slash..entry[2], entry[3], entry[4] }))
         end
     else
         error("unrecognized flag entry format.")
