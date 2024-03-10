@@ -81,7 +81,7 @@ local rg_typeadd = clink.argmatcher():addarg({})
 local rg_typeclear = clink.argmatcher():addarg({})
 local rg_typenot = clink.argmatcher():addarg({"(rg", "--type-list", "|", "string", "replace", ":", "t)"})
 
-rg_conditions = {
+local rg__hide_unless = {
   ["--ignore"] = { "--no-ignore" },
   ["--ignore-dot"] = { "--no-ignore-dot" },
   ["--ignore-exclude"] = { "--no-ignore-exclude" },
@@ -505,5 +505,5 @@ clink.argmatcher("rg")
   "--sort-files",
   "--no-sort-files",
   onarg = onarg_contains_opt,
-  function(_, _, _, _, user_data) clink.onfiltermatches(function(matches) return do_filter(matches, rg_conditions, user_data) end) end,
+  function(_, _, _, _, user_data) clink.onfiltermatches(function(matches) return do_filter(matches, rg__hide_unless, user_data) end) end,
 })
