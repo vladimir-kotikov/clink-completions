@@ -398,7 +398,7 @@ if not tmp._addexflags or not tmp._addexarg then
         list.onarg = tbl.onarg
         if hide_unless then
             local any = false
-            for k,v in pairs(hide_unless) do
+            for _,_ in pairs(hide_unless) do -- luacheck: ignore 512
                 any = true
                 break
             end
@@ -422,7 +422,7 @@ if not tmp._addexflags or not tmp._addexarg then
                 else
                     flags.onarg = onarg_hide_unless
                 end
-                table.insert(flags, function (word, word_index, line_state, match_builder, user_data) -- luacheck: no unused
+                table.insert(flags, function (word, word_index, line_state, match_builder, user_data) -- luacheck: no unused, no max line length
                     clink.onfiltermatches(function (matches)
                         return do_filter(matches, hide_unless, user_data)
                     end)

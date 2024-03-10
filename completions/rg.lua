@@ -1,6 +1,8 @@
 ------------------------------------------------------------------------------
 -- RG
 
+-- luacheck: no max line length
+
 local function try_require(module)
   local r
   pcall(function() r = require(module) end)
