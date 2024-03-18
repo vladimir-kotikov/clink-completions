@@ -104,7 +104,7 @@ clink.argmatcher("eza")
     { "-U",                             "use the created timestamp field" },
     { "--created" },
     { "--changed" },
-    { "--time-style="..timestyles, "STYLE", "how to format timestamps" },
+    { opteq=true, "--time-style="..timestyles, "STYLE", "how to format timestamps" },
     -- --total-size                     show the size of a directory as the size of all files and directories inside (unix only)
     { "--no-permissions" },
     -- -o, --octal-permissions          list each file's permission in octal format
