@@ -65,7 +65,7 @@ local function keyname_impl(restricted, _, word_index, line_state, builder, _)
     return matches
 end
 
-local function keyname(word, word_index, line_state, builder, user_data)
+local function keyname_any(word, word_index, line_state, builder, user_data)
     return keyname_impl(false, word, word_index, line_state, builder, user_data)
 end
 
@@ -75,7 +75,7 @@ end
 
 local user_data_keyname
 
-local function onarg_keyname(arg_index, word, word_index, line_state, user_data)
+local function onarg_keyname(arg_index, word, _, _, user_data)
     if arg_index == 1 then
         local ud = user_data.shared_user_data and user_data.shared_user_data or user_data
         ud.keyname = word
@@ -133,7 +133,7 @@ local query = clink.argmatcher():_addexflags({
 })
 :addarg({
     onarg=onarg_keyname,
-    keyname,
+    keyname_any,
 })
 :_addexflags({
     onarg=onarg_keyname,
@@ -164,7 +164,7 @@ local add = clink.argmatcher():_addexflags({
 })
 :addarg({
     onarg=onarg_keyname,
-    keyname,
+    keyname_any,
 })
 :nofiles()
 
@@ -174,7 +174,7 @@ local delete = clink.argmatcher():_addexflags({
     { "/va",                "Delete all values under the specified key" },
     { "/f",                 "Forces deletion without prompt" },
 })
-:addarg(keyname)
+:addarg(keyname_any)
 :nofiles()
 
 local copy = clink.argmatcher():_addexflags({
@@ -182,36 +182,36 @@ local copy = clink.argmatcher():_addexflags({
     { "/s",                 "Copies all subkeys and values" },
     { "/f",                 "Forces the copy without prompt" },
 })
-:addarg(keyname)
-:addarg(keyname)
+:addarg(keyname_any)
+:addarg(keyname_any)
 :nofiles()
 
 local save = clink.argmatcher():_addexflags({
     common_flags,
     { "/y",                 "Force overwriting the existing file without prompt" },
 })
-:addarg(keyname)
+:addarg(keyname_any)
 :addarg(clink.filematches)
 :nofiles()
 
 local restore = clink.argmatcher():_addexflags({
     common_flags,
 })
-:addarg(keyname)
+:addarg(keyname_any)
 :addarg(clink.filematches)
 :nofiles()
 
 local load = clink.argmatcher():_addexflags({
     common_flags,
 })
-:addarg(keyname)
+:addarg(keyname_any)
 :addarg(clink.filematches)
 :nofiles()
 
 local unload = clink.argmatcher():_addexflags({
     { "/?",                 "Show help" },
 })
-:addarg(keyname)
+:addarg(keyname_any)
 :nofiles()
 
 local compare = clink.argmatcher():_addexflags({
@@ -227,16 +227,16 @@ local compare = clink.argmatcher():_addexflags({
 })
 :addarg({
     onarg=onarg_keyname,
-    keyname,
+    keyname_any,
 })
-:addarg(keyname)
+:addarg(keyname_any)
 :nofiles()
 
 local export = clink.argmatcher():_addexflags({
     common_flags,
     { "/y",                 "Force overwriting the existing file without prompt" },
 })
-:addarg(keyname)
+:addarg(keyname_any)
 :addarg(clink.filematches)
 :nofiles()
 
@@ -271,18 +271,18 @@ local flags = clink.argmatcher():_addexflags({
 :nofiles()
 
 local commands = {
-    { "query"   .. query,   " keyname",             "Query keys or values" },
-    { "add"     .. add,     " keyname",             "Add a key or value" },
-    { "delete"  .. delete,  " keyname",             "Delete keys or values" },
-    { "copy"    .. copy,    " keyname1 keyname2",   "Copy keys and values" },
-    { "save"    .. save,    " keyname filename",    "Save a hive to a file" },
-    { "restore" .. restore, " keyname filename",    "Restore a hive from a file" },
-    { "load"    .. load,    " keyname filename",    "Load a hive file into a key name" },
-    { "unload"  .. unload,  " keyname",             "Unload a loaded hive file from a key name" },
-    { "compare" .. compare, " keyname1 keyname2",   "Compare keys and values" },
-    { "export"  .. export,  " keyname filename",    "Export keys and values to a .reg file" },
-    { "import"  .. import,  " filename",            "Import keys and values from a .reg file" },
-    { "flags"   .. flags,   " keyname [query|set]", "Query or set flags for keys" },
+    { "query"   .. query,   " KeyName",             "Query keys or values" },
+    { "add"     .. add,     " KeyName",             "Add a key or value" },
+    { "delete"  .. delete,  " KeyName",             "Delete keys or values" },
+    { "copy"    .. copy,    " KeyName1 KeyName2",   "Copy keys and values" },
+    { "save"    .. save,    " KeyName FileName",    "Save a hive to a file" },
+    { "restore" .. restore, " KeyName FileName",    "Restore a hive from a file" },
+    { "load"    .. load,    " KeyName FileName",    "Load a hive file into a key name" },
+    { "unload"  .. unload,  " KeyName",             "Unload a loaded hive file from a key name" },
+    { "compare" .. compare, " KeyName1 KeyName2",   "Compare keys and values" },
+    { "export"  .. export,  " KeyName FileName",    "Export keys and values to a .reg file" },
+    { "import"  .. import,  " FileName",            "Import keys and values from a .reg file" },
+    { "flags"   .. flags,   " KeyName [query|set]", "Query or set flags for keys" },
 }
 
 clink.argmatcher("reg")
