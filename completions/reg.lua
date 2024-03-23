@@ -73,8 +73,37 @@ local function keyname_hklm_software(word, word_index, line_state, builder, user
     return keyname_impl(true, word, word_index, line_state, builder, user_data)
 end
 
--- FUTURE: use onarg and user_data to list existing value names.
-local valuename = clink.argmatcher():addarg({fromhistory=true})
+local user_data_keyname
+
+local function onarg_keyname(arg_index, word, word_index, line_state, user_data)
+    if arg_index == 1 then
+        local ud = user_data.shared_user_data and user_data.shared_user_data or user_data
+        ud.keyname = word
+    elseif arg_index == 0 and word == "/v" then
+        user_data_keyname = user_data.keyname
+    end
+end
+
+local function valuename_impl(_, _, _, _, user_data)
+    local matches = {}
+    if user_data then
+        local keyname = user_data.shared_user_data and user_data.shared_user_data.keyname or user_data_keyname
+        local command = string.format('2>nul reg.exe query "%s" /v *', keyname)
+        local f = io.popen(command)
+        if f then
+            for line in f:lines() do
+                local m, t = line:match("^    +([^<>|&%%]+)    (REG[^%s]+)")
+                if m then
+                    table.insert(matches, { match=m, description=t })
+                end
+            end
+            f:close()
+        end
+    end
+    return matches
+end
+
+local valuename = clink.argmatcher():addarg(valuename_impl)
 
 local sep = clink.argmatcher():addarg({fromhistory=true})
 local find = clink.argmatcher():addarg({fromhistory=true})
@@ -102,10 +131,14 @@ local common_flags = {
 
 local query = clink.argmatcher():_addexflags({
 })
-:addarg(keyname)
+:addarg({
+    onarg=onarg_keyname,
+    keyname,
+})
 :_addexflags({
+    onarg=onarg_keyname,
     common_flags,
-    { "/v",                 "Queries for a specific registry key values" },
+    { "/v"..valuename, " ValueName", "Queries for a specific registry key values" },
     { "/ve",                "Queries for the default value or empty value name (Default)" },
     { "/s",                 "Queries all subkeys and values recursively (like dir /s)" },
     { "/se"..sep, " Sep",   "Specifies the separator (1 char) for REG_MULTI_SZ (Default is \\0)" },
@@ -120,6 +153,7 @@ local query = clink.argmatcher():_addexflags({
 :nofiles()
 
 local add = clink.argmatcher():_addexflags({
+    onarg=onarg_keyname,
     common_flags,
     { "/v"..valuename, " ValueName", "The value name to add under the selected key" },
     { "/ve",                "Adds an empty value name (Default) for the key" },
@@ -128,7 +162,10 @@ local add = clink.argmatcher():_addexflags({
     { "/d"..data, " Data",  "The data to assign to the registry ValueName being added" },
     { "/f",                 "Force overwriting the existing registry entry without prompt" },
 })
-:addarg(keyname)
+:addarg({
+    onarg=onarg_keyname,
+    keyname,
+})
 :nofiles()
 
 local delete = clink.argmatcher():_addexflags({
@@ -178,6 +215,7 @@ local unload = clink.argmatcher():_addexflags({
 :nofiles()
 
 local compare = clink.argmatcher():_addexflags({
+    onarg=onarg_keyname,
     common_flags,
     { "/v"..valuename, " ValueName", "The value name to compare under the selected key (Default is all)" },
     { "/ve",                "Compare the value of empty value name (Default)" },
@@ -187,7 +225,10 @@ local compare = clink.argmatcher():_addexflags({
     { "/os",                "Output only matches" },
     { "/on",                "No output (exit code 0=identical, 1=failed, 2=different)" },
 })
-:addarg(keyname)
+:addarg({
+    onarg=onarg_keyname,
+    keyname,
+})
 :addarg(keyname)
 :nofiles()
 
@@ -245,5 +286,7 @@ local commands = {
 }
 
 clink.argmatcher("reg")
-:addflags("/?")
+:_addexflags({
+    { "/?",                 "Show help" },
+})
 :_addexarg(commands)
