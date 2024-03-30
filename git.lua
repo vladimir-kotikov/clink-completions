@@ -288,6 +288,8 @@ local function catchall(token) -- luacheck: no unused args
         f:close()
     end
 
+    res:sort()
+
     if clink.onbeginedit then
         cached_commands = res
     end

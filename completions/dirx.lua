@@ -78,6 +78,7 @@ local helps = clink.argmatcher():_addexarg({
     { "defaultcolors", "Print the default color string" },
     { "icons",      "Help on icons and Nerd Fonts" },
     { "pictures",   "Help on format pictures" },
+    { "printallicons", "Print a list of all icons" },
     { "regex",      "Help on regular expression syntax" },
 })
 
