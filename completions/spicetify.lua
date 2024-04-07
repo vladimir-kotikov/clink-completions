@@ -39,8 +39,10 @@ function get_app_names()
     return names
 end
 
+local one_arg = clink.argmatcher():addarg()
+
 local function create_arg(name)
-    return clink.argmatcher():addarg(name):nofiles()
+    return clink.argmatcher():addarg(name .. one_arg)
 end
 
 local empty_parser = clink.argmatcher()
