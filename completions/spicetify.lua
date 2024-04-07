@@ -13,7 +13,7 @@ function split(inputstr, sep)
     return t
 end
 
-function get_extension_names()
+function get_extension_names(append_hyphen)
     local handle = io.popen("2>nul spicetify.exe path -e")
     local result = handle:read("*a")
     handle:close()
@@ -21,12 +21,15 @@ function get_extension_names()
     local names = {}
     for _, path in ipairs(paths) do
         local name = path:match("([^\\]+)$")
+        if append_hyphen then
+            name = name .. "-"
+        end
         table.insert(names, name)
     end
     return names
 end
 
-function get_app_names()
+function get_app_names(append_hyphen)
     local handle = io.popen("2>nul spicetify.exe path -a")
     local result = handle:read("*a")
     handle:close()
@@ -34,6 +37,9 @@ function get_app_names()
     local names = {}
     for _, path in ipairs(paths) do
         local name = path:match("([^\\]+)$")
+        if append_hyphen then
+            name = name .. "-"
+        end
         table.insert(names, name)
     end
     return names
@@ -60,10 +66,10 @@ local watch_parser = clink.argmatcher()
     :addarg("-e", "-a", "-s", "-l")
 
 local path_a_flag_parser = clink.argmatcher()
-    :addarg("root", get_app_names)
+    :addarg("root", get_app_names(false))
 
 local path_e_flag_parser = clink.argmatcher()
-    :addarg("root", get_extension_names)
+    :addarg("root", get_extension_names(false))
 
 local path_s_flag_parser = clink.argmatcher()
     :addarg("root", "folder", "color", "css", "js", "assets")
