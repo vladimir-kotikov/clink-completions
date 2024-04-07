@@ -91,32 +91,35 @@ local config_custom_apps_parser = clink.argmatcher()
 local config_extensions_parser = clink.argmatcher()
     :addarg(get_extension_names(true))
 
+local binary_parser = clink.argmatcher()
+    :addarg("0", "1")
+
 local config_parser = clink.argmatcher()
     :addarg(
-        create_arg("disable_sentry"),
-        create_arg("disable_ui_logging"),
-        create_arg("remove_rtl_rule"),
-        create_arg("expose_apis"),
-        create_arg("disable_upgrade_check"),
+        "disable_sentry" .. binary_parser,
+        "disable_ui_logging" .. binary_parser,
+        "remove_rtl_rule" .. binary_parser,
+        "expose_apis" .. binary_parser,
+        "disable_upgrade_check" .. binary_parser,
         "extensions" .. config_extensions_parser,
         "custom_apps" .. config_custom_apps_parser,
-        create_arg("sidebar_config"),
-        create_arg("home_config"),
-        create_arg("experimental_features"),
-        create_arg("inject_css"),
-        create_arg("replace_colors"),
-        create_arg("overwrite_assets"),
+        "sidebar_config" .. binary_parser,
+        "home_config" .. binary_parser,
+        "experimental_features" .. binary_parser,
+        "inject_css" .. binary_parser,
+        "replace_colors" .. binary_parser,
+        "overwrite_assets" .. binary_parser,
         create_arg("spotify_launch_flags"),
         create_arg("prefs_path"),
         create_arg("current_theme"),
         create_arg("color_scheme"),
-        create_arg("check_spicetify_upgrade"),
+        "check_spicetify_upgrade" .. binary_parser,
         create_arg("spotify_path"),
         create_arg("xpui.js_find_8008"),
         create_arg("xpui.js_repl_8008"),
-        create_arg("inject_theme_js"),
-        create_arg("check_spicetify_update"),
-        create_arg("always_enable_devtools")
+        "inject_theme_js" .. binary_parser,
+        "check_spicetify_update" .. binary_parser,
+        "always_enable_devtools" .. binary_parser
     )
     :loop(1)
     :nofiles()
