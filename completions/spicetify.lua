@@ -85,6 +85,12 @@ local path_parser = clink.argmatcher()
     )
     :nofiles()
     
+local config_custom_apps_parser = clink.argmatcher()
+    :addarg(get_app_names(true))
+
+local config_extensions_parser = clink.argmatcher()
+    :addarg(get_extension_names(true))
+
 local config_parser = clink.argmatcher()
     :addarg(
         create_arg("disable_sentry"),
@@ -92,8 +98,8 @@ local config_parser = clink.argmatcher()
         create_arg("remove_rtl_rule"),
         create_arg("expose_apis"),
         create_arg("disable_upgrade_check"),
-        create_arg("extensions"),
-        create_arg("custom_apps"),
+        "extensions" .. config_extensions_parser,
+        "custom_apps" .. config_custom_apps_parser,
         create_arg("sidebar_config"),
         create_arg("home_config"),
         create_arg("experimental_features"),
