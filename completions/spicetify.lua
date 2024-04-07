@@ -14,7 +14,7 @@ function split(inputstr, sep)
 end
 
 function get_extension_names()
-    local handle = io.popen("spicetify.exe path -e")
+    local handle = io.popen("2>nul spicetify.exe path -e")
     local result = handle:read("*a")
     handle:close()
     local paths = split(result, "\n")
@@ -27,7 +27,7 @@ function get_extension_names()
 end
 
 function get_app_names()
-    local handle = io.popen("spicetify.exe path -a")
+    local handle = io.popen("2>nul spicetify.exe path -a")
     local result = handle:read("*a")
     handle:close()
     local paths = split(result, "\n")
