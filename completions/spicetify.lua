@@ -2,7 +2,7 @@
 -- Clink argmatcher for Spicetify
 --------------------------------------------------------------------------------
 
-function split(inputstr, sep)
+local function split(inputstr, sep)
     if sep == nil then
         sep = "%s"
     end
@@ -13,7 +13,7 @@ function split(inputstr, sep)
     return t
 end
 
-function get_extension_names(append_hyphen)
+local function get_extension_names(append_hyphen)
     local handle = io.popen("2>nul spicetify.exe path -e")
     local result = handle:read("*a")
     handle:close()
@@ -29,7 +29,7 @@ function get_extension_names(append_hyphen)
     return names
 end
 
-function get_app_names(append_hyphen)
+local function get_app_names(append_hyphen)
     local handle = io.popen("2>nul spicetify.exe path -a")
     local result = handle:read("*a")
     handle:close()
@@ -100,7 +100,7 @@ local path_parser = clink.argmatcher()
         "-c" .. empty_parser
     )
     :nofiles()
-    
+
 local config_custom_apps_parser = clink.argmatcher()
     :addarg(get_app_names_true)
 
@@ -164,7 +164,7 @@ local color_parser = clink.argmatcher()
     :loop(1)
     :nofiles()
 
-local spicetify_parser = clink.argmatcher("spicetify")
+clink.argmatcher("spicetify")
     :addflags(
         "-a", "--app",
         "-e", "--extension",
