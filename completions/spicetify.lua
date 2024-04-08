@@ -45,6 +45,22 @@ function get_app_names(append_hyphen)
     return names
 end
 
+local function get_app_names_true()
+    return get_app_names(true)
+end
+
+local function get_extension_names_true()
+    return get_extension_names(true)
+end
+
+local function get_app_names_false()
+    return get_app_names(false)
+end
+
+local function get_extension_names_false()
+    return get_extension_names(false)
+end
+
 local one_arg = clink.argmatcher():addarg()
 
 local function create_arg(name)
@@ -66,10 +82,10 @@ local watch_parser = clink.argmatcher()
     :addarg("-e", "-a", "-s", "-l")
 
 local path_a_flag_parser = clink.argmatcher()
-    :addarg("root", get_app_names(false))
+    :addarg("root", get_app_names_false)
 
 local path_e_flag_parser = clink.argmatcher()
-    :addarg("root", get_extension_names(false))
+    :addarg("root", get_extension_names_false)
 
 local path_s_flag_parser = clink.argmatcher()
     :addarg("root", "folder", "color", "css", "js", "assets")
@@ -86,10 +102,10 @@ local path_parser = clink.argmatcher()
     :nofiles()
     
 local config_custom_apps_parser = clink.argmatcher()
-    :addarg(get_app_names(true))
+    :addarg(get_app_names_true)
 
 local config_extensions_parser = clink.argmatcher()
-    :addarg(get_extension_names(true))
+    :addarg(get_extension_names_true)
 
 local binary_parser = clink.argmatcher()
     :addarg("0", "1")
