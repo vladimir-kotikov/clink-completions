@@ -8,6 +8,7 @@ local file_matcher = clink.argmatcher():addarg({
 
 -- luacheck: no max line length
 clink.argmatcher("findstr")
+:setflagsanywhere(false)
 :_addexflags({
     {"/b",          "Matches pattern if at the beginning of a line"},
     {"/e",          "Matches pattern if at the end of a line"},
