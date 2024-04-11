@@ -426,6 +426,7 @@ if not tmp._addexflags or not tmp._addexarg then
                     clink.onfiltermatches(function (matches)
                         return do_filter(matches, hide_unless, user_data)
                     end)
+                    return {}
                 end)
             end
             parser:addflags(flags)
