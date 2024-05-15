@@ -21,19 +21,46 @@ Some completion generators in this bundle use features from the latest Clink dis
 
 If this doesn't help, feel free to submit an issue.
 
-Installation
-============
+Installation and Updates
+========================
+
+### If you use Cmder
 
 If you're using [Cmder](https://github.com/cmderdev/cmder), then the clink-completions are already bundled with it.
 
-Otherwise, here is the easiest way to install the clink-completions scripts, when using a recent version of [Clink](https://github.com/chrisant996/clink):
+Installing updates for Cmder also updates clink-completions, but not necessarily the latest clink-completions.
+
+To update Cmder to use the very latest clink-completions, do this:
+
+1. Go to the [Releases](https://github.com/vladimir-kotikov/clink-completions/releases) page.
+2. Download the "Source code (zip)" file under "Assets" for the latest release.
+3. Extract the files to your Cmder `vendor\clink-completions` directory.
+4. Start a new session of Cmder.
+
+Otherwise, here are a couple of ways to install the clink-completions scripts, when using a recent version of [Clink](https://github.com/chrisant996/clink):
+
+### Using git
 
 1. Make sure you have [git](https://www.git-scm.com/downloads) installed.
-2. Clone this repo into a new local directory via `git clone https://github.com/vladimir-kotikov/clink-completions local_directory` (replace `local_directory` with the name of the directory where you want to install the scripts).
-  - **Note:** avoid naming it `completions`, because that's a reserved subdirectory name in Clink.  See [Completion directories](https://chrisant996.github.io/clink/clink.html#completion-directories) for more info.
-3. Tell Clink to load scripts from the repo via `clink installscripts full_path_to_local_directory`.
-  - **Note:** it is important to specify the full path to the directory.
+2. Clone this repo into a new local directory via <code>git clone https://github.com/vladimir-kotikov/clink-completions <em>local_directory</em></code> (replace <em>local_directory</em> with the name of the directory where you want to install the scripts).
+    > **Important:** Avoid naming it `completions`, because that's a reserved subdirectory name in Clink.  See [Completion directories](https://chrisant996.github.io/clink/clink.html#completion-directories) for more info.
+3. Tell Clink to load scripts from the repo via <code>clink installscripts <em>full_path_to_local_directory</em></code>.
+    > **Important:** Specify the full path to the local directory (don't use a relative path).
 4. Start a new session of Clink.
+
+Get updates using `git pull` and normal git workflow.
+
+### From the .zip file
+
+1. Go to the [Releases](https://github.com/vladimir-kotikov/clink-completions/releases) page.
+2. Download the "Source code (zip)" file under "Assets" for the latest release.
+3. Extract the files to a local directory.
+    > **Important:** Avoid naming it `completions`, because that's a reserved subdirectory name in Clink.  See [Completion directories](https://chrisant996.github.io/clink/clink.html#completion-directories) for more info.
+4. Tell Clink to load scripts from the repo via <code>clink installscripts <em>full_path_to_local_directory</em></code> (only when installing the first time; skip this step when updating).
+    > **Important:** Specify the full path to the local directory (don't use a relative path).
+5. Start a new session of Clink.
+
+Get updates by following the steps again, but skip step 4.
 
 Repo structure
 ==============
