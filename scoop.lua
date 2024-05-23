@@ -15,54 +15,54 @@ local function get_home_dir()
 end
 
 local function scoop_load_config() -- luacheck: no unused args
-  local file = io.open(get_home_dir() .. "\\.config\\scoop\\config.json")
-  -- If there is no such file, then close handle and return
-  if file == nil then
-      return w()
-  end
+    local file = io.open(get_home_dir() .. "\\.config\\scoop\\config.json")
+    -- If there is no such file, then close handle and return
+    if file == nil then
+        return w()
+    end
 
-  -- Read the whole file contents
-  local contents = file:read("*a")
-  file:close()
+    -- Read the whole file contents
+    local contents = file:read("*a")
+    file:close()
 
-  -- strip UTF-8-BOM
-  local utf8_len = contents:len()
-  local pat_start, _ = string.find(contents, "{")
-  contents = contents:sub(pat_start, utf8_len)
+    -- strip UTF-8-BOM
+    local utf8_len = contents:len()
+    local pat_start, _ = string.find(contents, "{")
+    contents = contents:sub(pat_start, utf8_len)
 
-  local data = JSON:decode(contents)
+    local data = JSON:decode(contents)
 
-  if data == nil then
-      return w()
-  end
+    if data == nil then
+        return w()
+    end
 
-  return data
+    return data
 end
 
 local function scoop_folder()
-  local folder = os.getenv("SCOOP")
-  if not folder then
-      local config = scoop_load_config()
-      if config and config.root_path then
-          folder = config.root_path
-      else
-          folder = get_home_dir() .. "\\scoop"
-      end
-  end
-  return folder
+    local folder = os.getenv("SCOOP")
+    if not folder then
+        local config = scoop_load_config()
+        if config and config.root_path then
+            folder = config.root_path
+        else
+            folder = get_home_dir() .. "\\scoop"
+        end
+    end
+    return folder
 end
 
 local function scoop_global_folder()
-  local folder = os.getenv("SCOOP_GLOBAL")
-  if not folder then
-      local config = scoop_load_config()
-      if config and config.global_path then
-          folder = config.global_path
-      else
-          folder = os.getenv("ProgramData") .. "\\scoop"
-      end
-  end
-  return folder
+    local folder = os.getenv("SCOOP_GLOBAL")
+    if not folder then
+        local config = scoop_load_config()
+        if config and config.global_path then
+            folder = config.global_path
+        else
+            folder = os.getenv("ProgramData") .. "\\scoop"
+        end
+    end
+    return folder
 end
 
 local function scoop_alias_list(token) -- luacheck: no unused args
