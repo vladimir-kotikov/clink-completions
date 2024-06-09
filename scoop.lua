@@ -162,6 +162,15 @@ local function scoop_cache_apps_list(token)
     return list
 end
 
+local arch_parser =
+    parser(
+    {
+        "32bit",
+        "64bit",
+        "arm64",
+    }
+)
+
 local scoop_default_flags = {
     "--help",
     "-h"
@@ -190,7 +199,15 @@ local scoop_cache_parser =
     parser(
     {
         "show" .. parser({scoop_cache_apps_list, scoop_apps_list, "*"}),
-        "rm" .. parser({scoop_cache_apps_list, "*"})
+        "rm" .. parser({scoop_cache_apps_list, "*"}, "--all", "-a")
+    }
+)
+
+local scoop_cat_parser =
+    parser(
+    {
+        scoop_available_apps_list,
+        scoop_apps_list
     }
 )
 
@@ -200,6 +217,8 @@ local scoop_cleanup_parser =
         scoop_apps_list,
         "*"
     },
+    "--all",
+    "-a",
     "--global",
     "-g",
     "--cache",
@@ -222,6 +241,132 @@ local scoop_config_parser =
         "show_update_log" .. parser({"true", "false"}),
         "virustotal_api_key"
     }
+)
+
+local scoop_depends_parser =
+    parser(
+    {
+        scoop_available_apps_list,
+        scoop_apps_list
+    },
+    "--arch" .. arch_parser,
+    "-a" .. arch_parser
+)
+
+local scoop_download_parser =
+    parser(
+    {
+        scoop_available_apps_list
+    },
+    "--arch" .. arch_parser,
+    "-a" .. arch_parser,
+    "--force",
+    "-f",
+    "--no-hash-check",
+    "-h",
+    "--no-update-scoop",
+    "-u"
+)
+
+local scoop_export_parser =
+    parser(
+    "--config",
+    "-c"
+):nofiles()
+
+local scoop_hold_parser =
+    parser(
+    {
+        scoop_apps_list
+    },
+    "--global",
+    "-g"
+)
+
+local scoop_home_parser =
+    parser(
+    {
+        scoop_available_apps_list,
+        scoop_apps_list
+    }
+)
+
+local scoop_info_parser =
+    parser(
+    {
+        scoop_available_apps_list,
+        scoop_apps_list
+    },
+    "--verbose",
+    "-v"
+)
+
+local scoop_install_parser =
+    parser(
+    {
+        scoop_available_apps_list
+    },
+    "--global",
+    "-g",
+    "--independent",
+    "-i",
+    "--no-cache",
+    "-k",
+    "--no-update-scoop",
+    "-u",
+    "--skip",
+    "-s",
+    "--arch" .. arch_parser,
+    "-a" .. arch_parser
+):loop(1)
+
+local scoop_prefix_parser =
+    parser(
+    {
+        scoop_apps_list
+    }
+)
+
+local scoop_reset_parser =
+    parser(
+    {
+        scoop_apps_list,
+        "*",
+    },
+    "--all",
+    "-a"
+):loop(1)
+
+local shim_subcommand_parser =
+    parser(
+    "--global",
+    "-g"
+)
+
+local scoop_shim_parser =
+    parser(
+    {
+        "add" .. shim_subcommand_parser,
+        "rm" .. shim_subcommand_parser,
+        "list" .. shim_subcommand_parser,
+        "info" .. shim_subcommand_parser,
+        "alter" .. shim_subcommand_parser,
+    }
+)
+
+local scoop_status_parser =
+    parser(
+    "--local",
+    "-l"
+)
+
+local scoop_unhold_parser =
+    parser(
+    {
+        scoop_apps_list
+    },
+    "--global",
+    "-g"
 )
 
 local scoop_uninstall_parser =
@@ -252,22 +397,27 @@ local scoop_update_parser =
     "--skip",
     "-s",
     "--quiet",
-    "-q"
+    "-q",
+    "--all",
+    "-a"
 ):loop(1)
 
-local scoop_install_parser =
+local scoop_virustotal_parser =
     parser(
-    {scoop_available_apps_list},
-    "--global",
-    "-g",
-    "--independent",
-    "-i",
-    "--no-cache",
-    "-k",
-    "--skip",
+    {
+        scoop_apps_list,
+        "*"
+    },
+    "--all",
+    "-a",
+    "--scan",
     "-s",
-    "--arch" .. parser({"32bit", "64bit"}),
-    "-a" .. parser({"32bit", "64bit"})
+    "--no-depends",
+    "-n",
+    "--no-update-scoop",
+    "-u",
+    "--passthru",
+    "-p"
 ):loop(1)
 
 local scoop_help_parser =
@@ -294,6 +444,7 @@ local scoop_help_parser =
         "prefix",
         "reset",
         "search",
+        "shim",
         "status",
         "unhold",
         "uninstall",
@@ -315,54 +466,30 @@ scoop_parser:set_arguments(
         "alias" .. scoop_alias_parser,
         "bucket" .. scoop_bucket_parser,
         "cache" .. scoop_cache_parser,
-        "cat" .. parser({scoop_available_apps_list, scoop_apps_list}),
+        "cat" .. scoop_cat_parser,
         "checkup",
         "cleanup" .. scoop_cleanup_parser,
         "config" .. scoop_config_parser,
         "create",
-        "depends" ..
-            parser(
-                {scoop_available_apps_list, scoop_apps_list},
-                "--arch" .. parser({"32bit", "64bit"}),
-                "-a" .. parser({"32bit", "64bit"})
-            ),
-        "download" ..
-            parser(
-                {scoop_available_apps_list},
-                "--arch" .. parser({"32bit", "64bit"}),
-                "-a" .. parser({"32bit", "64bit"}),
-                "--force",
-                "-f",
-                "--no-hash-check",
-                "-h",
-                "--no-update-scoop",
-                "-u"
-            ),
-        "export",
+        "depends" .. scoop_depends_parser,
+        "download" .. scoop_download_parser,
+        "export" .. scoop_export_parser,
         "help" .. scoop_help_parser,
-        "hold" .. parser({scoop_apps_list}),
-        "home" .. parser({scoop_available_apps_list, scoop_apps_list}),
+        "hold" .. scoop_hold_parser,
+        "home" .. scoop_home_parser,
         "import",
-        "info" .. parser({scoop_available_apps_list, scoop_apps_list}),
+        "info" .. scoop_info_parser,
         "install" .. scoop_install_parser,
         "list",
-        "prefix" .. parser({scoop_apps_list}),
-        "reset" .. parser({scoop_apps_list}):loop(1),
+        "prefix" .. scoop_prefix_parser,
+        "reset" .. scoop_reset_parser,
         "search",
-        "status",
-        "unhold" .. parser({scoop_apps_list}),
+        "shim" .. scoop_shim_parser,
+        "status" .. scoop_status_parser,
+        "unhold" .. scoop_unhold_parser,
         "uninstall" .. scoop_uninstall_parser,
         "update" .. scoop_update_parser,
-        "virustotal" ..
-            parser(
-                {scoop_apps_list, "*"},
-                "--arch" .. parser({"32bit", "64bit"}),
-                "-a" .. parser({"32bit", "64bit"}),
-                "--scan",
-                "-s",
-                "--no-depends",
-                "-n"
-            ):loop(1),
+        "virustotal" .. scoop_virustotal_parser,
         "which"
     }
 )
