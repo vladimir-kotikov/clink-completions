@@ -1,5 +1,24 @@
 # Release Notes
 
+## 0.5.3 (Jun 16, 2024)
+
+  * Add completions for [`gh`](https://github.com/cli/cli).
+  * Add completions for [`spicetify`](https://github.com/spicetify/cli).
+  * Add completions for [`nuke`](https://github.com/nuke-build/nuke).
+  * Update `scoop` completions.
+  * Minor updates to `git` completions.
+  * Minor updates to `dirx` completions.
+  * Fix completions for `dirx /`.
+  * Fix `findstr` completions to only accept flags up until a non-flag argument.
+  * Fix `scoop.lua` script to use `config.json` since Scoop has deprecated using environment variables for configuration.
+  * Add readme instructions for how to update clink-completions.
+
+## 0.5.2 (Mar 23, 2024)
+
+  * Add completions for the `reg` command in Windows.
+  * Update `rg` completions to be even closer to what the official rg completion script produces in the fish shell.
+  * Update `eza` completions.
+
 ## 0.5.1 (Mar 8, 2024)
 
   * Add completions for [`dirx`](https://github.com/chrisant996/dirx).
