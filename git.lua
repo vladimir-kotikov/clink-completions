@@ -203,6 +203,8 @@ local function list_local_branches(dir)
 
     local result = w(path_module.list_files(git_dir..'/refs/heads', '/*',
         --[[recursive=]]true, --[[reverse_separator=]]true))
+    :concat(list_packed_refs(git_dir, 'heads'))
+    :sort():dedupe()
 
     return result
 end
