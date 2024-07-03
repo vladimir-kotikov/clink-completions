@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.5.4 (Jul 3, 2024)
+
+  * [git] Fix `git` completions for local branches to include packed refs.
+  * Fix `pip` completions to suppress error messages such as from python installation problems.
+
 ## 0.5.3 (Jun 16, 2024)
 
   * Add completions for [`gh`](https://github.com/cli/cli).
