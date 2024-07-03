@@ -7,7 +7,7 @@ local w = require("tables").wrap
 local parser = clink.arg.new_parser
 
 local function pip_libs_list(token)
-    local handle = io.popen('python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"')
+    local handle = io.popen('2>nul python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"')
     local python_lib_path = handle:read("*a")
     handle:close()
 
