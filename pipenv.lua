@@ -1,13 +1,15 @@
 local matchers = require("matchers")
 local w = require("tables").wrap
-local concat = require("funclib").concat
 
 local parser = clink.arg.new_parser
 
 local function pipenv_libs_list(token)
-    local handle = io.popen('python -c "import sys; print(\\";\\".join(sys.path))"')
-    local result = handle:read("*a")
-    handle:close()
+    local result = ""
+    local handle = io.popen('2>nul python -c "import sys; print(\\";\\".join(sys.path))"')
+    if handle then
+        result = handle:read("*a")
+        handle:close()
+    end
 
     -- trim spaces
     result = clink.get_cwd() .. result:gsub("^%s*(.-)%s*$", "%1")
@@ -16,21 +18,24 @@ local function pipenv_libs_list(token)
 
     local list = w()
     for _,lib_path in ipairs(lib_paths) do
-        local finder = matchers.create_files_matcher(lib_path)
+        lib_path = lib_path .. "\\"
+        local finder = matchers.create_files_matcher(lib_path .. "*")
         local libs = finder(token)
-        libs =
-            libs:filter(
-            function(v)
-                return clink.is_dir(lib_path .. "/" .. v) or string.find(v, "%.py$")
+        for _,v in ipairs(libs) do
+            local ext = path.getextension(v):lower()
+            if ext == ".py" then
+                v = v:sub(1, #v - #ext)
+                table.insert(list, v)
+            elseif ext == ".dist-info" then
+                if clink.is_dir(lib_path .. "/" .. v) then
+                    local tmp = v:sub(1, #v - #ext)
+                    if tmp:match("%-%d[%d%.]+$") then
+                        v = tmp:gsub("%-%d[%d%.]+$", "")
+                        table.insert(list, v)
+                    end
+                end
             end
-        )
-
-        list = w(concat(list, libs))
-    end
-
-    -- remove ".py" and "-1.2.3-dist-info" of file name
-    for k, v in pairs(list) do
-        list[k] = v:gsub(".py", ""):gsub("-[%d%.]+dist%-info$", "")
+        end
     end
 
     return list
