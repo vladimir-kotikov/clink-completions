@@ -8,9 +8,7 @@ local parser = clink.arg.new_parser
 
 local function get_packages(dir, token)
     local list
-    if not dir or dir == "" then
-        list = {}
-    else
+    if dir and dir ~= "" then
         local finder = matchers.create_files_matcher(dir .. "\\*.dist-info")
         list = finder(token)
     end
@@ -31,10 +29,17 @@ local function pip_libs_list(token)
         handle:close()
     end
 
-    local platlib = get_packages(sysconfig["platlib"], token)
-    local purelib = get_packages(sysconfig["purelib"], token)
+    local libpaths = w()
+    table.insert(libpaths, sysconfig["platlib"])
+    table.insert(libpaths, sysconfig["purelib"])
+    libpaths = libpaths:dedupe()
 
-    local list = platlib:concat(purelib):map(
+    local list = w()
+    for _,libpath in ipairs(libpaths) do
+        list = list:concat(get_packages(libpath, token))
+    end
+
+    list = list:map(
         function(package)
             package = package:gsub("-[%d%.]+dist%-info$", "")
             return package
