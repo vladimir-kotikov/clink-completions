@@ -18,7 +18,7 @@ local function init(argmatcher)
     end
     inited = true
 
-    local file = io.popen('less --help')
+    local file = io.popen('2>nul less --help')
     if not file then
         return
     end

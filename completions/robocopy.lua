@@ -23,7 +23,7 @@ local function sentence_casing(text)
 end
 
 local function delayinit(argmatcher)
-    local r = io.popen('robocopy.exe /??? 2>nul')
+    local r = io.popen('2>nul robocopy.exe /???')
     if not r then
         return
     end

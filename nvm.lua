@@ -7,7 +7,7 @@ local NVM_ROOT
 local function get_nvm_root()
     if NVM_ROOT then return NVM_ROOT end
 
-    local proc = io.popen("nvm root")
+    local proc = io.popen("2>nul nvm root")
     if not proc then
         NVM_ROOT = ""
         return NVM_ROOT

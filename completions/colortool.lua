@@ -6,7 +6,7 @@ end
 
 local function init_themes(argmatcher, argindex) -- luacheck: no unused
     local matches = {}
-    local r = io.popen('colortool -s')
+    local r = io.popen('2>nul colortool -s')
     if not r then
         return
     end

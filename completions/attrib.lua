@@ -38,7 +38,7 @@ local function delayinit(argmatcher)
     end
     inited = true
 
-    local f = io.popen('attrib /?')
+    local f = io.popen('2>nul attrib /?')
     if not f then
         return
     end

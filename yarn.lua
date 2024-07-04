@@ -20,7 +20,7 @@ local function get_yarn_config_value (config_entry)
     assert(config_entry and type(config_entry) == "string" and #config_entry > 0,
         "get_yarn_config_value: config_entry param should be non-empty string")
 
-    local proc = io.popen("yarn config get "..config_entry.." 2>nul")
+    local proc = io.popen("2>nul yarn config get "..config_entry)
     if not proc then return "" end
 
     local value = proc:read()

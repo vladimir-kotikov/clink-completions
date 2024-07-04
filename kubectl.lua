@@ -2,7 +2,7 @@ local w = require('tables').wrap
 local parser = clink.arg.new_parser
 
 local function exec_kubectl(arguments, template)
-    local f = io.popen("kubectl "..arguments.." -o template --template=\""..template.."\"")
+    local f = io.popen("2>nul kubectl "..arguments.." -o template --template=\""..template.."\"")
 	if not f then return w({}) end
 	local output = f:read('*all')
 	f:close()

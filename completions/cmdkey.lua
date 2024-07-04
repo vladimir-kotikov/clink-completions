@@ -14,7 +14,7 @@ local add_flags = {
 local function existing_targets(_, _, _, builder)
     local targets = {}
     local pending
-    local f = io.popen("cmdkey.exe /list")
+    local f = io.popen("2>nul cmdkey.exe /list")
     if f then
         for line in f:lines() do
             local a,b = line:match("^ +Target: ([^=:]+):target=(.*)$")
