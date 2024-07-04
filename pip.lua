@@ -6,20 +6,35 @@ local w = require("tables").wrap
 
 local parser = clink.arg.new_parser
 
+local function get_packages(dir, token)
+    local list
+    if not dir or dir == "" then
+        list = {}
+    else
+        local finder = matchers.create_files_matcher(dir .. "\\*.dist-info")
+        list = finder(token)
+    end
+    return w(list)
+end
+
 local function pip_libs_list(token)
-    local handle = io.popen('2>nul python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"')
-    local python_lib_path = handle:read("*a")
-    handle:close()
+    local sysconfig = {}
 
-    -- trim spaces
-    python_lib_path = python_lib_path:gsub("^%s*(.-)%s*$", "%1")
+    local handle = io.popen('2>nul python -m sysconfig')
+    if handle then
+        for line in handle:lines() do
+            local name, value = line:match('^%s+(.-) = "(.*)"%s*$')
+            if name and value then
+                sysconfig[name] = value
+            end
+        end
+        handle:close()
+    end
 
-    local finder = matchers.create_files_matcher(python_lib_path .. "\\*.dist-info")
+    local platlib = get_packages(sysconfig["platlib"], token)
+    local purelib = get_packages(sysconfig["purelib"], token)
 
-    local list = w(finder(token))
-
-    list =
-        list:map(
+    local list = platlib:concat(purelib):map(
         function(package)
             package = package:gsub("-[%d%.]+dist%-info$", "")
             return package
