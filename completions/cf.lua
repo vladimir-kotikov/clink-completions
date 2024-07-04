@@ -3,7 +3,7 @@
 
 local fullname = ...
 
-local function get_completions(matchtype, word, word_index, line_state, match_builder, user_data)
+local function get_completions(matchtype, word, word_index, line_state, match_builder, user_data) -- luacheck: no unused
     -- Collect the command arguments.
     local args = ""
     for i = 1, line_state:getwordcount() do
@@ -13,12 +13,12 @@ local function get_completions(matchtype, word, word_index, line_state, match_bu
                 -- Skip first non-redir word; it's the program name.
                 args = " "
             else
-                local word = line_state:getword(i)
-                if word:sub(-1) == "\\" then
+                local w = line_state:getword(i)
+                if w:sub(-1) == "\\" then
                     -- Compensate for \" command line parsing.
-                    word = word.."\\"
+                    w = w.."\\"
                 end
-                args = args..' "'..word..'"'
+                args = args..' "'..w..'"'
             end
         end
     end
@@ -29,13 +29,18 @@ local function get_completions(matchtype, word, word_index, line_state, match_bu
     if f then
         -- Add completions to the match builder.
         for line in f:lines() do
-            local match = line
-            local word, desc = line:match("^([^ ]+) +# (.*)$")
-            if word and desc then
-                -- Include the description when available.
-                match = { match=word, description=desc }
+            local mt = matchtype
+            local w, d = line:match("^([^ ]+) +# (.*)$")
+            w = w or line
+            if w:sub(-1) == "\\" then
+                mt = "dir"
             end
-            match_builder:addmatch(match, matchtype)
+            if w and d then
+                -- Include the description when available.
+                match_builder:addmatch({ match=w, description=d }, mt)
+            else
+                match_builder:addmatch(w, mt)
+            end
         end
         f:close()
     end
