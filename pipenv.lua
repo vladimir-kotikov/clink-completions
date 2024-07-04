@@ -18,7 +18,7 @@ local function pipenv_libs_list(token)
     local lib_paths = clink.split(result, ";")
 
     local list = w()
-    for lib_path in lib_paths do
+    for _,lib_path in ipairs(lib_paths) do
         local finder = matchers.create_files_matcher(lib_path)
         local libs = finder(token)
         libs =
