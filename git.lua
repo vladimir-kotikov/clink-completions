@@ -1,5 +1,3 @@
--- preamble: common routines
-
 local path_module = require('path')
 local git = require('gitutil')
 local matchers = require('matchers')

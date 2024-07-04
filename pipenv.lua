@@ -1,6 +1,3 @@
--- -*- coding: utf-8 -*-
--- preamble: common routines
-
 local matchers = require("matchers")
 local w = require("tables").wrap
 local concat = require("funclib").concat

@@ -1,6 +1,3 @@
--- -*- coding: utf-8 -*-
--- preamble: common routines
-
 local JSON = require("JSON")
 
 local matchers = require("matchers")
