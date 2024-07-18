@@ -135,7 +135,7 @@ local list_of_flags = {
     { hide_unless="/b -b --bare", "--no-bare" },
     { "-c",                     "Display with colors" },
     { "--color" },
-    { hide_unless="/c -c --color", "--no-color" },
+    { "--no-color" },
     { "-g",                     "Show git file status" },
     { "-gg",                    "Show git repo status" },
     { "--git" },
