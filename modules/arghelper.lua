@@ -100,6 +100,12 @@
 --------------------------------------------------------------------------------
 -- Changes:
 --
+--  2024/07/23
+--      - Support for `onalias=func`.
+--
+--  2024/04/11
+--      - Support for `hide_unless=func`.
+--
 --  2023/11/18
 --      - Support for `hide=true` in _addexarg().
 --
@@ -394,6 +400,7 @@ if not tmp._addexflags or not tmp._addexarg then
         list.loopchars = tbl.loopchars
         list.nosort = tbl.nosort
         list.onadvance = tbl.onadvance
+        list.onalias = tbl.onalias
         list.onlink = tbl.onlink
         list.onarg = tbl.onarg
         if hide_unless then

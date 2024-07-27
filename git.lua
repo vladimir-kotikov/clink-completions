@@ -2771,10 +2771,28 @@ local function init(argmatcher, full_init)
     -- function, the sort order when displaying completions is defined by the
     -- alias function.  But these do affect input line parsing and coloring.
     local aliases = get_git_aliases()
+    local complex, chain
     for _, a in ipairs(aliases) do
-        local linked = linked_parsers[a.command]
+        local linked
+        if not clink_version.supports_onalias then
+            linked = linked_parsers[a.command]
+        end
         if linked then
             table.insert(commands, a.name..linked)
+        else
+            local bang = a.command:match("^%!") and true or nil
+            local command = a.command:sub(bang and 2 or 1)
+            complex = complex or {}
+            chain = chain or {}
+            complex[a.name] = command
+            chain[a.name] = bang
+            table.insert(commands, a.name)
+        end
+    end
+
+    if complex then
+        commands.onalias = function(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused
+            return complex[word], chain[word]
         end
     end
 

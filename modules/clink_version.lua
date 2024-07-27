@@ -22,5 +22,6 @@ exports.has_volatile_matches_fix = (clink_version_encoded >= 10040013)
 exports.supports_argmatcher_onlink = (clink_version_encoded >= 10050014)
 exports.has_linked_setdelayinit_fix = (clink_version_encoded >= 10050016)
 exports.supports_argmatcher_nowordbreakchars = (clink_version_encoded >= 10050017)
+exports.supports_onalias = (clink_version_encoded >= 10060018)
 
 return exports
