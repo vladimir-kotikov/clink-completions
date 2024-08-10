@@ -40,6 +40,12 @@
 --          { "-x="..argmatcher, opteq=true },  -- Adds "-x="..argmatcher, and a hidden "-x"..argmatcher.
 --          -- Also, adding opteq=true or opteq=false to an outer table applies
 --          -- to everything nested within the table.
+--
+--          -- Allow "-xy" meaning "-x -y", and also "-xARG" meaning "-x ARG".
+--          concat_one_letter_flags=true,
+--
+--          -- Allow "-xARG" meaning "-x ARG".
+--          adjacent_one_letter_flags=true,
 --      })
 --
 -- The arghelper script also fills in compatibility methods for any of the
@@ -61,56 +67,94 @@
 --
 --      local arghelper = require("arghelper")
 --      arghelper.make_arg_hider_func()
+--      arghelper.make_one_letter_concat_classifier_func()
 --
--- Use the arghelper.make_arg_hider_func() function to create and return a match
--- function that omits the specified matches when displaying or completing
--- matches, while still letting input coloring apply color to them.  If
--- make_arg_hider_func() is used more than once in the same argument position,
--- only the last one will take effect.
+-- arghelper.make_arg_hider_func()
 --
---      local arghelper = require("arghelper")
+--      Use the arghelper.make_arg_hider_func() function to create and return a
+--      match function that omits the specified matches when displaying or
+--      completing matches, while still letting input coloring apply color to
+--      them.  If make_arg_hider_func() is used more than once in the same
+--      argument position, only the last one will take effect.
 --
---      clink.argmatcher("foo")
---      :addarg({
---          "abc", "def",
---          "Abc", "Def",
---          arghelper.make_arg_hider_func("Abc", "Def")
---      })
+--          local arghelper = require("arghelper")
 --
--- The arghelper.make_arg_hider_func() accepts as many arguments as you like,
--- and the argument types can be tables, functions, and strings.
---
---      - Strings are added to the list of matches to hide.
---      - Functions can return more arguments.
---      - Tables can contain more arguments (tables, functions, and strings).
---
---      clink.argmatcher("foo")
---      :addarg({
---          "abc", "def",
---          "Abc", "Def",
---          "ABC", "DEF",
---          arghelper.make_arg_hider_func({
---              {"Abc", "ABC"},
---              function ()
---                  return {"Def", "DEF"}
---              end
+--          clink.argmatcher("foo")
+--          :addarg({
+--              "abc", "def",
+--              "Abc", "Def",
+--              arghelper.make_arg_hider_func("Abc", "Def")
 --          })
---      })
+--
+--      The arghelper.make_arg_hider_func() accepts as many arguments as you
+--      like, and the argument types can be tables, functions, and strings.
+--
+--          - Strings are added to the list of matches to hide.
+--          - Functions can return more arguments.
+--          - Tables can contain more arguments (tables, functions, and strings).
+--
+--          clink.argmatcher("foo")
+--          :addarg({
+--              "abc", "def",
+--              "Abc", "Def",
+--              "ABC", "DEF",
+--              arghelper.make_arg_hider_func({
+--                  {"Abc", "ABC"},
+--                  function ()
+--                      return {"Def", "DEF"}
+--                  end
+--              })
+--          })
+--
+-- arghelper.make_one_letter_concat_classifier_func()
+--
+--      Use the arghelper.make_one_letter_concat_classifier_func() function to
+--      create and return a classifier function that allows concatenating
+--      multiple one letter flags, for example "-xy" instead of "-x -y".
+--
+--      The arghelper.make_one_letter_concat_classifier_func() accepts up to
+--      two arguments:
+--
+--          - A table of flag strings.  For any strings of the form "-x" or
+--            "/x" or "-x-" or "/x-" or "-x+" or "/x+", the one-letter flags
+--            will be recognized even when they're concatenated.  For example,
+--            the XCOPY program allows concatenating flags, e.g. "xcopy /suh",
+--            and this function helps accommodate that.
+--          - The argmatcher.  Passing the argmatcher lets the
+--            arghelper.make_one_letter_concat_classifier_func() function
+--            merge new concatenate-able flags into a pre-existing collection.
+--            This makes it possible to use
+--            arghelper.make_one_letter_concat_classifier_func() more than
+--            once in the same argmatcher and merge the configuration, instead
+--            of replacing the older configuration.
+--
+--      The even easier thing to do is include concat_one_letter_flags=true
+--      when passing a table into argmatcher:_addexflags().  That will
+--      automatically use make_one_letter_concat_classifier_func().
 --
 --------------------------------------------------------------------------------
 -- Changes:
 --
+--  2024/08/05
+--      - Support for `concat_one_letter_flags=true` in _addexflags() to make
+--        input line coloring recognize concatenated one-letter flags like the
+--        commonly used getopt library allows (for example `-xy` for `-x -y`).
+--      - `arghelper.make_one_letter_concat_classifier_func()` makes a
+--        classifier function that handles input line coloring for a list of
+--        one-letter flags that can be concatenated.
+--
 --  2024/07/23
---      - Support for `onalias=func`.
+--      - Support for `onalias=func` in _addexarg() and _addexflags().
 --
 --  2024/04/11
---      - Support for `hide_unless=func`.
+--      - Support for `hide_unless=func` in _addexflags().
 --
 --  2023/11/18
 --      - Support for `hide=true` in _addexarg().
 --
 --  2023/11/14
---      - Support for `onadvance=func` and `onlink=func`.
+--      - Support for `onadvance=func` and `onlink=func` in _addexarg() and
+--        _addexflags().
 --
 --  2023/01/29
 --      - `local arghelper = require("arghelper.lua")` returns an export table.
@@ -118,13 +162,13 @@
 --        specified args.
 --
 --  2022/10/22
---      - Support for `onarg=func`.
---      - Support for `delayinit=func`.
---      - Support for `loopchars="chars"`.
+--      - Support for `onarg=func` in _addexarg() and _addexflags().
+--      - Support for `delayinit=func` in _addexarg() and _addexflags().
+--      - Support for `loopchars="chars"` in _addexflags().
 --
 --  2022/07/30
---      - `hide=true` hides a match.
---      - `opteq=true` affects nested tables.
+--      - `hide=true` hides a match (in _addexflags()).
+--      - `opteq=true` affects nested tables (in _addexarg() and _addexflags()).
 --
 --  2022/07/06
 --      - Fixed backward compatibility shim to work on v0.4.9 as well.
@@ -158,6 +202,15 @@ local function condense_stack_trace(skip_levels)
         end
     end
     return ret
+end
+
+local function is_one_letter_flag(flag)
+    if not flag:find("^%-%-") then
+        local letter,plusminus = flag:match("^([-/][^-/])([-+]?)$")
+        if letter then
+            return letter, plusminus
+        end
+    end
 end
 
 local function make_arg_hider_func(...)
@@ -203,6 +256,129 @@ local function make_arg_hider_func(...)
     end
 
     return filter_matches
+end
+
+local function make_one_letter_concat_classifier_func(list, parser)
+    -- Allow :_addexflags() to ADD to an existing collection of flags, rather
+    -- than REPLACING the collection of flags.
+    local one_letter_flags = parser and parser.one_letter_flags or {}
+    if parser then
+        parser.one_letter_flags = one_letter_flags
+    end
+
+    local function func(arg_index, word, word_index, line_state, classifications)
+        if arg_index == 0 then
+            if #word > 2 and word:sub(2, 2) ~= "-" then
+                local color_flag = settings.get("color.flag")
+                if color_flag then
+                    local apply_len = 0
+                    local unexpected
+                    local arginfo
+                    local i = 2
+                    local len = #word
+                    local info = line_state:getwordinfo(word_index)
+                    local pre = word:sub(1, 1)
+                    while i <= len do
+                        local letter = pre..word:sub(i, i)
+                        local olf = one_letter_flags[letter]
+                        if olf then
+                            apply_len = i
+                            i = i + 1
+                            if olf.plusminus and word:find("^[-+]", i) then
+                                apply_len = i
+                                i = i + 1
+                            end
+                            if olf.arginfo then
+                                arginfo = i
+                                break
+                            end
+                        else
+                            unexpected = i
+                            break
+                        end
+                    end
+                    if apply_len > 0 then
+                        classifications:applycolor(info.offset, apply_len, color_flag, true)
+                        if arginfo then
+                            local color_input = settings.get("color.input") or ""
+                            classifications:applycolor(info.offset + arginfo - 1, #word - arginfo, color_input, true) -- luacheck: no max line length
+                        elseif unexpected then
+                            local color_unexpected = settings.get("color.unexpected") or ""
+                            local color_nope = settings.get("color.unrecognized") or color_unexpected
+                            classifications:applycolor(info.offset + unexpected - 1, 1, color_nope, true)
+                            classifications:applycolor(info.offset + unexpected - 0, #word - unexpected, color_unexpected, true) -- luacheck: no max line length
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    for _,flag in ipairs(list) do
+        if type(flag) == "string" then
+            local letter,plusminus = is_one_letter_flag(flag)
+            if letter then
+                local olf = one_letter_flags[letter]
+                if not olf then
+                    olf = {}
+                    one_letter_flags[letter] = olf
+                end
+                if plusminus then
+                    olf.plusminus = true
+                end
+                if type(list[flag]) == "table" then
+                    if list[flag].one_letter_arginfo then
+                        olf.arginfo = true
+                    end
+                    if list[flag].one_letter_linked then
+                        olf.linked = true
+                    end
+                end
+            end
+        end
+    end
+
+    return func
+end
+
+local function make_one_letter_concat_onalias_func(list, parser)
+    if not parser or parser.has_one_letter_concat_onalias_func then
+        return
+    end
+
+    if not parser.one_letter_flags then
+        parser.one_letter_flags = {}
+    end
+
+    local function func(arg_index, word, word_index, line_state)
+        if arg_index == 0 then
+            if #word > 2 and word:sub(2, 2) ~= "-" then
+                local split_pos = 0
+                local arginfo
+                local i = 2
+                local len = #word
+                local info = line_state:getwordinfo(word_index)
+                local one_letter_flags = parser.one_letter_flags
+                while i <= len do
+                    local letter = word:sub(i, i)
+                    local olf = one_letter_flags[letter]
+                    if not olf then
+                        return
+                    elseif olf.linked then
+                        split_pos = i
+                    end
+                    i = i + 1
+                end
+                if split_pos > 2 and split_pos == len then
+                    local text = word:sub(1, split_pos - 1).." "..word:sub(1, 1)..word:sub(split_pos)
+                    return text
+                end
+            end
+        end
+    end
+
+    parser.has_one_letter_concat_onalias_func = true
+    return func
 end
 
 if not tmp.addarg then
@@ -298,7 +474,7 @@ if not tmp._addexflags or not tmp._addexarg then
         return ret
     end
 
-    local function add_elm(elm, list, descriptions, hide, hide_unless, in_opteq)
+    local function add_elm(elm, list, descriptions, hide, hide_unless, in_opteq, concat_flags, adjacent_flags)
         local arg
         local opteq = in_opteq
         if elm[1] then
@@ -326,6 +502,32 @@ if not tmp._addexflags or not tmp._addexarg then
                         t = "nested"
                         break
                     end
+                end
+            end
+        elseif t == "string" then
+            if concat_flags and is_one_letter_flag(arg) then
+                if not elm[3] then -- Skip flags that have arginfo.
+                    table.insert(concat_flags, arg)
+                else
+                    -- Flags like "-M[n]" color the flag but don't support
+                    -- completions of the "[n]" part.
+                    table.insert(concat_flags, arg)
+                    concat_flags[arg] = { one_letter_arginfo=true }
+                end
+            end
+        end
+        if arglinked then
+            -- Flags like "-p port" accept "-pport" as well.
+            local key = arg._key
+            if concat_flags then
+                if is_one_letter_flag(key) then
+                    table.insert(concat_flags, key)
+                    concat_flags[key] = { one_letter_arginfo=true, one_letter_linked=true }
+                end
+            elseif adjacent_flags then
+                if is_one_letter_flag(key) then
+                    table.insert(adjacent_flags, key)
+                    adjacent_flags[key] = { one_letter_arginfo=true, one_letter_linked=true }
                 end
             end
         end
@@ -370,7 +572,7 @@ if not tmp._addexflags or not tmp._addexarg then
             table.insert(list, arg)
         elseif t == "nested" then
             for _,sub_elm in ipairs(elm) do
-                add_elm(sub_elm, list, descriptions, hide, hide_unless, opteq)
+                add_elm(sub_elm, list, descriptions, hide, hide_unless, opteq, concat_flags, adjacent_flags)
             end
         else
             pause("unrecognized input table format.")
@@ -383,6 +585,8 @@ if not tmp._addexflags or not tmp._addexarg then
         local descriptions = (not ARGHELPER_DISABLE_DESCRIPTIONS) and {} -- luacheck: no global
         local hide = {}
         local hide_unless = is_flags and {}
+        local concat_flags = tbl.concat_one_letter_flags and {} or nil
+        local adjacent_flags = tbl.adjacent_one_letter_flags and {} or nil
         if type(tbl) ~= "table" then
             pause('table expected.')
             error('table expected.')
@@ -390,7 +594,7 @@ if not tmp._addexflags or not tmp._addexarg then
         for _,elm in ipairs(tbl) do
             local t = type(elm)
             if t == "table" then
-                add_elm(elm, list, descriptions, hide, hide_unless, tbl.opteq)
+                add_elm(elm, list, descriptions, hide, hide_unless, tbl.opteq, concat_flags, adjacent_flags)
             elseif t == "string" or t == "number" or t == "function" then
                 table.insert(list, elm)
             end
@@ -413,12 +617,22 @@ if not tmp._addexflags or not tmp._addexarg then
                 hide_unless = nil
             end
         end
-        return list, descriptions, hide, hide_unless
+        if adjacent_flags then
+            concat_flags = concat_flags or {}
+            for k,v in pairs(adjacent_flags) do
+                if type(k) == "number" then
+                    table.insert(concat_flags, v)
+                else
+                    concat_flags[k] = v
+                end
+            end
+        end
+        return list, descriptions, hide, hide_unless, concat_flags
     end
 
     if not tmp._addexflags then
         interop._addexflags = function(parser, tbl)
-            local flags, descriptions, hide, hide_unless = build_lists(tbl, true--[[is_flags]])
+            local flags, descriptions, hide, hide_unless, concat_flags = build_lists(tbl, true--[[is_flags]])
             if hide_unless then
                 if tbl.onarg then
                     local fwd = tbl.onarg
@@ -442,6 +656,10 @@ if not tmp._addexflags or not tmp._addexarg then
             end
             if hide then
                 parser:hideflags(hide)
+            end
+            if concat_flags and parser.setclassifier then
+                parser:setclassifier(make_one_letter_concat_classifier_func(concat_flags, parser))
+                parser:addflags({ onalias=make_one_letter_concat_onalias_func(concat_flags, parser) })
             end
             return parser
         end
@@ -480,7 +698,8 @@ for _,_ in pairs(interop) do -- luacheck: ignore 512
 end
 
 local exports = {
-    make_arg_hider_func = make_arg_hider_func
+    make_arg_hider_func = make_arg_hider_func,
+    make_one_letter_concat_classifier_func = make_one_letter_concat_classifier_func,
 }
 
 return exports

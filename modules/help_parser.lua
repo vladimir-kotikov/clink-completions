@@ -28,6 +28,8 @@
 --                      case=2,         -- Add flags with verbatim casing.
 --                      slashes=true,   -- Add slash copies of minus flags
 --                                      -- (add /x for -x, etc).
+--                      concat=true,    -- Allow one letter flags to be
+--                                      -- concatenated (/hk == /h /k).
 --                  }
 --
 --  function make(command, help_flag, parser, config, closure)
@@ -94,6 +96,8 @@ if (clink.version_encoded or 0) < 10030010 then -- Requires _argmatcher:setdelay
     return
 end
 
+local ah = require("arghelper")
+
 --------------------------------------------------------------------------------
 local function sentence_casing(text)
     if unicode.iter then -- luacheck: no global
@@ -104,6 +108,26 @@ local function sentence_casing(text)
     else
         return clink.upper(text:sub(1,1)) .. text:sub(2)
     end
+end
+
+--------------------------------------------------------------------------------
+local function expand_tabs(text)
+    local s = ''
+    local i = 1
+    while true do
+        -- Find next TAB.
+        local next = text:find('\t', i, true--[[plain]]) or (#text + 1)
+        -- Append up to next TAB or EOL.
+        s = s..text:sub(i, next - 1)
+        -- Stop if EOL.
+        if text:sub(i) == '' then
+            break
+        end
+        -- Expand TAB.
+        s = s..string.rep(' ', 8 - (console.cellcount(s) % 8))
+        i = next + 1
+    end
+    return s
 end
 
 --------------------------------------------------------------------------------
@@ -247,7 +271,7 @@ local function basic_parser(context, flags, descriptions, hideflags, line)
         if indent then
             if #context.pending.desc == 0 then
                 context.pending.indent = #indent
-            elseif #indent ~= context.pending.indent then
+            elseif console.cellcount(expand_tabs(indent)) ~= context.pending.indent then
                 indent = nil
                 d = nil
             end
@@ -257,6 +281,9 @@ local function basic_parser(context, flags, descriptions, hideflags, line)
                 end
                 context.pending.desc = context.pending.desc .. d:gsub('[ \t]+$', '')
             end
+        else
+            indent = nil
+            d = nil
         end
     end
 
@@ -312,7 +339,7 @@ local function basic_parser(context, flags, descriptions, hideflags, line)
 
         context.pending.flag = f
         context.pending.desc = sentence_casing(d)
-        context.pending.indent = #indent + #f + #pad
+        context.pending.indent = console.cellcount(expand_tabs(indent..f..pad))
         context.pending.has_arg = context.pending.display and true
     end
 end
@@ -653,6 +680,10 @@ local function run(argmatcher, parser, command, config)
     argmatcher:addflags(actual_flags)
     argmatcher:adddescriptions(descriptions)
     argmatcher:hideflags(hideflags)
+
+    if config.concat and argmatcher.setclassifier then
+        argmatcher:setclassifier(ah.make_one_letter_concat_classifier_func(actual_flags, argmatcher))
+    end
 end
 
 --------------------------------------------------------------------------------

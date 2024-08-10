@@ -169,12 +169,17 @@ local add = clink.argmatcher():_addexflags({
 :nofiles()
 
 local delete = clink.argmatcher():_addexflags({
+    onarg=onarg_keyname,
     common_flags,
+    { "/v"..valuename, " ValueName", "Delete value name under the specified key" },
     { "/ve",                "Delete the value of empty value name (Default)" },
     { "/va",                "Delete all values under the specified key" },
     { "/f",                 "Forces deletion without prompt" },
 })
-:addarg(keyname_any)
+:addarg({
+    onarg=onarg_keyname,
+    keyname_any,
+})
 :nofiles()
 
 local copy = clink.argmatcher():_addexflags({
