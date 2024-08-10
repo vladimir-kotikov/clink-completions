@@ -345,7 +345,7 @@ local function make_one_letter_concat_classifier_func(list, parser)
     return func
 end
 
-local function make_one_letter_concat_onalias_func(list, parser)
+local function make_one_letter_concat_onalias_func(parser)
     if not parser or parser.has_one_letter_concat_onalias_func then
         return
     end
@@ -354,14 +354,12 @@ local function make_one_letter_concat_onalias_func(list, parser)
         parser.one_letter_flags = {}
     end
 
-    local function func(arg_index, word, word_index, line_state)
+    local function func(arg_index, word, word_index, line_state) -- luacheck: no unused
         if arg_index == 0 then
             if #word > 2 and word:sub(2, 2) ~= "-" then
                 local split_pos = 0
-                local arginfo
                 local i = 2
                 local len = #word
-                local info = line_state:getwordinfo(word_index)
                 local one_letter_flags = parser.one_letter_flags
                 while i <= len do
                     local letter = word:sub(i, i)
@@ -675,7 +673,7 @@ if not tmp._addexflags or not tmp._addexarg then
             end
             if concat_flags and parser.setclassifier then
                 parser:setclassifier(make_one_letter_concat_classifier_func(concat_flags, parser))
-                parser:addflags({ onalias=make_one_letter_concat_onalias_func(concat_flags, parser) })
+                parser:addflags({ onalias=make_one_letter_concat_onalias_func(parser) })
             end
             return parser
         end

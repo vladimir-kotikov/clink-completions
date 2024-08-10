@@ -5,6 +5,7 @@ return {
     },
     globals = {
         "clink",
+        "console",
         "error",
         "log",
         "os",
