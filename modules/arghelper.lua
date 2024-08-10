@@ -206,7 +206,7 @@ end
 
 local function is_one_letter_flag(flag)
     if not flag:find("^%-%-") then
-        local letter,plusminus = flag:match("^([-/][^-/])([-+]?)$")
+        local letter,plusminus = flag:match("^([-/][^-/])([-+:=]?)$")
         if letter then
             return letter, plusminus
         end
@@ -268,7 +268,7 @@ local function make_one_letter_concat_classifier_func(list, parser)
 
     local function func(arg_index, word, word_index, line_state, classifications)
         if arg_index == 0 then
-            if #word > 2 and word:sub(2, 2) ~= "-" then
+            if #word > 2 and word:sub(1, 2) ~= "--" then
                 local color_flag = settings.get("color.flag")
                 if color_flag then
                     local apply_len = 0
@@ -280,13 +280,17 @@ local function make_one_letter_concat_classifier_func(list, parser)
                     local pre = word:sub(1, 1)
                     while i <= len do
                         local letter = pre..word:sub(i, i)
+                        local next_symbol = word:sub(i + 1, i + 1)
+                        if next_symbol == ":" or next_symbol == "=" then
+                            letter = letter..next_symbol
+                        end
                         local olf = one_letter_flags[letter]
                         if olf then
-                            apply_len = i
-                            i = i + 1
+                            i = i + #letter - 1
+                            apply_len = i - 1
                             if olf.plusminus and word:find("^[-+]", i) then
-                                apply_len = i
                                 i = i + 1
+                                apply_len = i - 1
                             end
                             if olf.arginfo then
                                 arginfo = i
@@ -474,6 +478,29 @@ if not tmp._addexflags or not tmp._addexarg then
         return ret
     end
 
+    local function maybe_one_letter_flag(concat_flags, flag, arginfo, linked)
+        if is_one_letter_flag(flag) then
+            table.insert(concat_flags, flag)
+            local tbl = concat_flags[flag]
+            if not tbl then
+                tbl = {}
+                concat_flags[flag] = tbl
+            end
+            if arginfo then
+                tbl.one_letter_arginfo = true
+            end
+            if linked then
+                tbl.one_letter_linked = true
+            end
+        end
+        if #flag > 2 then
+            local flag2 = flag:sub(1, 2)
+            if is_one_letter_flag(flag2) and concat_flags[flag2] then
+                concat_flags[flag2].one_letter_arginfo = true
+            end
+        end
+    end
+
     local function add_elm(elm, list, descriptions, hide, hide_unless, in_opteq, concat_flags, adjacent_flags)
         local arg
         local opteq = in_opteq
@@ -505,30 +532,19 @@ if not tmp._addexflags or not tmp._addexarg then
                 end
             end
         elseif t == "string" then
-            if concat_flags and is_one_letter_flag(arg) then
-                if not elm[3] then -- Skip flags that have arginfo.
-                    table.insert(concat_flags, arg)
-                else
-                    -- Flags like "-M[n]" color the flag but don't support
-                    -- completions of the "[n]" part.
-                    table.insert(concat_flags, arg)
-                    concat_flags[arg] = { one_letter_arginfo=true }
-                end
+            if concat_flags then
+                -- Flags like "-M[n]" color the flag but don't support
+                -- completions of the "[n]" part (elm[3] catches them).
+                maybe_one_letter_flag(concat_flags, arg, elm[3])
             end
         end
         if arglinked then
             -- Flags like "-p port" accept "-pport" as well.
-            local key = arg._key
+
             if concat_flags then
-                if is_one_letter_flag(key) then
-                    table.insert(concat_flags, key)
-                    concat_flags[key] = { one_letter_arginfo=true, one_letter_linked=true }
-                end
+                maybe_one_letter_flag(concat_flags, arg._key, true, true)
             elseif adjacent_flags then
-                if is_one_letter_flag(key) then
-                    table.insert(adjacent_flags, key)
-                    adjacent_flags[key] = { one_letter_arginfo=true, one_letter_linked=true }
-                end
+                maybe_one_letter_flag(adjacent_flags, arg._key, true, true)
             end
         end
         if t == "string" or t == "number" or t == "matcher" then
