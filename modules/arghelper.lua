@@ -477,7 +477,8 @@ if not tmp._addexflags or not tmp._addexarg then
     end
 
     local function maybe_one_letter_flag(concat_flags, flag, arginfo, linked)
-        if is_one_letter_flag(flag) then
+        local letter,plusminus = is_one_letter_flag(flag)
+        if letter then
             table.insert(concat_flags, flag)
             local tbl = concat_flags[flag]
             if not tbl then
@@ -491,7 +492,7 @@ if not tmp._addexflags or not tmp._addexarg then
                 tbl.one_letter_linked = true
             end
         end
-        if #flag > 2 then
+        if #flag > 2 and not plusminus then
             local flag2 = flag:sub(1, 2)
             if is_one_letter_flag(flag2) and concat_flags[flag2] then
                 concat_flags[flag2].one_letter_arginfo = true

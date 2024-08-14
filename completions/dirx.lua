@@ -320,7 +320,6 @@ end
 -- the hide_unless stuff in general.
 local minus_flags = { concat_one_letter_flags=true, onarg=onarg_dirxcmd }
 local slash_flags = { concat_one_letter_flags=true }
-local one_letter_flags = {}
 
 local function copy_vars(entry, tbl)
     tbl.hide = entry.hide
@@ -351,11 +350,6 @@ for _, entry in ipairs(list_of_flags) do
         end
     else
         error("unrecognized flag entry format.")
-    end
-
-    if not long then
-        table.insert(one_letter_flags, minus)
-        table.insert(one_letter_flags, slash)
     end
 end
 
