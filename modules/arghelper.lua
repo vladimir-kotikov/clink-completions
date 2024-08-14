@@ -714,6 +714,7 @@ end
 local exports = {
     make_arg_hider_func = make_arg_hider_func,
     make_one_letter_concat_classifier_func = make_one_letter_concat_classifier_func,
+    make_one_letter_concat_onalias_func = make_one_letter_concat_onalias_func,
 }
 
 return exports

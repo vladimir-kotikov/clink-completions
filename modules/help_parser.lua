@@ -96,7 +96,13 @@ if (clink.version_encoded or 0) < 10030010 then -- Requires _argmatcher:setdelay
     return
 end
 
-local ah = require("arghelper")
+local function try_require(module)
+    local r
+    pcall(function() r = require(module) end)
+    return r
+end
+
+local ah = try_require("arghelper")
 
 --------------------------------------------------------------------------------
 local function sentence_casing(text)
@@ -681,8 +687,13 @@ local function run(argmatcher, parser, command, config)
     argmatcher:adddescriptions(descriptions)
     argmatcher:hideflags(hideflags)
 
-    if config.concat and argmatcher.setclassifier then
-        argmatcher:setclassifier(ah.make_one_letter_concat_classifier_func(actual_flags, argmatcher))
+    if config.concat and argmatcher.setclassifier and ah then
+        if ah.make_one_letter_concat_classifier_func then
+            argmatcher:setclassifier(ah.make_one_letter_concat_classifier_func(actual_flags, argmatcher))
+            if ah.make_one_letter_concat_onalias_func then
+                argmatcher:addflags({ onalias=ah.make_one_letter_concat_onalias_func(argmatcher) })
+            end
+        end
     end
 end
 
