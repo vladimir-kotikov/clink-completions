@@ -288,7 +288,7 @@ local function make_one_letter_concat_classifier_func(list, parser)
                         if olf then
                             i = i + #letter - 1
                             apply_len = i - 1
-                            if olf.plusminus and word:find("^[-+]", i) then
+                            if not olf.linked and olf.plusminus and word:find("^[-+]", i) then
                                 i = i + 1
                                 apply_len = i - 1
                             end
@@ -360,19 +360,25 @@ local function make_one_letter_concat_onalias_func(parser)
                 local split_pos = 0
                 local i = 2
                 local len = #word
+                local pre = word:sub(1, 1)
                 local one_letter_flags = parser.one_letter_flags
                 while i <= len do
-                    local letter = word:sub(i, i)
+                    local letter = pre..word:sub(i, i)
                     local olf = one_letter_flags[letter]
                     if not olf then
                         return
                     elseif olf.linked then
                         split_pos = i
+                        break
+                    elseif olf.plusminus and word:find("^[-+]", i + 1) then
+                        i = i + 1
                     end
                     i = i + 1
                 end
-                if split_pos > 2 and split_pos == len then
-                    local text = word:sub(1, split_pos - 1).." "..word:sub(1, 1)..word:sub(split_pos)
+                if split_pos > 2 and split_pos < len then
+                    local info = line_state:getwordinfo(word_index)
+                    local quote = info.quoted and line_state:getline():sub(info.offset - 1, info.offset - 1) or ""
+                    local text = word:sub(1, split_pos - 1)..quote.." "..quote..word:sub(1, 1)..word:sub(split_pos)
                     return text
                 end
             end
