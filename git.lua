@@ -545,7 +545,11 @@ local function checkout_spec_generator(token)
     end
 end
 
-local function checkout_dashdash(token)
+local function checkout_dashdash(token, _, _, _, user_data)
+    if user_data and user_data.shared_user_data and user_data.shared_user_data.has_arg1 then
+        return file_matches(token)
+    end
+
     if has_dot_dirs(token) then
         return file_matches(token)
     end
@@ -1413,6 +1417,11 @@ local catfile_parser = parser()
 
 local checkout_arg_hints_new_branch = {"start-point"}
 local checkout_arg_hints_normal = {"branch", "pathspec"}
+local function checkout_onarg1(_, _, _, _, user_data)
+    if user_data and user_data.shared_user_data then
+        user_data.shared_user_data.has_arg1 = true
+    end
+end
 local function checkout_onflag(arg_index, word, _, _, user_data)
     if user_data and arg_index == 0 then
         if word == "-b" or word == "-B" or word == "--orphan" then
@@ -1434,7 +1443,7 @@ end
 
 local checkout_parser = parser()
 :setendofflags()
-:addarg({checkout_spec_generator, hint=checkout_arg_hint})
+:addarg({checkout_spec_generator, hint=checkout_arg_hint, onarg=checkout_onarg1})
 :addarg({file_matches, hint=checkout_arg_hint}):loop(2)
 :_addexflags({
     concat_one_letter_flags=true,
