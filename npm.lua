@@ -215,6 +215,10 @@ local npm_parser = parser({
 clink.arg.register_parser("npm", npm_parser)
 
 local function npm_prompt_filter()
+    -- Automatically disable this when a .clinkprompt custom prompt is active.
+    local customprompt = clink.getclinkprompt and clink.getclinkprompt()
+    if customprompt and customprompt ~= "" then return false end
+
     local package_file = io.open('package.json')
     if not package_file then return false end
 

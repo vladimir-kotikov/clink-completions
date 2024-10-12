@@ -116,6 +116,10 @@ local function git_prompt_filter()
     -- and that will turn off the replacement feature.
     if DISABLE_GIT_REMOTE_IN_PROMPT then return false end  -- luacheck: globals DISABLE_GIT_REMOTE_IN_PROMPT
 
+    -- Automatically disable this when a .clinkprompt custom prompt is active.
+    local customprompt = clink.getclinkprompt and clink.getclinkprompt()
+    if customprompt and customprompt ~= "" then return false end
+
     local git_dir = gitutil.get_git_dir()
     if not git_dir then return false end
 
