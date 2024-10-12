@@ -135,6 +135,10 @@
 --------------------------------------------------------------------------------
 -- Changes:
 --
+--  2024/09/16
+--      - Support for `hint="text"` and `hint=func` in _addexarg() and
+--        _addexflags().
+--
 --  2024/08/05
 --      - Support for `concat_one_letter_flags=true` in _addexflags() to make
 --        input line coloring recognize concatenated one-letter flags like the
@@ -622,6 +626,7 @@ if not tmp._addexflags or not tmp._addexarg then
         end
         list.delayinit = tbl.delayinit
         list.fromhistory = tbl.fromhistory
+        list.hint = tbl.hint
         list.loopchars = tbl.loopchars
         list.nosort = tbl.nosort
         list.onadvance = tbl.onadvance
