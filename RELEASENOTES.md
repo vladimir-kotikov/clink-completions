@@ -1,5 +1,18 @@
 # Release Notes
 
+## 0.6.0 (Oct 13, 2024)
+
+  * [git] Added support for git aliases that include flags or `!`.
+  * [git] Added support for input hints during `git` commands (input hints are new in Clink v1.7.0).
+  * [pip] Update to use the newer sysconfig since the older distutils.sysconfig has been deprecated for many years.
+  * [pip] Fixed some long standing bugs in the pip completions.
+  * Added completions for [Cloud Foundry CLI](https://github.com/cloudfoundry/cli).
+  * Added completions for `where`.
+  * Added support in various completion scripts for one-letter flags that can be concatenated together.
+  * Updated several completion scripts to be consistent about suppressing stderr output to avoid contaminating the prompt display.
+  * Updated to coexist better with .clinkprompt files (new in Clink v1.7.0).
+  * Fixed completions after `git checkout branchname -- `.
+
 ## 0.5.4 (Jul 3, 2024)
 
   * [git] Fix `git` completions for local branches to include packed refs.
