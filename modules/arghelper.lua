@@ -486,7 +486,7 @@ if not tmp._addexflags or not tmp._addexarg then
         return ret
     end
 
-    local function maybe_one_letter_flag(concat_flags, flag, arginfo, linked)
+    local function maybe_one_letter_flag(concat_flags, invalid_flags, flag, arginfo, linked)
         local letter,plusminus = is_one_letter_flag(flag)
         if letter then
             table.insert(concat_flags, flag)
@@ -501,16 +501,25 @@ if not tmp._addexflags or not tmp._addexarg then
             if linked then
                 tbl.one_letter_linked = true
             end
-        end
-        if #flag > 2 and not plusminus then
-            local flag2 = flag:sub(1, 2)
-            if is_one_letter_flag(flag2) and concat_flags[flag2] then
-                concat_flags[flag2].one_letter_arginfo = true
+            if #flag > 2 and not plusminus then
+                local flag2 = flag:sub(1, 2)
+                if is_one_letter_flag(flag2) and concat_flags[flag2] then
+                    concat_flags[flag2].one_letter_arginfo = true
+                end
+            end
+        else
+            if #flag > 2 then
+                local flag2 = flag:sub(1, 2)
+                -- Allow things like -v and -vv, but only if -v is already
+                -- defined before -vv.
+                if flag:sub(2, 2) ~= flag:sub(3, 3) or not concat_flags or not concat_flags[flag2] then
+                    invalid_flags[flag2] = true
+                end
             end
         end
     end
 
-    local function add_elm(elm, list, descriptions, hide, hide_unless, in_opteq, concat_flags, adjacent_flags)
+    local function add_elm(elm, list, descriptions, hide, hide_unless, in_opteq, concat_flags, invalid_flags, adjacent_flags)
         local arg
         local opteq = in_opteq
         if elm[1] then
@@ -544,16 +553,15 @@ if not tmp._addexflags or not tmp._addexarg then
             if concat_flags then
                 -- Flags like "-M[n]" color the flag but don't support
                 -- completions of the "[n]" part (elm[3] catches them).
-                maybe_one_letter_flag(concat_flags, arg, elm[3])
+                maybe_one_letter_flag(concat_flags, invalid_flags, arg, elm[3])
             end
         end
         if arglinked then
             -- Flags like "-p port" accept "-pport" as well.
-
             if concat_flags then
-                maybe_one_letter_flag(concat_flags, arg._key, true, true)
+                maybe_one_letter_flag(concat_flags, invalid_flags, arg._key, true, true)
             elseif adjacent_flags then
-                maybe_one_letter_flag(adjacent_flags, arg._key, true, true)
+                maybe_one_letter_flag(adjacent_flags, invalid_flags, arg._key, true, true)
             end
         end
         if t == "string" or t == "number" or t == "matcher" then
@@ -597,7 +605,7 @@ if not tmp._addexflags or not tmp._addexarg then
             table.insert(list, arg)
         elseif t == "nested" then
             for _,sub_elm in ipairs(elm) do
-                add_elm(sub_elm, list, descriptions, hide, hide_unless, opteq, concat_flags, adjacent_flags)
+                add_elm(sub_elm, list, descriptions, hide, hide_unless, opteq, concat_flags, invalid_flags, adjacent_flags)
             end
         else
             pause("unrecognized input table format.")
@@ -611,6 +619,7 @@ if not tmp._addexflags or not tmp._addexarg then
         local hide = {}
         local hide_unless = is_flags and {}
         local concat_flags = tbl.concat_one_letter_flags and {} or nil
+        local invalid_flags = {}
         local adjacent_flags = tbl.adjacent_one_letter_flags and {} or nil
         if type(tbl) ~= "table" then
             pause('table expected.')
@@ -619,7 +628,7 @@ if not tmp._addexflags or not tmp._addexarg then
         for _,elm in ipairs(tbl) do
             local t = type(elm)
             if t == "table" then
-                add_elm(elm, list, descriptions, hide, hide_unless, tbl.opteq, concat_flags, adjacent_flags)
+                add_elm(elm, list, descriptions, hide, hide_unless, tbl.opteq, concat_flags, invalid_flags, adjacent_flags)
             elseif t == "string" or t == "number" or t == "function" then
                 table.insert(list, elm)
             end
@@ -651,6 +660,21 @@ if not tmp._addexflags or not tmp._addexarg then
                 else
                     concat_flags[k] = v
                 end
+            end
+        end
+        if concat_flags then
+            local invalid = {}
+            for k,v in pairs(invalid_flags) do
+                concat_flags[k] = nil
+            end
+            local remove = {}
+            for i,v in ipairs(concat_flags) do
+                if invalid_flags[v] then
+                    table.insert(remove, i)
+                end
+            end
+            for i = #remove, 1, -1 do
+                table.remove(concat_flags, remove[i])
             end
         end
         return list, descriptions, hide, hide_unless, concat_flags
