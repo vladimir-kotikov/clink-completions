@@ -519,7 +519,7 @@ if not tmp._addexflags or not tmp._addexarg then
         end
     end
 
-    local function add_elm(elm, list, descriptions, hide, hide_unless, in_opteq, concat_flags, invalid_flags, adjacent_flags)
+    local function add_elm(elm, list, descriptions, hide, hide_unless, in_opteq, concat_flags, invalid_flags, adjacent_flags) -- luacheck: no max line length
         local arg
         local opteq = in_opteq
         if elm[1] then
@@ -605,7 +605,7 @@ if not tmp._addexflags or not tmp._addexarg then
             table.insert(list, arg)
         elseif t == "nested" then
             for _,sub_elm in ipairs(elm) do
-                add_elm(sub_elm, list, descriptions, hide, hide_unless, opteq, concat_flags, invalid_flags, adjacent_flags)
+                add_elm(sub_elm, list, descriptions, hide, hide_unless, opteq, concat_flags, invalid_flags, adjacent_flags) -- luacheck: no max line length
             end
         else
             pause("unrecognized input table format.")
@@ -628,7 +628,7 @@ if not tmp._addexflags or not tmp._addexarg then
         for _,elm in ipairs(tbl) do
             local t = type(elm)
             if t == "table" then
-                add_elm(elm, list, descriptions, hide, hide_unless, tbl.opteq, concat_flags, invalid_flags, adjacent_flags)
+                add_elm(elm, list, descriptions, hide, hide_unless, tbl.opteq, concat_flags, invalid_flags, adjacent_flags) -- luacheck: no max line length
             elseif t == "string" or t == "number" or t == "function" then
                 table.insert(list, elm)
             end
@@ -663,8 +663,7 @@ if not tmp._addexflags or not tmp._addexarg then
             end
         end
         if concat_flags then
-            local invalid = {}
-            for k,v in pairs(invalid_flags) do
+            for k,_ in pairs(invalid_flags) do
                 concat_flags[k] = nil
             end
             local remove = {}
