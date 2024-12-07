@@ -35,9 +35,13 @@ clink.argmatcher("eza")
     { "-X",                             "dereference symbolic links when displaying information" },
     { "--dereference" },
     { "-F",                             "display type indicator by file names" },
-    { "-F="..when, "WHEN",              "when to display type indicator by file names" },
     { "--classify" },
+    { "-F="..when, "WHEN",              "when to display type indicator by file names" },
     { "--classify="..when, "WHEN", "" },
+    { opteq=true, "-w="..cols, "COLS",      "set screen width in columns" },
+    { hide=true, "-w"..cols },
+    { opteq=true, "--width="..cols, "COLS", "" }, --"set screen width in columns"
+    { hide=true, "--width"..cols },
     { "--color" },                          --"use terminal colors"
     { "--color="..when, "WHEN", "" },       --"when to use terminal colors"
     { hide=true, "--colour" },
@@ -52,10 +56,8 @@ clink.argmatcher("eza")
     { "--icons="..when, "WHEN", "" },       --"when to display icons"
     { "--no-quotes" },                      --"don't quote file names with spaces"
     { "--hyperlink" },                      --"display entries as hyperlinks"
-    { opteq=true, "-w="..cols, "COLS",      "set screen width in columns" },
-    { hide=true, "-w"..cols },
-    { opteq=true, "--width="..cols, "COLS", "" }, --"set screen width in columns"
-    { hide=true, "--width"..cols },
+    { "--follow-symlinks" },                --"drill down into symbolic links that point to directories"
+    { "--absolute" },                       --"display entries with their absolute path"
 
     -- FILTERING AND SORTING OPTIONS
     { "-a",                             "show hidden and 'dot' files" },
@@ -72,10 +74,13 @@ clink.argmatcher("eza")
     { opteq=true, "-s="..sortfield, "SORT_FIELD", "which field to sort by" },
     { opteq=true, "--sort="..sortfield, "SORT_FIELD", "" },
     { "--group-directories-first" },        --"list directories before other files"
+    { "--group-directories-last" },         --"list directories after other files"
     { "-D",                             "list only directories" },
     { "--only-dirs" },
     { "-f",                             "list only files" },
     { "--only-files" },
+    { "--show-symlinks" },                  --"explicitly show symbolic links (for use with --only-dirs | --only-files)"
+    { "--no-symlinks" },                    --"do not show symbolic links"
     -- -I, --ignore-glob GLOBS          glob patterns (pipe-separated) of files to ignore
     { "--git-ignore" },                     --"ignore files mentioned in '.gitignore'"
 
@@ -90,11 +95,15 @@ clink.argmatcher("eza")
     { "--header" },
     -- -H, --links                      list each file's number of hard links
     -- -i, --inode                      list each file's inode number
-    -- -m, --modified                   use the modified timestamp field
+    { "-m",                             "use the modified timestamp field" },
+    { "--modified" },
+    { hide=true, "--changed" },
     -- -M, --mounts                     show mount details (Linux and Mac only)
     -- -n, --numeric                    list numeric user and group IDs
     { "-O",                             "list file flags (Mac, BSD, and Windows only)" },
     { "--flags" },
+    { "--no-permissions" },             --"suppress the permissions field"
+    -- -o, --octal-permissions          list each file's permission in octal format
     { "-S",                             "show size of allocated file system blocks" },
     { "--blocksize" },
     { opteq=true, "-t"..timefield, " FIELD", "which timestamp field to list" },
@@ -103,11 +112,8 @@ clink.argmatcher("eza")
     { "--accessed" },
     { "-U",                             "use the created timestamp field" },
     { "--created" },
-    { "--changed" },
-    { opteq=true, "--time-style="..timestyles, "STYLE", "how to format timestamps" },
+    { opteq=true, "--time-style="..timestyles, "STYLE", "" }, --"how to format timestamps"
     -- --total-size                     show the size of a directory as the size of all files and directories inside (unix only)
-    { "--no-permissions" },
-    -- -o, --octal-permissions          list each file's permission in octal format
     { "--no-filesize" },
     -- --no-user                        suppress the user field
     { "--no-time" },
@@ -115,4 +121,5 @@ clink.argmatcher("eza")
     { "--git" },                            --"list each file's Git status, if tracked or ignored"
     { "--no-git" },                         --"suppress Git status"
     { "--git-repos" },                      --"list root of git-tree status"
+    { "--git-repos-no-status" },            --"list each git-repos branch name (much faster)"
 })
