@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.6.1 (Dec 24, 2024)
+
+  * Updated `eza` completions.
+  * [.net] Updated `dotnet add [PROJECT] package` completions (#192).
+  * [git] Fixed `git status -uno` completion.
+  * Turned off debug logging in `gh` completions by default.
+
 ## 0.6.0 (Oct 13, 2024)
 
   * [git] Added support for git aliases that include flags or `!`.
