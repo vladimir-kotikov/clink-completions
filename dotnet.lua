@@ -1,6 +1,205 @@
 local matchers = require('matchers')
+local standalone = not clink or not clink.argmatcher
+local clink_version = require('clink_version')
+
+--------------------------------------------------------------------------------
+-- Helper functions for invoking `dotnet complete` to let dotnet itself
+-- generate completions.
+
+-- luacheck: max line length 100
+
+-- Clink v1.4.12 and earlier fall into a CPU busy-loop if
+-- match_builder:setvolatile() is used during an autosuggest strategy.
+local volatile_fixed = clink_version.has_volatile_matches_fix
+
+local function sanitize_word(line_state, index, info)
+    if not info then
+        info = line_state:getwordinfo(index)
+    end
+
+    local end_offset = info.offset + info.length - 1
+    if volatile_fixed and end_offset < info.offset and index == line_state:getwordcount() then
+        end_offset = line_state:getcursor() - 1
+    end
+
+    local word = line_state:getline():sub(info.offset, end_offset)
+    local word_len = #word
+    word = word:gsub('"', '\\"')
+    return word, word_len
+end
+
+local function append_word(text, word)
+    local added_len = 0
+    if #text > 0 then
+        text = text .. " "
+        added_len = 1
+    end
+    return text .. word, added_len
+end
+
+local function sanitize_line(line_state)
+    local text = ""
+    local endpos = 1
+    for i = 1, line_state:getwordcount() do
+        local info = line_state:getwordinfo(i)
+        local word, word_len, added_len
+        if info.alias then
+            word = "dotnet"
+        elseif not info.redir then
+            word, word_len = sanitize_word(line_state, i, info)
+        end
+        if word then
+            if not word_len then
+                word_len = #word
+            end
+            text, added_len = append_word(text, word)
+            endpos = endpos + added_len + word_len
+        end
+    end
+    local endword = sanitize_word(line_state, line_state:getwordcount())
+    return text, endword, endpos
+end
+
+local debug_print_query
+if tonumber(os.getenv("DEBUG_CLINK_DOTNET") or "0") > 0 then
+    local query_count = 0
+    local color_index = 0
+    local color_values = { "52", "94", "100", "22", "23", "19", "53" }
+    debug_print_query = function (endword)
+        query_count = query_count + 1
+        color_index = color_index + 1
+        if color_index > #color_values then
+            color_index = 1
+        end
+        clink.print("\x1b[s\x1b[H\x1b[1;37;48;5;"..color_values[color_index].."mQUERY #"..query_count..", endword '"..endword.."'\x1b[m\x1b[K\x1b[u", NONL) -- luacheck: no max line length, no global
+    end
+else
+    debug_print_query = function () end
+end
+
+local function dotnet_complete(word, index, line_state, builder) -- luacheck: no unused args
+    local matches = {}
+    local dotnet = "dotnet.exe"
+
+    -- In the background (async auto-suggest), delay `dotnet complete` by 200 ms
+    -- to coalesce rapid keypresses into a single query.  Overall, this improves
+    -- the responsiveness for showing auto-suggestions which involve slow
+    -- network queries.  The drawback is that all background `dotnet complete`
+    -- queries take 200 milliseconds longer to show results.  But it can save
+    -- many seconds, so on average it works out as feeling more responsive.
+    if dotnet and volatile_fixed and builder.setvolatile and rl.islineequal then
+        local co, ismain = coroutine.running()
+        if not ismain then
+            local orig_line = line_state:getline():sub(1, line_state:getcursor() - 1)
+            clink.setcoroutineinterval(co, .2)
+            coroutine.yield()
+            clink.setcoroutineinterval(co, 0)
+            if not rl.islineequal(orig_line, true) then
+                dotnet = nil
+                builder:setvolatile()
+            end
+        end
+    end
+
+    if dotnet then
+        local commandline, endword, endpos = sanitize_line(line_state)
+        debug_print_query(endword)
+        local command = string.format('2>nul %s complete --position %s "%s"', dotnet, endpos, commandline) -- luacheck: no max line length
+        local f = io.popen(command)
+        if f then
+            for line in f:lines() do
+                line = line:gsub('"', '')
+                if line ~= "" and (standalone or line:sub(1,1) ~= "-") then
+                    table.insert(matches, line)
+                end
+            end
+            f:close()
+        end
+
+        -- Mark the matches volatile even when generation was skipped due to
+        -- running in a coroutine.  Otherwise it'll never run it in the main
+        -- coroutine, either.
+        if volatile_fixed and builder.setvolatile then
+            builder:setvolatile()
+        end
+
+        -- Enable quoting.
+        if builder.setforcequoting then
+            builder:setforcequoting()
+        elseif clink.matches_are_files then
+            clink.matches_are_files()
+        end
+    end
+    return matches
+end
+
+--------------------------------------------------------------------------------
+-- When this script is run as a standalone Lua script, it can traverse the
+-- available dotnet commands and flags and output the available completions.
+-- This helps when updating the completions this script supports.
+
+if standalone then
+
+    local function ignore_match(match)
+        if match == "--help" or
+                match == "--no-vt" or
+                match == "--rainbow" or
+                match == "--retro" or
+                match == "--verbose-logs" or
+                false then
+            return true
+        end
+    end
+
+    local function dump_completions(line, recursive)
+        local line_state = clink.parseline(line..' ""')[1].line_state
+        local t = dotnet_complete("", 0, line_state, {})
+        if #t > 0 then
+            print(line)
+            for _, match in ipairs(t) do
+                if not ignore_match(match) then
+                    print("", match)
+                end
+            end
+            print()
+            if recursive then
+                for _, match in ipairs(t) do
+                    if not ignore_match(match) then
+                        dump_completions(line.." "..match, not match:find("^-") )
+                    end
+                end
+            end
+        end
+    end
+
+    dump_completions("dotnet", true)
+    return
+
+end
+
+--------------------------------------------------------------------------------
+-- Argmatcher for the dotnet.exe program.
 
 local parser = clink.arg.new_parser
+
+local function package_reference_onadvance(arg_index, word, word_index, line_state, user_data)
+    if arg_index == 1 then
+        if word ~= "" and word ~= "package" and word ~= "reference" then
+            if user_data and not user_data.project_argument then
+                user_data.project_argument = true
+                return 0 -- Repeat using the Advance to next argument position BEFORE parsing the word.
+            end
+        end
+    end
+end
+
+local package_list = parser({dotnet_complete})
+local reference_list = parser({dotnet_complete})
+local package_reference_commands = parser({
+    "reference" .. reference_list,
+    "package" .. package_list,
+    onadvance = package_reference_onadvance,
+})
 
 local runtime_parser = parser({
     -- Windows
@@ -187,18 +386,18 @@ ef_parser:add_flags(
 )
 
 local dotnet_parser = parser({
-    "add"..parser({"reference", "package"}),
+    "add"..package_reference_commands,
     "build"..build_parser,
     "build-server",
     "clean"..clean_parser,
     "help",
-    "list"..parser({"reference", "package"}),
+    "list"..package_reference_commands,
     "msbuild",
     "new"..new_parser,
     "nuget",
     "pack",
     "publish"..publish_parser,
-    "remove"..parser({"reference", "package"}),
+    "remove"..package_reference_commands,
     "restore",
     "run"..run_parser,
     "sln"..parser({"add", "remove", "list"}),
