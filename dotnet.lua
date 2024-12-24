@@ -182,12 +182,20 @@ end
 
 local parser = clink.arg.new_parser
 
-local function package_reference_onadvance(arg_index, word, word_index, line_state, user_data)
+local function collect_project_files(word, index, line_state, builder) -- luacheck: no unused args
+    if clink.filematchesexact then
+        return clink.filematchesexact(word.."*.*proj")
+    else
+        return clink.filematches(word)
+    end
+end
+
+local function package_reference_onadvance(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused args, no max line length
     if arg_index == 1 then
         if word ~= "" and word ~= "package" and word ~= "reference" then
             if user_data and not user_data.project_argument then
                 user_data.project_argument = true
-                return 0 -- Repeat using the Advance to next argument position BEFORE parsing the word.
+                return 0 -- Don't advance to the next argument position.
             end
         end
     end
@@ -196,8 +204,10 @@ end
 local package_list = parser({dotnet_complete})
 local reference_list = parser({dotnet_complete})
 local package_reference_commands = parser({
-    "reference" .. reference_list,
+    nosort = true,
     "package" .. package_list,
+    "reference" .. reference_list,
+    collect_project_files,
     onadvance = package_reference_onadvance,
 })
 
