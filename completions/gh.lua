@@ -13,8 +13,8 @@ if not clink_version.has_linked_setdelayinit_fix then
 end
 
 --------------------------------------------------------------------------------
-local debug
---[[]]
+local debug = nil
+--[[
 debug = {
     debug_output = true,                -- Enable debugging output.
     debug_log_all_usage = true,         -- Write all USAGE info to dbgfile.
