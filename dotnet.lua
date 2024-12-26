@@ -182,8 +182,10 @@ end
 
 local parser = clink.arg.new_parser
 
-local function collect_project_files(word, index, line_state, builder) -- luacheck: no unused args
-    if clink.filematchesexact then
+local function collect_project_files(word, index, line_state, builder, user_data) -- luacheck: no unused args
+    if user_data and user_data.project_argument then
+        return {}
+    elseif clink.filematchesexact then
         local matches = clink.dirmatches(word)
         local files = clink.filematchesexact(word.."*.*proj")
         for _, f in ipairs(files) do
