@@ -102,9 +102,9 @@ local function dotnet_complete(word, index, line_state, builder) -- luacheck: no
     end
 
     if dotnet then
-        local commandline, endword, endpos = sanitize_line(line_state)
+        local input, endword, endpos = sanitize_line(line_state)
         debug_print_query(endword)
-        local command = string.format('2>nul %s complete --position %s "%s"', dotnet, endpos, commandline) -- luacheck: no max line length
+        local command = string.format('2>nul %s complete --position %s "%s"', dotnet, endpos, input)
         local f = io.popen(command)
         if f then
             for line in f:lines() do
@@ -182,7 +182,7 @@ end
 
 local parser = clink.arg.new_parser
 
-local function collect_project_files(word, index, line_state, builder, user_data) -- luacheck: no unused args
+local function collect_project_files(word, _, _, _, user_data)
     if user_data and user_data.project_argument then
         return {}
     elseif clink.filematchesexact then
@@ -197,7 +197,7 @@ local function collect_project_files(word, index, line_state, builder, user_data
     end
 end
 
-local function package_reference_onadvance(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused args, no max line length
+local function package_reference_onadvance(arg_index, word, _, _, user_data)
     if arg_index == 1 then
         if word ~= "" and word ~= "package" and word ~= "reference" then
             if user_data and not user_data.project_argument then
