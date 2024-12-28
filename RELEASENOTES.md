@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.6.2 (Dec 28, 2024)
+
+  * [.net] Fixed edge case in `dotnet add [PROJECT] package` completions.
+
 ## 0.6.1 (Dec 24, 2024)
 
   * Updated `eza` completions.
