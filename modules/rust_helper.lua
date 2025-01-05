@@ -34,10 +34,10 @@ local dbgpro = "\x1b[s\x1b[H"
 local dbgcolor = "\x1b[36m"
 local dbgepi = "\x1b[K\x1b[u"
 local norm = "\x1b[m"
-local red = "\x1b[38;5;160m"
-local reverse = "\x1b[7m"
-local unreverse = "\x1b[27m"
-local function dbgprint(msg)
+--local red = "\x1b[38;5;160m"
+--local reverse = "\x1b[7m"
+--local unreverse = "\x1b[27m"
+local function dbgprint(msg) -- luacheck: no unused
     if debug and debug.debug_output then
         clink.print(dbgpro..dbgcolor..msg..norm..dbgepi, NONL)
     end
@@ -166,7 +166,7 @@ local function sentence_casing(text)
     end
 end
 
-local function patesc(s)
+local function patesc(s) -- luacheck: no unused
     return s:gsub("%-", "%%-")
 end
 
@@ -410,7 +410,6 @@ end
 --------------------------------------------------------------------------------
 local function parse_line(context, flags, descriptions, hideflags, line, config)
     local last_line = not line
-    local help_commands = context.rust_data.help_commands
 
     context.section = line and parse_section(context.section, line) or nil
     line = line or ""
