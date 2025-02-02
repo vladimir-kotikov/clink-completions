@@ -7,12 +7,10 @@ end
 require("arghelper")
 -- luacheck: globals os
 
-local fullname = ...
-
 --------------------------------------------------------------------------------
 -- Microsoft's sudo command.
 
-local function init_microsoft_sudo()
+local function init_microsoft_sudo(argmatcher)
     local subcommands = {
         ["help"] = true,
         ["run"] = true,
@@ -45,7 +43,7 @@ local function init_microsoft_sudo()
     }
     local runs = clink.argmatcher():_addexflags(ex_run_flags):chaincommand()
 
-    clink.argmatcher(fullname)
+    argmatcher
     :_addexflags({
         ex_run_flags,
         {"-h", "Print help (see more with '--help')"},
@@ -65,13 +63,13 @@ end
 --------------------------------------------------------------------------------
 -- Chrisant996 sudo command (https://github.com/chrisant996/sudo-windows).
 
-local function init_chrisant996_sudo()
+local function init_chrisant996_sudo(argmatcher)
     local dir = clink.argmatcher():addarg({clink.dirmatches})
     local prompt = clink.argmatcher():addarg({fromhistory=true})
     local user = clink.argmatcher():addarg({fromhistory=true})
 
-    clink.argmatcher(fullname)
-    :_addexarg({
+    argmatcher
+    :_addexflags({
         {"-?", "Display a short help message and exit"},
         {"-b", "Run the command in the background"},
         {"-D"..dir, " dir", "Run the command in the specified directory"},
@@ -97,21 +95,37 @@ end
 --------------------------------------------------------------------------------
 -- Detect sudo command version.
 
-if string.lower(path.getname(fullname)) == "sudo.exe" then
-    local windir = os.getenv("windir")
-    if windir then
-        local cdir = clink.lower(path.getdirectory(fullname))
-        local wdir = clink.lower(path.join(windir, "system32"))
-        if cdir == wdir then
-            init_microsoft_sudo()
-            return
+local fullname = ... -- Full command path.
+
+if fullname then
+    if string.lower(path.getname(fullname)) == "sudo.exe" then
+        local windir = os.getenv("windir")
+        if windir then
+            local cdir = clink.lower(path.getdirectory(fullname))
+            local wdir = clink.lower(path.join(windir, "system32"))
+            if cdir == wdir then
+                local sudo = clink.argmatcher(fullname)
+                init_microsoft_sudo(sudo)
+                return
+            end
         end
-    elseif os.getfileversion then
-        local info = os.getfileversion(fullname)
-        if info and info.companyname == "Christopher Antos" then
-            init_chrisant996_sudo()
-            return
+        if os.getfileversion then
+            local info = os.getfileversion(fullname)
+            if info and info.companyname == "Christopher Antos" then
+                local sudo = clink.argmatcher(fullname)
+                init_chrisant996_sudo(sudo)
+                return
+            end
         end
+    end
+else
+    -- Alternative initialization in case the script is not located in a
+    -- completions\ directory, in which case ... will be nil.
+    local sysroot = os.getenv("windir") or os.getenv("systemroot")
+    if sysroot then
+        local system32 = clink.lower(path.join(sysroot, "system32"))
+        local sudo = clink.argmatcher(path.join(system32, "sudo.exe"))
+        init_microsoft_sudo(sudo)
     end
 end
 
