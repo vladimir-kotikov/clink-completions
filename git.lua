@@ -3078,7 +3078,10 @@ local function init(argmatcher, full_init)
 
     if complex then
         commands.onalias = function(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused
-            return complex[word], chain[word]
+            if not user_data.did_onalias then
+                user_data.did_onalias = true
+                return complex[word], chain[word]
+            end
         end
     end
 
