@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.6.3 (Mar 5, 2025)
+
+  * Speeded up the initial load time of clink-completions by around 35 milliseconds (maybe more or less, depending on the CPU speed).  This also speeds up loading Clink in a new command window.
+  * Added completions for Rust: `cargo`, `rustc`, and `rustup`.
+  * Added completions for the new Windows `sudo` command.
+  * [git] Fixed a freeze in git completion when an aliased command starts with the alias name (#194).
+
 ## 0.6.2 (Dec 28, 2024)
 
   * [.net] Fixed edge case in `dotnet add [PROJECT] package` completions.
