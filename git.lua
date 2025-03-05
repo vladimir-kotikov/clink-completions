@@ -3026,7 +3026,10 @@ local function command_display_filter()
 end
 
 -- Initialize the argmatcher.  This may be called repeatedly.
+local ever_inited
 local function init(argmatcher, full_init)
+    ever_inited = true
+
     -- When doing a full init, must reset in order to maintain the sort order.
     -- Full init is used from the setdelayinit callback function, for an alias
     -- to be able to parse arguments for the command it aliases.
@@ -3107,7 +3110,6 @@ local cached_cwd
 local cached_repo
 
 local git_parser = parser()
-init(git_parser, false--[[full_init]])
 if git_parser.setdelayinit then
     git_parser:setdelayinit(function (argmatcher)
         local cwd = os.getcwd()
@@ -3120,8 +3122,13 @@ if git_parser.setdelayinit then
                     init(argmatcher, true--[[full_init]])
                 end
             end
+            if not ever_inited then
+                init(git_parser, false--[[full_init]])
+            end
         end
     end)
+else
+    init(git_parser, false--[[full_init]])
 end
 
 clink.arg.register_parser("git", git_parser)
