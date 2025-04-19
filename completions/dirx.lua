@@ -191,6 +191,7 @@ local list_of_flags = {
     { "-L", levels, " depth",   "Limit depth of recursion with -s" },
     { opteq=true, "--levels=", levels, "depth", "" },
     { hide=true, opteq=true, "--level=", levels, "depth", "" },
+    { hide=true, "-o",          "" },
     { "-o:", sorts, "options",  "List files in sorted order" },
     { "-X",                     "Reset skipped types" },
     { "-X:", skips, "types",    "Skip types during -s" },
