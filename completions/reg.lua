@@ -103,6 +103,26 @@ local function valuename_impl(_, _, _, _, user_data)
     return matches
 end
 
+local function filematches_byext(word, ext)
+    if clink.filematchesexact then
+        local matches = clink.dirmatches(word) or {}
+        for _, m in ipairs(clink.filematchesexact(word.."*."..ext)) do
+            table.insert(matches, m)
+        end
+        return matches
+    else
+        return clink.filematches(word)
+    end
+end
+
+local function filematches_hiv(word)
+    return filematches_byext(word, "hiv")
+end
+
+local function filematches_reg(word)
+    return filematches_byext(word, "reg")
+end
+
 local valuename = clink.argmatcher():addarg(valuename_impl)
 
 local sep = clink.argmatcher():addarg({fromhistory=true})
@@ -196,21 +216,21 @@ local save = clink.argmatcher():_addexflags({
     { "/y",                 "Force overwriting the existing file without prompt" },
 })
 :addarg(keyname_any)
-:addarg(clink.filematches)
+:addarg(filematches_hiv)
 :nofiles()
 
 local restore = clink.argmatcher():_addexflags({
     common_flags,
 })
 :addarg(keyname_any)
-:addarg(clink.filematches)
+:addarg(filematches_hiv)
 :nofiles()
 
 local load = clink.argmatcher():_addexflags({
     common_flags,
 })
 :addarg(keyname_any)
-:addarg(clink.filematches)
+:addarg(filematches_hiv)
 :nofiles()
 
 local unload = clink.argmatcher():_addexflags({
@@ -242,13 +262,13 @@ local export = clink.argmatcher():_addexflags({
     { "/y",                 "Force overwriting the existing file without prompt" },
 })
 :addarg(keyname_any)
-:addarg(clink.filematches)
+:addarg(filematches_reg)
 :nofiles()
 
 local import = clink.argmatcher():_addexflags({
     common_flags,
 })
-:addarg(clink.filematches)
+:addarg(filematches_reg)
 :nofiles()
 
 local flags_query = clink.argmatcher():_addexflags({
