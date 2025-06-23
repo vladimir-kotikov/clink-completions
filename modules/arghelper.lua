@@ -297,7 +297,7 @@ local function make_one_letter_concat_classifier_func(list, parser)
                                 apply_len = i - 1
                             end
                             if olf.arginfo then
-                                arginfo = i
+                                arginfo = i - 1
                                 break
                             end
                         else
@@ -308,13 +308,17 @@ local function make_one_letter_concat_classifier_func(list, parser)
                     if apply_len > 0 then
                         classifications:applycolor(info.offset, apply_len, color_flag, true)
                         if arginfo then
-                            local color_input = settings.get("color.input") or ""
-                            classifications:applycolor(info.offset + arginfo - 1, #word - arginfo, color_input, true) -- luacheck: no max line length
+                            if #word > arginfo then
+                                local color_input = settings.get("color.input") or ""
+                                classifications:applycolor(info.offset + arginfo, #word - arginfo, color_input, true) -- luacheck: no max line length
+                            end
                         elseif unexpected then
-                            local color_unexpected = settings.get("color.unexpected") or ""
-                            local color_nope = settings.get("color.unrecognized") or color_unexpected
-                            classifications:applycolor(info.offset + unexpected - 1, 1, color_nope, true)
-                            classifications:applycolor(info.offset + unexpected - 0, #word - unexpected, color_unexpected, true) -- luacheck: no max line length
+                            if #word >= unexpected then
+                                local color_unexpected = settings.get("color.unexpected") or ""
+                                local color_nope = settings.get("color.unrecognized") or color_unexpected
+                                classifications:applycolor(info.offset + unexpected - 1, 1, color_nope, true)
+                                classifications:applycolor(info.offset + unexpected - 0, #word - unexpected, color_unexpected, true) -- luacheck: no max line length
+                            end
                         end
                     end
                 end
@@ -331,7 +335,7 @@ local function make_one_letter_concat_classifier_func(list, parser)
                     olf = {}
                     one_letter_flags[letter] = olf
                 end
-                if plusminus then
+                if plusminus and plusminus:find("^[-+]") then
                     olf.plusminus = true
                 end
                 if type(list[flag]) == "table" then
