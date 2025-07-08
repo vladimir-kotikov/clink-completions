@@ -30,16 +30,21 @@ local flag_def_table = {
 -- luacheck: pop
 
 local flags = {}
-for _,f in ipairs(flag_def_table) do
-    if f[3] then
-        table.insert(flags, { f[1]..f[2], f[3], f[4] })
-        if f[1]:upper() ~= f[1] then
-            table.insert(flags, { hide=true, f[1]:upper()..f[2], f[3], f[4] })
+for i = 1, 2 do
+    for _,f in ipairs(flag_def_table) do
+        if i == 2 then
+            f[1] = f[1]:gsub("^/", "-")
         end
-    else
-        table.insert(flags, { f[1], f[2] })
-        if f[1]:upper() ~= f[1] then
-            table.insert(flags, { hide=true, f[1]:upper(), f[2] })
+        if f[3] then
+            table.insert(flags, { f[1]..f[2], f[3], f[4] })
+            if f[1]:upper() ~= f[1] then
+                table.insert(flags, { hide=true, f[1]:upper()..f[2], f[3], f[4] })
+            end
+        else
+            table.insert(flags, { f[1], f[2] })
+            if f[1]:upper() ~= f[1] then
+                table.insert(flags, { hide=true, f[1]:upper(), f[2] })
+            end
         end
     end
 end
@@ -64,14 +69,17 @@ end
 function where__generator:getwordbreakinfo(line_state) -- luacheck: no unused
     local cwi = line_state:getcommandwordindex()
     if line_state:getword(cwi):lower() == "where" then
-        local word = line_state:getendword()
-        local scope = word:match("^(.*:)[^:]-$")
-        if scope then
-            return #scope, 0
-        end
-        scope = word:match("^(%$[^:]*)$")
-        if scope then
-            return 1, 0
+        local prev_word = line_state:getword(line_state:getwordcount() - 1)
+        if prev_word ~= "/r" and prev_word ~= "/R" and prev_word ~= "-r" then
+            local word = line_state:getendword()
+            local scope = word:match("^(.*:)[^:]-$")
+            if scope then
+                return #scope, 0
+            end
+            scope = word:match("^(%$[^:]*)$")
+            if scope then
+                return 1, 0
+            end
         end
     end
 end
