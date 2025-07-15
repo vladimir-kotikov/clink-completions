@@ -214,6 +214,10 @@ local npm_parser = parser({
 
 clink.arg.register_parser("npm", npm_parser)
 
+local function escape_percents(s)
+    return s:gsub('%%', '%%%%')
+end
+
 local function npm_prompt_filter()
     -- Automatically disable this when a .clinkprompt custom prompt is active.
     local customprompt = clink.getclinkprompt and clink.getclinkprompt()
@@ -234,7 +238,7 @@ local function npm_prompt_filter()
     local package_name = package.name or "<no name>"
     local package_version = package.version and "@"..package.version or ""
     local package_string = color.color_text("("..package_name..package_version..")", color.YELLOW)
-    clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..package_string)
+    clink.prompt.value = clink.prompt.value:gsub('{git}', '{git} '..escape_percents(package_string))
 
     return false
 end
