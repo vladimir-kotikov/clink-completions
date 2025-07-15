@@ -1,11 +1,16 @@
 # Release Notes
 
-## 0.6.3 (Mar 5, 2025)
+## 0.6.3 (July 15, 2025)
 
   * Speeded up the initial load time of clink-completions by around 35 milliseconds (maybe more or less, depending on the CPU speed).  This also speeds up loading Clink in a new command window.
   * Added completions for Rust: `cargo`, `rustc`, and `rustup`.
   * Added completions for the new Windows `sudo` command.
+  * Added completions for `procdump` from sysinternals.net.
   * [git] Fixed a freeze in git completion when an aliased command starts with the alias name (#194).
+  * Updated `dirx` completions.
+  * Updated `reg` completions for `*.hiv` and `*.reg` files.
+  * Updated `where` completions to handle its `$envvar:pattern` and `path:pattern` syntaxes, and to accept `/` flags in addition to `-` flags.
+  * Fixed script error in npm.lua if package.json file contains percent signs in certain fields.
 
 ## 0.6.2 (Dec 28, 2024)
 
