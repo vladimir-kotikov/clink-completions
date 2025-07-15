@@ -10,7 +10,7 @@
   * Updated `dirx` completions.
   * Updated `reg` completions for `*.hiv` and `*.reg` files.
   * Updated `where` completions to handle its `$envvar:pattern` and `path:pattern` syntaxes, and to accept `/` flags in addition to `-` flags.
-  * Fixed script error in npm.lua if package.json file contains percent signs in certain fields.
+  * Fixed script error in npm.lua if package.json file contains percent signs in certain fields (#197).
 
 ## 0.6.2 (Dec 28, 2024)
 
