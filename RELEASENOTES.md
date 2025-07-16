@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.6.4 (July 16, 2025)
+
+  * Fixed script error when completing `procdump` due to missing `pid_complete` module.
+
 ## 0.6.3 (July 15, 2025)
 
   * Speeded up the initial load time of clink-completions by around 35 milliseconds (maybe more or less, depending on the CPU speed).  This also speeds up loading Clink in a new command window.
