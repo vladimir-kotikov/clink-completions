@@ -350,14 +350,14 @@ local function add_spec_generator(token)
     return addicons(list_git_status_files(token, "-uall"):map(map_file))
 end
 
-local function checkout_spec_generator_049(token)
+local function __common_spec_generator_049(token, mode)
     local function is_token_match(value)
         return clink.is_match(token, value)
     end
 
     local git_dir = git.get_git_common_dir()
 
-    local files = list_git_status_files(token, "-uno"):filter(is_token_match)
+    local files = mode:find("checkout") and list_git_status_files(token, "-uno"):filter(is_token_match) or w()
     local local_branches = branches():filter(is_token_match)
     local remote_branches = list_remote_branches(git_dir):filter(is_token_match)
 
@@ -399,7 +399,7 @@ local function checkout_spec_generator_049(token)
         :concat(remote_branches)
 end
 
-local function checkout_spec_generator_usedisplay(token)
+local function __common_spec_generator_usedisplay(token, mode)
     -- NOTE:  The only reason this needs to use clink.is_match() is because the
     -- match_display_filter function defined here ignores the list of matches it
     -- receives, which is already filtered correctly and has had duplicates
@@ -410,7 +410,7 @@ local function checkout_spec_generator_usedisplay(token)
 
     local git_dir = git.get_git_common_dir()
 
-    local files = list_git_status_files(token, "-uno"):filter(is_token_match)
+    local files = mode:find("checkout") and list_git_status_files(token, "-uno"):filter(is_token_match) or w()
     local local_branches = branches(token):filter(is_token_match)
     local remote_branches = list_remote_branches(git_dir):filter(is_token_match)
 
@@ -469,7 +469,7 @@ local function make_indexed_table(input)
     return output
 end
 
-local function checkout_spec_generator_nosort(token)
+local function __common_spec_generator_nosort(token, mode)
     local git_dir = git.get_git_common_dir()
 
     local local_branches = branches(token)
@@ -490,11 +490,11 @@ local function checkout_spec_generator_nosort(token)
 
     local tag_names = list_tags(git_dir)
 
-    local files = list_git_status_files(token, "-uno")
-        :filter(function(name)
-            name = path.normalise(name, '/')
-            return not predicted_branches_idx[name] and not remote_branches_idx[name] and not local_branches_idx[name]
-        end)
+    local function files_filter(name)
+        name = path.normalise(name, '/')
+        return not predicted_branches_idx[name] and not remote_branches_idx[name] and not local_branches_idx[name]
+    end
+    local files = mode:find("checkout") and list_git_status_files(token, "-uno"):filter(files_filter) or w()
 
     local filtered_color = color.get_clink_color('color.filtered')
     local local_pre = filtered_color
@@ -531,18 +531,26 @@ local function checkout_spec_generator_nosort(token)
     return result
 end
 
-local function checkout_spec_generator(token)
+local function __common_spec_generator(token, mode)
     if has_dot_dirs(token) then
         return file_matches(token)
     end
 
     if clink_version.supports_argmatcher_nosort then
-        return checkout_spec_generator_nosort(token)
+        return __common_spec_generator_nosort(token, mode)
     elseif clink_version.supports_display_filter_description then
-        return checkout_spec_generator_usedisplay(token)
+        return __common_spec_generator_usedisplay(token, mode)
     else
-        return checkout_spec_generator_049(token)
+        return __common_spec_generator_049(token, mode)
     end
+end
+
+local function checkout_spec_generator(token)
+    return __common_spec_generator(token, "checkout")
+end
+
+local function log_spec_generator(token)
+    return __common_spec_generator(token, "log")
 end
 
 local function checkout_dashdash(token, _, _, _, user_data)
@@ -1684,7 +1692,7 @@ local config_parser = parser()
 
 local diff_parser = parser()
 :setendofflags()
-:addarg({local_or_remote_branches, file_matches, hint=argoptional.."commit or path"}):loop()
+:addarg({log_spec_generator, hint=argoptional.."commit or path"}):loop()
 :_addexflags(diff_flags)
 :_addexflags(help_flags)
 :_addexflags({"--"..parser({file_matches, hint=argoptional.."pathspec"}):loop()})
@@ -1779,7 +1787,7 @@ end
 
 local log_parser = parser()
 :setendofflags()
-:addarg({file_matches, hint=argoptional.."revision-range or pathspec"})
+:addarg({log_spec_generator, hint=argoptional.."revision-range or pathspec"})
 :addarg({file_matches, hint=argoptional.."pathspec"}):loop(2)
 :_addexflags(log_flags)
 :_addexflags(log_history_flags)
