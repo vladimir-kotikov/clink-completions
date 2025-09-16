@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.6.6 (Sept 16, 2025)
+
+  * [git] Adjust completions for `git diff` and `git log` so that e.g. `git log ./`TAB or `git log -- `TAB list file completions instead of branches or tags.
+
 ## 0.6.4 (July 16, 2025)
 
   * Fixed script error when completing `procdump` due to missing `pid_complete` module.
