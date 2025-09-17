@@ -1959,7 +1959,7 @@ local rebase_parser = parser()
     '--apply',
     { opteq=true, '--empty='..parser({'drop', 'keep', 'ask'}) },
     '--keep-empty', '--no-keep-empty',
-    '--reapply-chery-picks', '--no-reapply-chery-picks',
+    '--reapply-cherry-picks', '--no-reapply-cherry-picks',
     '--allow-empty-message',
     '--skip',
     '--edit-todo',
