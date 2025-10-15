@@ -32,12 +32,12 @@ if clink_version.supports_color_settings then
     settings.add('color.git.star', 'bright green', 'Color for preferred branch completions')
 end
 
-local file_matches = clink.filematches or matchers.files
-local dir_matches = clink.dirmatches or matchers.dirs
+local file_matches = matchers.files
+local dir_matches = matchers.dirs
 local files_parser = parser({file_matches})
 local dirs_parser = parser({dir_matches})
 
-local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(clink.filematches):loop()
+local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(file_matches):loop()
 
 local function extract_sgr(c)
     return c and c:match("^\x1b%[(.*)m$") or c

@@ -10,6 +10,11 @@ local w = require('tables').wrap
 --  local matchers = require("matchers")
 --  clink.argmatcher():addarg(matchers.dirs)
 exports.dirs = function(word)
+    if clink_version.supports_display_filter_description then
+        local matches = w(clink.dirmatches(word))
+        return matches
+    end
+
     -- Strip off any path components that may be on text.
     local prefix = ""
     local i = word:find("[\\/:][^\\/:]*$")
