@@ -1,5 +1,9 @@
 # Release Notes
 
+## ?? (??)
+
+  * [git] Clean up file and directory completions to properly support Clink enhancements (e.g. match coloring, the mark-directories var in .inputrc, and so on).
+
 ## 0.6.6 (Sept 16, 2025)
 
   * [git] Adjust completions for `git diff` and `git log` so that e.g. `git log ./`TAB or `git log -- `TAB list file completions instead of branches or tags.
