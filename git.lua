@@ -469,6 +469,8 @@ local function make_indexed_table(input)
     return output
 end
 
+-- This generator can simply return matches and rely on nosort, instead of
+-- needing to use match display filtering to prevent sorting.
 local function __common_spec_generator_nosort(token, mode)
     local git_dir = git.get_git_common_dir()
 
@@ -521,28 +523,31 @@ local function __common_spec_generator_nosort(token, mode)
         end),
     }
 
-    local result = {}
+    local result = w()
     for _, t in ipairs(mapped) do
         for _, m in ipairs(t) do
             table.insert(result, m)
         end
     end
-    result.nosort = true
     return result
 end
 
 local function __common_spec_generator(token, mode)
-    if has_dot_dirs(token) then
-        return file_matches(token)
+    local result
+    if not has_dot_dirs(token) then
+        if clink_version.supports_argmatcher_nosort then
+            result = __common_spec_generator_nosort(token, mode)
+        elseif clink_version.supports_display_filter_description then
+            result = __common_spec_generator_usedisplay(token, mode)
+        else
+            result = __common_spec_generator_049(token, mode)
+        end
     end
-
+    result = (result or w()):concat(file_matches(token))
     if clink_version.supports_argmatcher_nosort then
-        return __common_spec_generator_nosort(token, mode)
-    elseif clink_version.supports_display_filter_description then
-        return __common_spec_generator_usedisplay(token, mode)
-    else
-        return __common_spec_generator_049(token, mode)
+        result.nosort = true
     end
+    return result
 end
 
 local function checkout_spec_generator(token)
