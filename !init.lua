@@ -11,15 +11,6 @@ if not package.path:find(modules_path, 1, true--[[plain]]) then
     package.path = modules_path..";"..package.path
 end
 
--- Load matchicons_module.lua early, if present, to ensure clink-completions
--- scripts gain match icons when appropriate.
-local function try_require(module)
-    local r
-    pcall(function() r = require(module) end)
-    return r
-end
-try_require("matchicons_module")
-
 -- Explicitly set the completions dir, in case something (such as Cmder)
 -- manually loads completion scripts with them being in a Clink script path.
 if os.setenv then
