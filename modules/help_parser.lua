@@ -96,13 +96,9 @@ if (clink.version_encoded or 0) < 10030010 then -- Requires _argmatcher:setdelay
     return
 end
 
-local function try_require(module)
-    local r
-    pcall(function() r = require(module) end)
-    return r
-end
-
-local ah = try_require("arghelper")
+local has_ah, ah
+has_ah, ah = pcall(require, "arghelper")
+ah = has_ah and ah or nil
 
 --------------------------------------------------------------------------------
 local function sentence_casing(text)
