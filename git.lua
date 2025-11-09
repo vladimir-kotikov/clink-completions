@@ -43,7 +43,7 @@ local function extract_sgr(c)
     return c and c:match("^\x1b%[(.*)m$") or c
 end
 
-local color_git = "38;2;240;80;50" -- the git orange
+local color_git = "38;2;217;93;59" -- the git orange
 
 local function addicon(m, icon, c)
     if matchicons and matchicons.addicontomatch then
