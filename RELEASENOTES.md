@@ -1,8 +1,13 @@
 # Release Notes
 
-## ?? (??)
+## 0.6.7 (Nov 21, 2025)
 
+  * [git] Always complete local files for `git log` and `git diff`.
   * [git] Clean up file and directory completions to properly support Clink enhancements (e.g. match coloring, the mark-directories var in .inputrc, and so on).
+  * [git] Be more clear that `git branch -d` accepts multiple arguments.
+  * [git] Tuned the git color used in git.lua to exactly match the official git color.
+  * [git] Fixed "chery" typos in git.lua.
+  * [git] Fixed cmderdev/cmder#3050; `cmd_commands.lua` could encounter a Lua error when using Clink versions older than v1.3.45 (Oct 2022).
 
 ## 0.6.6 (Sept 16, 2025)
 
