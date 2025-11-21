@@ -253,9 +253,11 @@ local function dir__delayinit(argmatcher)
     :setclassifier(dir__classifier)
 end
 
-clink.argmatcher("dir")
-:setdelayinit(dir__delayinit)
-:setcmdcommand()
+local dir = clink.argmatcher("dir")
+dir:setdelayinit(dir__delayinit)
+if dir.setcmdcommand then
+    dir:setcmdcommand()
+end
 
 end -- Version check.
 
