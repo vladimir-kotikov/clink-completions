@@ -111,55 +111,67 @@ local function adjust_relative_prefix(dir, rel)
     return dir:sub(len + 1)
 end
 
+local function make_indexed_table(input)
+    local output = {}
+    for _, value in ipairs(input) do
+        output[value] = true
+    end
+    return output
+end
+
+local function filter_refs(refs, kind, dummy)
+    assert(not dummy) -- Unsupported usage.
+
+    local result = w()
+    for _, r in ipairs(refs) do
+        local m = r:match('refs/'..kind..'/(.*)')
+        if m then
+            table.insert(result, m)
+        end
+    end
+    return result
+end
+
 ---
- -- Lists remote branches based on packed-refs file from git directory
+ -- Lists all refs, optionally filtered by kind
  -- @param string [dir]  Directory where to search file for
- -- @return table  List of remote branches
-local function list_packed_refs(dir, kind)
+ -- @param string [kind [,kind [,...]]]  Filter by kinds
+ -- @return table  List of filtered refs
+local function list_refs(dir, kind, kind2, dummy)
+    assert(not dummy) -- Unsupported usage.
+
     local result = w()
     local git_dir = dir or git.get_git_common_dir()
     if not git_dir then return result end
 
-    kind = kind or "remotes"
+    local filter
+    if kind2 then
+        filter = function (text)
+            return text:match('refs/'..kind..'/(.*)') or
+                    text:match('refs/'..kind2..'/(.*)')
+        end
+    elseif kind then
+        filter = function (text)
+            return text:match('refs/'..kind..'/(.*)')
+        end
+    else
+        filter = function (text)
+            return text
+        end
+    end
 
-    local packed_refs_file = io.open(git_dir..'/packed-refs')
-    if packed_refs_file == nil then return {} end
+    local refs = io.popen(git.make_command('show-ref'))
+    if refs == nil then return {} end
 
-    for line in packed_refs_file:lines() do
+    for line in refs:lines() do
         -- SHA is 40 char length + 1 char for space
         if #line > 41 then
-            local match = line:sub(41):match('refs/'..kind..'/(.*)')
+            local match = filter(line:sub(41))
             if match then table.insert(result, match) end
         end
     end
 
-    packed_refs_file:close()
-    return result
-end
-
-local function list_remote_branches(dir)
-    local git_dir = dir or git.get_git_common_dir()
-    if not git_dir then return w() end
-
-    return w(path_module.list_files(git_dir..'/refs/remotes', '/*',
-        --[[recursive=]]true, --[[reverse_separator=]]true))
-    :concat(list_packed_refs(git_dir))
-    :sort():dedupe()
-end
-
-local function list_tags(dir)
-    local git_dir = dir or git.get_git_common_dir()
-    if not git_dir then return w() end
-
-    local result = w(path_module.list_files(git_dir..'/refs/tags', '/*',
-        --[[recursive=]]true, --[[reverse_separator=]]true))
-    :concat(list_packed_refs(git_dir, 'tags'))
-
-    if string.comparematches then -- luacheck: no global
-        table.sort(result, string.comparematches) -- luacheck: no global
-    else
-        result = result:sort()
-    end
+    refs:close()
     return result
 end
 
@@ -205,28 +217,11 @@ local function list_git_status_files(token, flags) -- luacheck: no unused args
     return result
 end
 
----
- -- Lists local branches for git repo in git_dir directory.
- --
- -- @param string [dir]  Git directory, where to search for remote branches
- -- @return table  List of branches.
-local function list_local_branches(dir)
-    local git_dir = dir or git.get_git_common_dir()
-    if not git_dir then return w() end
-
-    local result = w(path_module.list_files(git_dir..'/refs/heads', '/*',
-        --[[recursive=]]true, --[[reverse_separator=]]true))
-    :concat(list_packed_refs(git_dir, 'heads'))
-    :sort():dedupe()
-
-    return result
-end
-
 local function branches()
     local git_dir = git.get_git_common_dir()
     if not git_dir then return w() end
 
-    return list_local_branches(git_dir)
+    return list_refs(git_dir, 'heads')
 end
 
 -- Function to get the list of git aliases.
@@ -336,8 +331,7 @@ local function local_or_remote_branches(token)
     local git_dir = git.get_git_common_dir()
     if not git_dir then return w() end
 
-    return list_local_branches(git_dir)
-    :concat(list_remote_branches(git_dir))
+    return list_refs(git_dir, 'heads', 'remotes')
     :filter(function(branch)
         return clink.is_match(token, branch)
     end)
@@ -358,10 +352,12 @@ local function __common_spec_generator_049(token, mode)
     local git_dir = git.get_git_common_dir()
 
     local files = mode:find("checkout") and list_git_status_files(token, "-uno"):filter(is_token_match) or w()
-    local local_branches = branches():filter(is_token_match)
-    local remote_branches = list_remote_branches(git_dir):filter(is_token_match)
+    local refs = list_refs(git_dir)
+    local local_branches = filter_refs(refs, 'heads'):filter(is_token_match)
+    local local_branches_idx = make_indexed_table(local_branches)
+    local remote_branches = filter_refs(refs, 'remotes'):filter(is_token_match)
 
-    local predicted_branches = list_remote_branches(git_dir)
+    local predicted_branches = filter_refs(refs, 'remotes')
         :map(function (remote_branch)
             return remote_branch:match('.-/(.+)')
         end)
@@ -369,7 +365,7 @@ local function __common_spec_generator_049(token, mode)
             return branch
                 and clink.is_match(token, branch)
                 -- Filter out those predictions which are already exists as local branches
-                and not local_branches:contains(branch)
+                and not local_branches_idx[branch]
         end)
 
     if (#local_branches + #remote_branches + #predicted_branches) == 0 then return files end
@@ -411,10 +407,12 @@ local function __common_spec_generator_usedisplay(token, mode)
     local git_dir = git.get_git_common_dir()
 
     local files = mode:find("checkout") and list_git_status_files(token, "-uno"):filter(is_token_match) or w()
-    local local_branches = branches(token):filter(is_token_match)
-    local remote_branches = list_remote_branches(git_dir):filter(is_token_match)
+    local refs = list_refs(git_dir)
+    local local_branches = filter_refs(refs, 'heads'):filter(is_token_match)
+    local local_branches_idx = make_indexed_table(local_branches)
+    local remote_branches = filter_refs(refs, 'remotes'):filter(is_token_match)
 
-    local predicted_branches = list_remote_branches(git_dir)
+    local predicted_branches = filter_refs(refs, 'remotes')
         :map(function (remote_branch)
             return remote_branch:match('.-/(.+)')
         end)
@@ -422,7 +420,7 @@ local function __common_spec_generator_usedisplay(token, mode)
             return branch
                 and clink.is_match(token, branch)
                 -- Filter out those predictions which are already exists as local branches
-                and not local_branches:contains(branch)
+                and not local_branches_idx[branch]
         end)
 
     -- if there is any refspec that matches token then:
@@ -461,26 +459,20 @@ local function __common_spec_generator_usedisplay(token, mode)
         :concat(remote_branches)
 end
 
-local function make_indexed_table(input)
-    local output = {}
-    for _, value in ipairs(input) do
-        output[value] = true
-    end
-    return output
-end
-
 -- This generator can simply return matches and rely on nosort, instead of
 -- needing to use match display filtering to prevent sorting.
 local function __common_spec_generator_nosort(token, mode)
     local git_dir = git.get_git_common_dir()
 
-    local local_branches = branches(token)
+    local refs = list_refs(git_dir)
+
+    local local_branches = filter_refs(refs, 'heads')
     local local_branches_idx = make_indexed_table(local_branches)
 
-    local remote_branches = list_remote_branches(git_dir)
+    local remote_branches = filter_refs(refs, 'remotes')
     local remote_branches_idx = make_indexed_table(remote_branches)
 
-    local predicted_branches = list_remote_branches(git_dir)
+    local predicted_branches = filter_refs(refs, 'remotes')
         :map(function (remote_branch)
             return remote_branch:match('.-/(.+)')
         end)
@@ -490,7 +482,7 @@ local function __common_spec_generator_nosort(token, mode)
         end)
     local predicted_branches_idx = make_indexed_table(predicted_branches)
 
-    local tag_names = list_tags(git_dir)
+    local tag_names = filter_refs(refs, 'tags')
 
     local function files_filter(name)
         name = path.normalise(name, '/')
@@ -590,8 +582,9 @@ local function push_branch_spec(token)
     -- * if there is no branch separator complete word with local branches
     if not s then
         -- setup display filter to prevent display '+' symbol in completion list
+        local refs = list_refs(git_dir)
         if clink_version.supports_display_filter_description then
-            local b = branches(branch_spec):map(function(branch)
+            local b = filter_refs(refs, 'heads'):map(function(branch)
                 -- append '+' to results if it was specified
                 return { match=plus_prefix and '+'..branch or branch, display=branch }
             end)
@@ -600,7 +593,7 @@ local function push_branch_spec(token)
             end)
             return b
         else
-            local b = branches(branch_spec)
+            local b = filter_refs(refs, 'heads')
             clink.match_display_filter = function ()
                 return b
             end
@@ -718,7 +711,7 @@ local stashes = function(token, _, _, builder)  -- luacheck: no unused args
 end
 
 local function tags()
-    local tag_names = list_tags()
+    local tag_names = list_refs(nil, 'tags')
     local tag_pre = color.get_clink_color('color.doskey')
     return tag_names:map(function(tag) return { match=tag, display=tag_pre..tag, type='arg' } end)
 end

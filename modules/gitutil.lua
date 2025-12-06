@@ -112,6 +112,7 @@ end
 
 ---
  -- Find out current branch
+ -- WARNING:  IS NOT COMPATIBLE WITH GIT REFTABLE!
  -- @return {nil|git branch name}
 ---
 exports.get_git_branch = function (dir)
