@@ -82,7 +82,9 @@ local function run_powershell_get_process()
         return
     end
 
-    local command = '2>&1 '..powershell_exe..' -Command "$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); get-process | format-list Id, Name, MainWindowTitle"'
+    local command = '2>&1 '..powershell_exe..' -Command "'..
+        '$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); '..
+        'get-process | format-list Id, Name, MainWindowTitle"'
 
     local matches = {}
     local name_len = 0
