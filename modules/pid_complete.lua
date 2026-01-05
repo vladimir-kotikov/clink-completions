@@ -169,7 +169,7 @@ local function pid_matches()
     for _, m in ipairs(matches) do
         if m.title then
             if use_popuplist then
-                m.description = m.description.."\t"..m.title
+                m.description = m.description.."\t\""..m.title.."\""
             else
                 local pad = string.rep(" ", name_len - m.len)
                 m.description = m.description..pad.."    "..m.title
