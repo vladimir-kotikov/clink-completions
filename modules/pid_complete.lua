@@ -75,10 +75,6 @@ local function make_file_at_path(root, rhs)
 end
 
 local function run_powershell_get_process()
-    if not clink.execute then
-        return
-    end
-
     local root = os.getenv("systemroot")
     local child = "System32\\WindowsPowerShell\\v1.0\\powershell.exe"
     local powershell_exe = make_file_at_path(root, child)
@@ -86,15 +82,13 @@ local function run_powershell_get_process()
         return
     end
 
-    local o = clink.execute('2>&1 '..powershell_exe..' -Command "get-process | format-list Id, Name, MainWindowTitle"')
-    if not o then
-        return
-    end
+    local command = '2>&1 '..powershell_exe..' -Command "$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); get-process | format-list Id, Name, MainWindowTitle"'
 
     local matches = {}
     local name_len = 0
 
-    if type(o) == "table" then
+    local f = io.popen(command, 'r')
+    if f then
         local m
         local function finish_pending()
             if m then
@@ -109,7 +103,7 @@ local function run_powershell_get_process()
                 m = nil
             end
         end
-        for _,line in ipairs(o) do
+        for line in f:lines() do
             local field, value = line:match("^(%w+)%s+:%s*(.*)$")
             if field == "Id" then
                 finish_pending()
@@ -120,6 +114,7 @@ local function run_powershell_get_process()
             end
         end
         finish_pending()
+        f:close()
     end
 
     return matches, name_len
