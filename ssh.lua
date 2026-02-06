@@ -47,17 +47,96 @@ local function extract_address(pattern, match_type, portflag)
     end
 end
 
--- read all Host entries in the user's ssh config file
-local function list_ssh_hosts(portflag)
+-- Expand glob patterns in include paths (e.g., config.d/*)
+local function expand_glob(pattern)
+    return w(os.globfiles(pattern))
+end
+
+-- Resolve include path relative to ssh directory
+local function resolve_include_path(include_path, ssh_dir)
+    if include_path:match('^~[/\\]') then
+        return path.join(clink.get_env("userprofile"), include_path:sub(2))
+    end
+    return path.join(ssh_dir, include_path)
+end
+
+-- Recursively collect hosts from a config file and its includes
+local function collect_hosts_from_file(filepath, portflag, visited)
+    visited = visited or {}
+
+    -- Normalize path for visited check
+    local normalized = path.normalise(filepath):lower()
+    if visited[normalized] then
+        return w({})
+    end
+    visited[normalized] = true
+
     local matches = w({})
-    local lines = read_lines(clink.get_env("userprofile") .. "/.ssh/config")
+    local lines = read_lines(filepath)
+    local ssh_dir = clink.get_env("userprofile") .. "/.ssh"
+
+    for _, line in ipairs(lines) do
+        line = line:gsub('(#.*)$', '')
+        local line_lower = line:lower()
+
+        -- Check for Include directive (case-insensitive)
+        local include_pattern = line_lower:match('^%s*include%s+')
+        if include_pattern then
+            local include_value = line:match('^%s*[Ii][Nn][Cc][Ll][Uu][Dd][Ee]%s+(.+)%s*$')
+            if include_value then
+                local resolved = resolve_include_path(include_value, ssh_dir)
+                -- Check if pattern contains glob characters
+                if resolved:match('[%*%?%[]') then
+                    local expanded_paths = expand_glob(resolved)
+                    for _, inc_file in ipairs(expanded_paths) do
+                        local inc_matches = collect_hosts_from_file(inc_file, portflag, visited)
+                        for _, m in ipairs(inc_matches) do
+                            table.insert(matches, m)
+                        end
+                    end
+                else
+                    local inc_matches = collect_hosts_from_file(resolved, portflag, visited)
+                    for _, m in ipairs(inc_matches) do
+                        table.insert(matches, m)
+                    end
+                end
+            end
+        end
+
+        -- Check for Host directive (case-insensitive)
+        local host_match = line_lower:match('^%s*host%s+')
+        if host_match then
+            local host = line:match('^%s*[Hh][Oo][Ss][Tt]%s+(.*)$')
+            if host then
+                for pattern in host:gmatch('([^%s]+)') do
+                    if not pattern:match('[%*%?/!]') then
+                        table.insert(matches, extract_address(pattern, 'alias', portflag))
+                    end
+                end
+            end
+        end
+    end
+
+    return matches
+end
+
+-- read all Host entries in the user's ssh config file and included files
+local function list_ssh_hosts(portflag)
+    local config_path = clink.get_env("userprofile") .. "/.ssh/config"
+    if path.normalise then
+        return collect_hosts_from_file(config_path, portflag):filter()
+    end
+
+    -- Fallback for older Clink versions without path.normalise
+    local matches = w({})
+    local lines = read_lines(config_path)
     for _, line in ipairs(lines) do
         line = line:gsub('(#.*)$', '')
         local host = line:match('^Host%s+(.*)$')
         if host then
-            for pattern in host:gmatch('([^%s]+)') do
-                if not pattern:match('[%*%?/!]') then
-                    table.insert(matches, extract_address(pattern, 'alias', portflag))
+            for host_pattern in host:gmatch('([^%s]+)') do
+                if not host_pattern:match('[%*%?/!]') then
+                    table.insert(matches, extract_address(host_pattern, 'alias', portflag))
                 end
             end
         end
