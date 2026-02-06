@@ -49,30 +49,15 @@ end
 
 -- Expand glob patterns in include paths (e.g., config.d/*)
 local function expand_glob(pattern)
-    local expanded_paths = w({})
-    -- Extract directory before converting to backslashes
-    local dir = pattern:match('^(.*/)[^/]*$') or ''
-    -- Use dir command to expand glob patterns on Windows
-    local f = io.popen('2>nul dir /b "' .. pattern:gsub('/', '\\') .. '"')
-    if f then
-        for line in f:lines() do
-            table.insert(expanded_paths, dir .. line)
-        end
-        f:close()
-    end
-    return expanded_paths
+    return w(os.globfiles(pattern))
 end
 
 -- Resolve include path relative to ssh directory
 local function resolve_include_path(include_path, ssh_dir)
-    -- Handle ~ prefix
     if include_path:match('^~[/\\]') then
-        include_path = clink.get_env("userprofile") .. include_path:sub(2)
-    -- Handle relative paths (not starting with / or drive letter)
-    elseif not include_path:match('^[/\\]') and not include_path:match('^%a:') then
-        include_path = ssh_dir .. '/' .. include_path
+        return path.join(clink.get_env("userprofile"), include_path:sub(2))
     end
-    return include_path
+    return path.join(ssh_dir, include_path)
 end
 
 -- Recursively collect hosts from a config file and its includes
@@ -80,7 +65,7 @@ local function collect_hosts_from_file(filepath, portflag, visited)
     visited = visited or {}
 
     -- Normalize path for visited check
-    local normalized = filepath:gsub('\\', '/'):lower()
+    local normalized = path.normalise(filepath):lower()
     if visited[normalized] then
         return w({})
     end
@@ -138,7 +123,25 @@ end
 -- read all Host entries in the user's ssh config file and included files
 local function list_ssh_hosts(portflag)
     local config_path = clink.get_env("userprofile") .. "/.ssh/config"
-    return collect_hosts_from_file(config_path, portflag):filter()
+    if path.normalise then
+        return collect_hosts_from_file(config_path, portflag):filter()
+    end
+
+    -- Fallback for older Clink versions without path.normalise
+    local matches = w({})
+    local lines = read_lines(config_path)
+    for _, line in ipairs(lines) do
+        line = line:gsub('(#.*)$', '')
+        local host = line:match('^Host%s+(.*)$')
+        if host then
+            for host_pattern in host:gmatch('([^%s]+)') do
+                if not host_pattern:match('[%*%?/!]') then
+                    table.insert(matches, extract_address(host_pattern, 'alias', portflag))
+                end
+            end
+        end
+    end
+    return matches:filter()
 end
 
 local function list_known_hosts(portflag)
