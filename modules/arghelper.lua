@@ -68,6 +68,7 @@
 --      local arghelper = require("arghelper")
 --      arghelper.make_arg_hider_func()
 --      arghelper.make_one_letter_concat_classifier_func()
+--      arghelper.make_exflags()
 --
 -- arghelper.make_arg_hider_func()
 --
@@ -132,8 +133,40 @@
 --      when passing a table into argmatcher:_addexflags().  That will
 --      automatically use make_one_letter_concat_classifier_func().
 --
+-- arghelper.make_exflags()
+--
+--      Use the arghelper.make_exflags() function to create and return a table
+--      suitable for passing to _addexflags(), from an input table using a new
+--      format that provides both short and long flags together.
+--
+--          local arghelper = require("arghelper")
+--
+--          local files = clink.argmatcher():addarg(clink.filematches)
+--
+--          clink.argmatcher("foo")
+--          :_addexflags(arghelper.make_exflags({
+--              -- Simple example with both short and long flags.
+--              { "-a", "--all",                        "Both short and long flags" },
+--              -- Simple examples with only short or long flags.
+--              { nil, "--long",                        "Only a long flag" },
+--              { "-s", nil,                            "Only a short flag" },
+--              -- Arguments may be specified, and are linked with the short
+--              -- and/or long flags, whichever are provided.
+--              { "-f", "--file", files, " <file>",     "Argument is applied to both -f and --file" },
+--          }))
+--
+--      All of the fields like opteq=, hide=, hide_unless=, nosort=,
+--      concat_one_letter_flags=, adjacent_one_letter_flags=, etc are also
+--      supported here in the same ways as usual.
+--
 --------------------------------------------------------------------------------
 -- Changes:
+--
+--  2026/02/14
+--      - `arghelper.make_exflags()` makes a table for _addexflags() from a
+--        table using a new format that can specify both short and long flags
+--        together, and automatically links the same argument argmatcher, if
+--        provided.
 --
 --  2024/09/16
 --      - Support for `hint="text"` and `hint=func` in _addexarg() and
@@ -187,8 +220,19 @@ if not clink then
 end
 
 local tmp = clink.argmatcher and clink.argmatcher() or clink.arg.new_parser()
-local meta = getmetatable(tmp)
+local meta_parser = getmetatable(tmp)
 local interop = {}
+
+local tmp_link = "link"..tmp
+local meta_link = getmetatable(tmp_link)
+
+local function is_parser(x)
+    return meta_parser and getmetatable(x) == meta_parser
+end
+
+local function is_link(x)
+    return meta_link and getmetatable(x) == meta_link
+end
 
 local function condense_stack_trace(skip_levels)
     local append
@@ -397,6 +441,69 @@ local function make_one_letter_concat_onalias_func(parser)
     return func
 end
 
+local function apply_list_field_names(dst, src)
+    dst.delayinit = src.delayinit
+    dst.fromhistory = src.fromhistory
+    dst.hint = src.hint
+    dst.loopchars = src.loopchars
+    dst.nosort = src.nosort
+    dst.onadvance = src.onadvance
+    dst.onalias = src.onalias
+    dst.onlink = src.onlink
+    dst.onarg = src.onarg
+end
+
+local function apply_element_field_names(dst, src)
+    dst.hide = src.hide
+    dst.hide_unless = src.hide_unless
+    dst.opteq = src.opteq
+end
+
+local flagdesc = (tonumber(os.getenv("CLINK_COMPLETIONS_FLAGDESC") or "2") or 2)
+local function maybe_desc(f, i_flag, i_desc)
+    if f[i_flag] then
+        assert(type(f[i_flag]) == "string")
+        local threshold = f[i_flag]:find("^%-%-") and 2 or 1
+        if flagdesc >= threshold and type(f[i_desc]) == "string" then
+            return f[i_desc]
+        end
+    end
+end
+
+local function valid_str(s)
+    return type(s) == "string" and s ~= ""
+end
+
+local function make_exflags(src)
+    local exflags = {}
+    for _, f in ipairs(src) do
+        local shrt, long
+        if not is_parser(f[3]) then
+            if valid_str(f[1]) then shrt = { f[1], maybe_desc(f, 1, 3) } end
+            if valid_str(f[2]) then long = { f[2], maybe_desc(f, 2, 3) } end
+        elseif f[5] then    -- Empty string is valid and meaningful at f[5].
+            if valid_str(f[1]) then shrt = { f[1]..f[3], f[4], maybe_desc(f, 1, 5) } end
+            if valid_str(f[2]) then long = { f[2]..f[3], f[4], maybe_desc(f, 2, 5) } end
+        elseif f[4] then    -- Empty string is valid and meaningful at f[4].
+            if valid_str(f[1]) then shrt = { f[1]..f[3], f[4], "" } end
+            if valid_str(f[2]) then long = { f[2]..f[3], f[4], "" } end
+        else
+            if valid_str(f[1]) then shrt = { f[1]..f[3] } end
+            if valid_str(f[2]) then long = { f[2]..f[3] } end
+        end
+        if shrt then
+            apply_element_field_names(shrt, f)
+            table.insert(exflags, shrt)
+        end
+        if long then
+            apply_element_field_names(long, f)
+            table.insert(exflags, long)
+        end
+    end
+    apply_list_field_names(exflags, src)
+    return exflags
+end
+
 if not tmp.addarg then
     interop.addarg = function(parser, ...)
         -- Extra braces to make sure exactly one argument position is added.
@@ -444,17 +551,6 @@ if not tmp.setendofflags then
 end
 
 if not tmp._addexflags or not tmp._addexarg then
-    local link = "link"..tmp
-    local meta_link = getmetatable(link)
-
-    local function is_parser(x)
-        return getmetatable(x) == meta
-    end
-
-    local function is_link(x)
-        return getmetatable(x) == meta_link
-    end
-
     local function onarg_hide_unless(arg_index, word, word_index, line_state, user_data) -- luacheck: no unused
         if arg_index == 0 then
             local present = user_data.present
@@ -637,15 +733,7 @@ if not tmp._addexflags or not tmp._addexarg then
                 table.insert(list, elm)
             end
         end
-        list.delayinit = tbl.delayinit
-        list.fromhistory = tbl.fromhistory
-        list.hint = tbl.hint
-        list.loopchars = tbl.loopchars
-        list.nosort = tbl.nosort
-        list.onadvance = tbl.onadvance
-        list.onalias = tbl.onalias
-        list.onlink = tbl.onlink
-        list.onarg = tbl.onarg
+        apply_list_field_names(list, tbl)
         if hide_unless then
             local any = false
             for _,_ in pairs(hide_unless) do -- luacheck: ignore 512
@@ -732,8 +820,8 @@ end
 -- If nothing was missing, then no interop functions got added, and the meta
 -- table doesn't need to be modified.
 for _,_ in pairs(interop) do -- luacheck: ignore 512
-    local old_index = meta.__index
-    meta.__index = function(parser, key)
+    local old_index = meta_parser.__index
+    meta_parser.__index = function(parser, key)
         local value = rawget(interop, key)
         if value then
             return value
@@ -741,7 +829,7 @@ for _,_ in pairs(interop) do -- luacheck: ignore 512
             return rawget(parser, key)
         elseif type(old_index) == "function" then
             return old_index(parser, key)
-        elseif old_index == meta then
+        elseif old_index == meta_parser then
             return rawget(old_index, key)
         else
             return old_index[key]
@@ -754,6 +842,7 @@ local exports = {
     make_arg_hider_func = make_arg_hider_func,
     make_one_letter_concat_classifier_func = make_one_letter_concat_classifier_func,
     make_one_letter_concat_onalias_func = make_one_letter_concat_onalias_func,
+    make_exflags = make_exflags,
 }
 
 return exports
