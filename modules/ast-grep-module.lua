@@ -1,7 +1,8 @@
 -- Completions for ast-grep -- "Find Code by Syntax"
 -- https://ast-grep.github.io
 
-require("arghelper")
+local arghelper = require("arghelper")
+local make_exflags = arghelper.make_exflags
 
 --      set CLINK_COMPLETIONS_FLAGDESC={NUMBER}
 --              0 -> no descriptions for flags
@@ -9,54 +10,6 @@ require("arghelper")
 --              2 -> (DEFAULT) descriptions for short and long flags
 
 local kind_playground_url = "https://ast-grep.github.io/playground.html"
-
-local flagdesc = (tonumber(os.getenv("CLINK_COMPLETIONS_FLAGDESC") or "2") or 2)
-local function maybe_desc(a, i, j)
-    if a[i] then
-        assert(type(a[i]) == "string")
-        local threshold = a[i]:find("^%-%-") and 2 or 1
-        if flagdesc >= threshold then
-            return a[j]
-        end
-    end
-end
-
-local tmp_parser = clink.argmatcher and clink.argmatcher() or clink.arg.new_parser()
-local meta_parser = getmetatable(tmp_parser)
-local function is_parser(x)
-    return getmetatable(x) == meta_parser
-end
-
---[[
-local tmp_link = "link"..tmp_parser
-local meta_link = getmetatable(tmp_link)
-local function is_link(x)
-    return getmetatable(x) == meta_link
-end
---]]
-
-local function make_exflags(src)
-    local exflags = {}
-    for _, f in ipairs(src) do
-        local shrt, long
-        if not is_parser(f[3]) then
-            if f[1] then shrt = { f[1], maybe_desc(f, 1, 3) } end
-            if f[2] then long = { f[2], maybe_desc(f, 2, 3) } end
-        elseif f[5] then
-            if f[1] then shrt = { f[1]..f[3], f[4], maybe_desc(f, 1, 5) } end
-            if f[2] then long = { f[2]..f[3], f[4], maybe_desc(f, 2, 5) } end
-        elseif f[4] then
-            if f[1] then shrt = { f[1]..f[3], f[4], "" } end
-            if f[2] then long = { f[2]..f[3], f[4], "" } end
-        elseif f[3] then
-            if f[1] then shrt = { f[1]..f[3] } end
-            if f[2] then long = { f[2]..f[3] } end
-        end
-        if shrt then table.insert(exflags, shrt) end
-        if long then table.insert(exflags, long) end
-    end
-    return exflags
-end
 
 local function filterfilematches(match_word, ext)
     ext = "."..ext:gsub("^%.+", "")
