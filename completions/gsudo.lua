@@ -4,59 +4,62 @@ if not clink_version.supports_argmatcher_chaincommand then
     return
 end
 
-require('arghelper')
+local ah = require('arghelper')
 
 -- luacheck: no max line length
 -- luacheck: globals string.equalsi
 
+local dirs = clink.argmatcher():addarg(clink.dirmatches)
 local integrity = clink.argmatcher():addarg({'Untrusted', 'Low', 'Medium', 'MediumPlus', 'High', 'System' })
 local username = clink.argmatcher():addarg({fromhistory=true})
 local loglevel = clink.argmatcher():addarg({'All', 'Debug', 'Info', 'Warning', 'Error', 'None'})
 
 clink.argmatcher('gsudo')
 :chaincommand()
-:_addexflags({
-    { hide=true, '-?' },
-    { hide=true, '-h' },
-    {            '--help',                                  'Show help text' },
-    { hide=true, '-v' },
-    {            '--version',                               'Show version info' },
+:_addexflags(ah.make_exflags({
+    { hide=true, '-?', nil,                         'Show help text' },
+    { '-h', '--help',                               'Show help text' },
+    { '-v', '--version',                            'Show version info' },
     -- New Window options:
-    { hide=true, '-n' },
-    {            '--new',                                   'Starts the command in a new console (and returns immediately)' },
-    { hide=true, '-w' },
-    {            '--wait',                                  'When in new console, wait for the command to end and return the exitcode' },
-    {            '--keepShell',                             'Keep elevated shell open after running {command}' },
-    {            '--keepWindow',                            'When in new console, ask for keypress before closing the console' },
-    {            '--close',                                 'Override settings and always close new window at end' },
+    { '-n', '--new',                                'Starts the command in a new console (and returns immediately)' },
+    { '-w', '--wait',                               'When in new console, wait for the command to end and return the exitcode' },
+    { nil, '--keepShell',                           'Keep elevated shell open after running {command}' },
+    { nil, '--keepWindow',                          'When in new console, ask for keypress before closing the console' },
+    { nil, '--close',                               'Override settings and always close new window at end' },
     -- Security options:
-    { hide=true, '-i'..integrity },
-    {            '--integrity'..integrity,  ' {v}',         'Run with specified integrity level' },
-    { hide=true, '-u'..username },
-    {            '--user'..username,        ' {username}',  'Run as the specified user. Asks for password. For local admins shows UAC unless \'-i Medium\'' },
-    { hide=true, '-s' },
-    {            '--system',                                'Run as Local System account (NT AUTHORITY\\SYSTEM)' },
-    {            '--ti',                                    'Run as member of NT SERVICE\\TrustedInstaller group' },
-    { hide=true, '-k' },
-    {            '--reset-timestamp',                       'Kills all cached credentials. The next time gsudo is run a UAC popup will be appear' },
+    { '-i', '--integrity', integrity, ' {v}',       'Run with specified integrity level' },
+    { '-u', '--user', username, ' {username}',      'Run as the specified user. Asks for password. For local admins shows UAC unless \'-i Medium\'' },
+    { '-s', '--system',                             'Run as Local System account (NT AUTHORITY\\SYSTEM)' },
+    { nil, '--ti',                                  'Run as member of NT SERVICE\\TrustedInstaller group' },
+    { '-k', '--reset-timestamp',                    'Kills all cached credentials. The next time gsudo is run a UAC popup will be appear' },
     -- Shell related options:
-    { hide=true, '-d' },
-    {            '--direct',                                'Skip Shell detection. Assume CMD shell or CMD {command}' },
+    { '-d', '--direct',                             'Skip Shell detection. Assume CMD shell or CMD {command}' },
     -- Other options:
-    {            '--loglevel'..loglevel,    ' {val}',       'Set minimum log level to display' },
-    {            '--debug',                                 'Enable debug mode' },
-    {            '--copyns',                                'Connect network drives to the elevated user. Warning: Interactively asks for credentials' },
+    { nil, '--loglevel', loglevel, ' {val}',        'Set minimum log level to display' },
+    { nil, '--debug',                               'Enable debug mode' },
+    { nil, '--copyns',                              'Connect network drives to the elevated user. Warning: Interactively asks for credentials' },
+    { nil, '--copyev',                              '(deprecated) Copy all environment variables to the elevated process' },
+    { '-D', '--chdir', dirs, ' {dir}',              'Change the current directory to {dir} before running the command' },
     -- Configuration:
-    --           gsudo config {key} [--global]              Affects all users (overrides user settings)
+    --  gsudo config                                Show current configuration settings & values
+    --  gsudo config {key} [--global] [value]       Read or write a configuration setting
+    --  gsudo config {key} [--global] --reset       Reset a specific setting to its default value
+    --  gsudo config --reset-all                    Reset all user and global settings to their default values
+    --  --global                                    Applies to all users (overrides user-specific settings)
     -- From PowerShell:
-    --{ ScriptBlock }     Must be wrapped in { curly brackets }
-    {            '--loadProfile',                           'When elevating PowerShell commands, load user profile' },
+    --  { ScriptBlock }                             Must be wrapped in { curly brackets }
+    { nil, '--loadProfile',                         'When elevating PowerShell commands, load user profile' },
+    -- Compatibility with ms-sudo:
+    { nil, '--inline',                              'Run in the current terminal' },
+    { nil, '--disable-input',                       'Run in the current terminal, with input to the target application disabled' },
+    { '-E', '--preserve-env',                       'Pass the current environment variables to the command' },
+    { '-N', '--new-window',                         'Use a new window for the command' },
+    { hide=true, '-V', nil,                         'Show version info' },
     -- Deprecated:
-    { hide=true, '--copyev',                                '(deprecated) Copy all environment variables to the elevated process' },
     { hide=true, '--attached' },
     { hide=true, '--piped' },
     { hide=true, '--vt' },
-})
+}))
 
 local gen = clink.generator(1)
 
@@ -110,15 +113,39 @@ function gen:generate(line_state, match_builder) -- luacheck: no unused
                 match_builder:addmatch({
                     match = '--global',
                     description = 'Affects all users (overrides user settings)',
-                    type = 'word',
+                    type = 'flag',
                 })
             end
         end
         return true
     elseif nw == 'cache' then
-        match_builder:addmatches({'on', 'off', 'help'}, 'arg')
+        match_builder:addmatches({
+            'on', 'off', 'help'
+        }, 'arg')
         return true
     elseif nw == 'status' then
+        local wc = ls:getwordcount()
+        if wc == nwi + 1 then
+            local info = ls:getwordinfo(wc)
+            local tocursor = ls:getline():sub(info.offset, ls:getcursor() - 1)
+            if tocursor == '-' or tocursor:match('^%-%-') then
+                match_builder:addmatch({
+                    match = '--json',
+                    description = 'Use JSON format for output',
+                    type = 'flag',
+                })
+            end
+        elseif wc == nwi + 2 then
+            local info = ls:getwordinfo(wc)
+            local tocursor = ls:getline():sub(info.offset, ls:getcursor() - 1)
+            if tocursor == '-' or tocursor:match('^%-%-') then
+                match_builder:addmatch({
+                    match = '--no-output',
+                    description = 'Set exit code but do not print output',
+                    type = 'flag',
+                })
+            end
+        end
         return true
     end
 end
@@ -141,15 +168,24 @@ function clf:classify(commands) -- luacheck: no unused
                 end
                 info = ls:getwordinfo(nwi + (ccw and 2 or 1))
             end
-            if info then
-                endinfo = ls:getwordinfo(ls:getwordcount())
-                c.classifications:applycolor(info.offset, endinfo.offset + endinfo.length - info.offset, none)
-            end
             c.classifications:classifyword(nwi, 'a', true)
             if nw == 'cache' and ccw then
                 c.classifications:classifyword(nwi + 1, 'a', true)
             elseif nw == 'config' and ls:getword(nwi + 2) == '--global' then
                 c.classifications:classifyword(nwi + 2, 'f', true)
+            elseif nw == 'status' then
+                info = ls:getwordinfo(nwi + 2)
+                for k = 1, 2 do
+                    ccw = ls:getword(nwi + k)
+                    if ccw == '--json' or ccw == '--no-output' then
+                        info = ls:getwordinfo(nwi + k + 1)
+                        c.classifications:classifyword(nwi + k, 'f', true)
+                    end
+                end
+            end
+            if info then
+                endinfo = ls:getwordinfo(ls:getwordcount())
+                c.classifications:applycolor(info.offset, endinfo.offset + endinfo.length - info.offset, none)
             end
         end
     end
