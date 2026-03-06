@@ -793,7 +793,7 @@ local placeholder_required_arg = parser({})
 -- collect from history separately.
 local abbrev_lengths = parser({5, 6, 8, 10, 12, 16, 20, 24, 32, 40})
 local batch_format_arg = parser({fromhistory=true, "%(objectname)", "%(objecttype)", "%(objectsize)", "%(objectsize:disk)", "%(deltabase)", "%(rest)"})
-local branches_args = parser({branches, hint="branch"}):loop(1)
+local branches_args = parser({branches, argexpected.."branch"}):loop(1)
 local clone_filter_arg = parser({fromhistory=true})
 local color_opts = parser({"true", "false", "always"})
 local commit_trailer_arg = parser({fromhistory=true})
@@ -1228,7 +1228,7 @@ local untracked_flags = {
 
 local add_parser = parser()
 :setendofflags()
-:addarg({add_spec_generator, hint="pathspec"}):loop()
+:addarg({add_spec_generator, hint=argexpected.."pathspec"}):loop()
 :_addexflags({
     concat_one_letter_flags=true,
     help_flags,
@@ -1305,7 +1305,7 @@ local apply_parser = parser()
 
 local blame_parser = parser()
 :setendofflags()
-:addarg({file_matches, hint="file"})
+:addarg({file_matches, hint=argexpected.."file"})
 :_addexflags({
     concat_one_letter_flags=true,
     help_flags,
