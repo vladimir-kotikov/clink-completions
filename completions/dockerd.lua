@@ -5,18 +5,10 @@
 
 -- luacheck: no max line length
 
-local function try_require(module)
-    local r
-    pcall(function() r = require(module) end)
-    return r
-end
-
-try_require("arghelper")
-
 --------------------------------------------------------------------------------
 -- Value matchers for flags that accept arguments.
 
-local log_levels = clink.argmatcher():addarg({"debug", "info", "warn", "error", "fatal"})
+local log_levels = clink.argmatcher():addarg("debug", "info", "warn", "error", "fatal")
 local log_drivers = clink.argmatcher():addarg({
     "none", "local", "json-file", "syslog", "journald", "gelf",
     "fluentd", "awslogs", "splunk", "etwlogs", "gcplogs", "logentries",
@@ -24,11 +16,14 @@ local log_drivers = clink.argmatcher():addarg({
 local storage_drivers = clink.argmatcher():addarg({
     "overlay2", "fuse-overlayfs", "btrfs", "zfs", "vfs",
 })
-local cgroup_drivers = clink.argmatcher():addarg({"cgroupfs", "systemd", "none"})
-local seccomp_profiles = clink.argmatcher():addarg(clink.filematches)
-local empty_arg = clink.argmatcher():addarg({})
+local empty_arg = clink.argmatcher():addarg()
 local file_matcher = clink.argmatcher():addarg(clink.filematches)
 local dir_matcher = clink.argmatcher():addarg(clink.dirmatches)
+local seccomp_profiles = file_matcher
+
+-- REVIEW:  There seems to be no such flag as --cgroup-driver.  Documentation
+-- says it's configured via `dockerd --exec-opt native.cgroupdriver=VALUE`.
+--local cgroup_drivers = clink.argmatcher():addarg("cgroupfs", "systemd", "none")
 
 --------------------------------------------------------------------------------
 -- Main argmatcher.
@@ -43,6 +38,8 @@ dockerd:adddescriptions({
     ["-b"]                          = { " string", "Attach containers to a network bridge" },
     ["--bridge"]                    = { " string", "Attach containers to a network bridge" },
     ["--bip"]                       = { " string", "Specify network bridge IP" },
+    -- REVIEW:  No such flag?  See note further above.
+    --["--cgroup-driver"]             = { " string", "???" },
     ["--cgroup-parent"]             = { " string", "Set parent cgroup for all containers" },
     ["--config-file"]               = { " string", "Daemon configuration file" },
     ["--containerd"]                = { " string", "containerd grpc address" },
@@ -137,6 +134,8 @@ dockerd:addflags({
     "-b"                                .. empty_arg,
     "--bridge"                          .. empty_arg,
     "--bip"                             .. empty_arg,
+    -- REVIEW:  No such flag?  See note further above.
+    --"--cgroup-driver"                   .. cgroup_drivers,
     "--cgroup-parent"                   .. empty_arg,
     "--config-file"                     .. file_matcher,
     "--containerd"                      .. empty_arg,
@@ -221,5 +220,4 @@ dockerd:addflags({
     "-v",
     "--version",
     "--validate",
-    "--cgroup-driver"                   .. cgroup_drivers,
 })

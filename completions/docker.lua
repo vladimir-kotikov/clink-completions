@@ -5,15 +5,9 @@
 
 -- luacheck: no max line length
 
-local function try_require(module)
-    local r
-    pcall(function() r = require(module) end)
-    return r
-end
-
-try_require("arghelper")
-
-local empty_arg = clink.argmatcher():addarg({})
+local empty_arg = clink.argmatcher():addarg()
+local file_arg = clink.argmatcher():addarg(clink.filematches)
+local dir_arg = clink.argmatcher():addarg(clink.dirmatches)
 
 --------------------------------------------------------------------------------
 -- Dynamic completions via docker commands.
@@ -116,12 +110,16 @@ local log_drivers = clink.argmatcher():addarg({
     "fluentd", "awslogs", "splunk", "etwlogs", "gcplogs", "logentries",
 })
 
+local log_levels = clink.argmatcher():addarg({
+    "debug", "info", "warn", "error", "fatal",
+})
+
 local restart_policies = clink.argmatcher():addarg({
     "no", "always", "on-failure", "unless-stopped",
 })
 
-local network_modes = clink.argmatcher():addarg({
-    "bridge", "host", "none", "container:",
+local network_drivers = clink.argmatcher():addarg({
+    "bridge", "host", "overlay", "macvlan", "none",
 })
 
 local pull_policies = clink.argmatcher():addarg({
@@ -137,28 +135,42 @@ local format_matcher = clink.argmatcher():addarg({
     "table", "json",
 })
 
+local platform_matcher = clink.argmatcher():addarg({
+    "linux/amd64", "linux/arm64", "linux/arm/v7",
+})
+
+local isolation_matcher = clink.argmatcher():addarg({
+    "default", "process", "hyperv",
+})
+
+local containers_matcher = clink.argmatcher():addarg(get_containers)
+local running_containers_matcher = clink.argmatcher():addarg(get_running_containers)
+local networks_matcher = clink.argmatcher():addarg(get_networks)
+local contexts_matcher = clink.argmatcher():addarg(get_contexts)
+local compose_services_matcher = clink.argmatcher():addarg(get_compose_services)
+
 --------------------------------------------------------------------------------
 -- Subcommand parsers.
 
 -- docker container
 local container_attach = clink.argmatcher()
-    :addarg({ get_running_containers })
+    :addarg(get_running_containers)
     :addflags("--detach-keys", "--no-stdin", "--sig-proxy")
 
 local container_commit = clink.argmatcher()
-    :addarg({ get_containers })
+    :addarg(get_containers)
     :addflags("-a" .. empty_arg, "--author" .. empty_arg,
               "-c" .. empty_arg, "--change" .. empty_arg,
               "-m" .. empty_arg, "--message" .. empty_arg,
               "-p", "--pause")
 
 local container_cp = clink.argmatcher()
-    :addarg({ get_containers })
+    :addarg(get_containers)
     :addflags("-a", "--archive", "-L", "--follow-link", "-q", "--quiet")
 
 local container_create = clink.argmatcher()
-    :addarg({ get_images })
-    :addflags(
+    :addarg(get_images)
+    :addflags({
         "--add-host" .. empty_arg,
         "--annotation" .. empty_arg,
         "--attach", "-a",
@@ -166,8 +178,8 @@ local container_create = clink.argmatcher()
         "--cap-add" .. empty_arg,
         "--cap-drop" .. empty_arg,
         "--cgroup-parent" .. empty_arg,
-        "--cgroupns" .. clink.argmatcher():addarg({"host", "private"}),
-        "--cidfile" .. clink.argmatcher():addarg(clink.filematches),
+        "--cgroupns" .. clink.argmatcher():addarg("host", "private"),
+        "--cidfile" .. file_arg,
         "--cpu-count" .. empty_arg,
         "--cpu-percent" .. empty_arg,
         "--cpu-period" .. empty_arg,
@@ -191,9 +203,9 @@ local container_create = clink.argmatcher()
         "--domainname" .. empty_arg,
         "--entrypoint" .. empty_arg,
         "-e" .. empty_arg, "--env" .. empty_arg,
-        "--env-file" .. clink.argmatcher():addarg(clink.filematches),
+        "--env-file" .. file_arg,
         "--expose" .. empty_arg,
-        "--gpus" .. clink.argmatcher():addarg({"all"}),
+        "--gpus" .. clink.argmatcher():addarg("all"),
         "--group-add" .. empty_arg,
         "--health-cmd" .. empty_arg,
         "--health-interval" .. empty_arg,
@@ -209,11 +221,11 @@ local container_create = clink.argmatcher()
         "--ip" .. empty_arg,
         "--ip6" .. empty_arg,
         "--ipc" .. empty_arg,
-        "--isolation" .. clink.argmatcher():addarg({"default", "process", "hyperv"}),
+        "--isolation" .. isolation_matcher,
         "--kernel-memory" .. empty_arg,
         "-l" .. empty_arg, "--label" .. empty_arg,
-        "--label-file" .. clink.argmatcher():addarg(clink.filematches),
-        "--link" .. clink.argmatcher():addarg({ get_containers }),
+        "--label-file" .. file_arg,
+        "--link" .. containers_matcher,
         "--link-local-ip" .. empty_arg,
         "--log-driver" .. log_drivers,
         "--log-opt" .. empty_arg,
@@ -224,14 +236,14 @@ local container_create = clink.argmatcher()
         "--memory-swappiness" .. empty_arg,
         "--mount" .. empty_arg,
         "--name" .. empty_arg,
-        "--network" .. clink.argmatcher():addarg({ get_networks }),
+        "--network" .. networks_matcher,
         "--network-alias" .. empty_arg,
         "--no-healthcheck",
         "--oom-kill-disable",
         "--oom-score-adj" .. empty_arg,
-        "--pid" .. clink.argmatcher():addarg({"host"}),
+        "--pid" .. clink.argmatcher():addarg("host"),
         "--pids-limit" .. empty_arg,
-        "--platform" .. clink.argmatcher():addarg({"linux/amd64", "linux/arm64", "linux/arm/v7"}),
+        "--platform" .. platform_matcher,
         "--privileged",
         "-p" .. empty_arg, "--publish" .. empty_arg,
         "-P", "--publish-all",
@@ -252,18 +264,18 @@ local container_create = clink.argmatcher()
         "-t", "--tty",
         "--ulimit" .. empty_arg,
         "-u" .. empty_arg, "--user" .. empty_arg,
-        "--userns" .. clink.argmatcher():addarg({"host"}),
+        "--userns" .. clink.argmatcher():addarg("host"),
         "--uts" .. empty_arg,
         "-v" .. empty_arg, "--volume" .. empty_arg,
         "--volume-driver" .. empty_arg,
-        "--volumes-from" .. clink.argmatcher():addarg({ get_containers }),
-        "-w" .. empty_arg, "--workdir" .. empty_arg
-    )
+        "--volumes-from" .. containers_matcher,
+        "-w" .. empty_arg, "--workdir" .. empty_arg,
+    })
 
 -- docker run reuses container_create flags plus -d/--detach
 local container_run = clink.argmatcher()
-    :addarg({ get_images })
-    :addflags(
+    :addarg(get_images)
+    :addflags({
         "-d", "--detach",
         "--add-host" .. empty_arg,
         "--annotation" .. empty_arg,
@@ -272,8 +284,8 @@ local container_run = clink.argmatcher()
         "--cap-add" .. empty_arg,
         "--cap-drop" .. empty_arg,
         "--cgroup-parent" .. empty_arg,
-        "--cgroupns" .. clink.argmatcher():addarg({"host", "private"}),
-        "--cidfile" .. clink.argmatcher():addarg(clink.filematches),
+        "--cgroupns" .. clink.argmatcher():addarg("host", "private"),
+        "--cidfile" .. file_arg,
         "--cpu-count" .. empty_arg,
         "--cpu-percent" .. empty_arg,
         "--cpu-period" .. empty_arg,
@@ -297,9 +309,9 @@ local container_run = clink.argmatcher()
         "--domainname" .. empty_arg,
         "--entrypoint" .. empty_arg,
         "-e" .. empty_arg, "--env" .. empty_arg,
-        "--env-file" .. clink.argmatcher():addarg(clink.filematches),
+        "--env-file" .. file_arg,
         "--expose" .. empty_arg,
-        "--gpus" .. clink.argmatcher():addarg({"all"}),
+        "--gpus" .. clink.argmatcher():addarg("all"),
         "--group-add" .. empty_arg,
         "--health-cmd" .. empty_arg,
         "--health-interval" .. empty_arg,
@@ -315,11 +327,11 @@ local container_run = clink.argmatcher()
         "--ip" .. empty_arg,
         "--ip6" .. empty_arg,
         "--ipc" .. empty_arg,
-        "--isolation" .. clink.argmatcher():addarg({"default", "process", "hyperv"}),
+        "--isolation" .. isolation_matcher,
         "--kernel-memory" .. empty_arg,
         "-l" .. empty_arg, "--label" .. empty_arg,
-        "--label-file" .. clink.argmatcher():addarg(clink.filematches),
-        "--link" .. clink.argmatcher():addarg({ get_containers }),
+        "--label-file" .. file_arg,
+        "--link" .. containers_matcher,
         "--link-local-ip" .. empty_arg,
         "--log-driver" .. log_drivers,
         "--log-opt" .. empty_arg,
@@ -330,14 +342,14 @@ local container_run = clink.argmatcher()
         "--memory-swappiness" .. empty_arg,
         "--mount" .. empty_arg,
         "--name" .. empty_arg,
-        "--network" .. clink.argmatcher():addarg({ get_networks }),
+        "--network" .. networks_matcher,
         "--network-alias" .. empty_arg,
         "--no-healthcheck",
         "--oom-kill-disable",
         "--oom-score-adj" .. empty_arg,
-        "--pid" .. clink.argmatcher():addarg({"host"}),
+        "--pid" .. clink.argmatcher():addarg("host"),
         "--pids-limit" .. empty_arg,
-        "--platform" .. clink.argmatcher():addarg({"linux/amd64", "linux/arm64", "linux/arm/v7"}),
+        "--platform" .. platform_matcher,
         "--privileged",
         "-p" .. empty_arg, "--publish" .. empty_arg,
         "-P", "--publish-all",
@@ -358,57 +370,57 @@ local container_run = clink.argmatcher()
         "-t", "--tty",
         "--ulimit" .. empty_arg,
         "-u" .. empty_arg, "--user" .. empty_arg,
-        "--userns" .. clink.argmatcher():addarg({"host"}),
+        "--userns" .. clink.argmatcher():addarg("host"),
         "--uts" .. empty_arg,
         "-v" .. empty_arg, "--volume" .. empty_arg,
         "--volume-driver" .. empty_arg,
-        "--volumes-from" .. clink.argmatcher():addarg({ get_containers }),
-        "-w" .. empty_arg, "--workdir" .. empty_arg
-    )
+        "--volumes-from" .. containers_matcher,
+        "-w" .. empty_arg, "--workdir" .. empty_arg,
+    })
 
-local container_diff = clink.argmatcher():addarg({ get_containers })
+local container_diff = containers_matcher
 local container_export = clink.argmatcher()
-    :addarg({ get_containers })
-    :addflags("-o" .. clink.argmatcher():addarg(clink.filematches), "--output" .. clink.argmatcher():addarg(clink.filematches))
+    :addarg(get_containers)
+    :addflags("-o" .. file_arg, "--output" .. file_arg)
 
 local container_exec = clink.argmatcher()
-    :addarg({ get_running_containers })
-    :addflags(
+    :addarg(get_running_containers)
+    :addflags({
         "-d", "--detach",
         "--detach-keys" .. empty_arg,
         "-e" .. empty_arg, "--env" .. empty_arg,
-        "--env-file" .. clink.argmatcher():addarg(clink.filematches),
+        "--env-file" .. file_arg,
         "-i", "--interactive",
         "--privileged",
         "-t", "--tty",
         "-u" .. empty_arg, "--user" .. empty_arg,
-        "-w" .. empty_arg, "--workdir" .. empty_arg
-    )
+        "-w" .. empty_arg, "--workdir" .. empty_arg,
+    })
 
 local container_inspect = clink.argmatcher()
-    :addarg({ get_containers })
-    :addflags(
+    :addarg(get_containers)
+    :addflags({
         "-f" .. empty_arg, "--format" .. empty_arg,
-        "-s", "--size"
-    )
+        "-s", "--size",
+    })
 
 local container_kill = clink.argmatcher()
-    :addarg({ get_running_containers })
+    :addarg(get_running_containers)
     :addflags("-s" .. signal_matcher, "--signal" .. signal_matcher)
 
 local container_logs = clink.argmatcher()
-    :addarg({ get_containers })
-    :addflags(
+    :addarg(get_containers)
+    :addflags({
         "--details",
         "-f", "--follow",
         "--since" .. empty_arg,
         "--until" .. empty_arg,
         "-n" .. empty_arg, "--tail" .. empty_arg,
-        "-t", "--timestamps"
-    )
+        "-t", "--timestamps",
+    })
 
 local container_ls = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-a", "--all",
         "-f" .. empty_arg, "--filter" .. empty_arg,
         "--format" .. empty_arg,
@@ -416,61 +428,61 @@ local container_ls = clink.argmatcher()
         "-l", "--latest",
         "--no-trunc",
         "-q", "--quiet",
-        "-s", "--size"
-    )
+        "-s", "--size",
+    })
 
-local container_pause = clink.argmatcher():addarg({ get_running_containers })
-local container_unpause = clink.argmatcher():addarg({ get_containers })
+local container_pause = running_containers_matcher
+local container_unpause = containers_matcher
 
-local container_port = clink.argmatcher():addarg({ get_containers })
+local container_port = containers_matcher
 
 local container_rename = clink.argmatcher()
-    :addarg({ get_containers })
-    :addarg({})
+    :addarg(get_containers)
+    :addarg()
 
 local container_restart = clink.argmatcher()
-    :addarg({ get_containers })
-    :addflags(
+    :addarg(get_containers)
+    :addflags({
         "-s" .. signal_matcher, "--signal" .. signal_matcher,
-        "-t" .. empty_arg, "--time" .. empty_arg
-    )
+        "-t" .. empty_arg, "--time" .. empty_arg,
+    })
 
 local container_rm = clink.argmatcher()
-    :addarg({ get_containers })
+    :addarg(get_containers)
     :addflags("-f", "--force", "-l", "--link", "-v", "--volumes")
     :loop(1)
 
 local container_start = clink.argmatcher()
-    :addarg({ get_containers })
-    :addflags(
+    :addarg(get_containers)
+    :addflags({
         "-a", "--attach",
         "--detach-keys" .. empty_arg,
-        "-i", "--interactive"
-    )
+        "-i", "--interactive",
+    })
     :loop(1)
 
 local container_stats = clink.argmatcher()
-    :addarg({ get_running_containers })
-    :addflags(
+    :addarg(get_running_containers)
+    :addflags({
         "-a", "--all",
         "--format" .. empty_arg,
         "--no-stream",
-        "--no-trunc"
-    )
+        "--no-trunc",
+    })
 
 local container_stop = clink.argmatcher()
-    :addarg({ get_running_containers })
-    :addflags(
+    :addarg(get_running_containers)
+    :addflags({
         "-s" .. signal_matcher, "--signal" .. signal_matcher,
-        "-t" .. empty_arg, "--time" .. empty_arg
-    )
+        "-t" .. empty_arg, "--time" .. empty_arg,
+    })
     :loop(1)
 
-local container_top = clink.argmatcher():addarg({ get_running_containers })
+local container_top = running_containers_matcher
 
 local container_update = clink.argmatcher()
-    :addarg({ get_containers })
-    :addflags(
+    :addarg(get_containers)
+    :addflags({
         "--blkio-weight" .. empty_arg,
         "--cpu-period" .. empty_arg,
         "--cpu-quota" .. empty_arg,
@@ -484,16 +496,16 @@ local container_update = clink.argmatcher()
         "--memory-reservation" .. empty_arg,
         "--memory-swap" .. empty_arg,
         "--pids-limit" .. empty_arg,
-        "--restart" .. restart_policies
-    )
+        "--restart" .. restart_policies,
+    })
 
-local container_wait = clink.argmatcher():addarg({ get_containers }):loop(1)
+local container_wait = clink.argmatcher():addarg(get_containers):loop(1)
 
 local container_prune = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-f", "--force",
-        "--filter" .. empty_arg
-    )
+        "--filter" .. empty_arg,
+    })
 
 -- docker container
 local container_parser = clink.argmatcher()
@@ -530,7 +542,7 @@ local container_parser = clink.argmatcher()
 
 local image_build = clink.argmatcher()
     :addarg(clink.dirmatches)
-    :addflags(
+    :addflags({
         "--add-host" .. empty_arg,
         "--build-arg" .. empty_arg,
         "--cache-from" .. empty_arg,
@@ -542,18 +554,18 @@ local image_build = clink.argmatcher()
         "--cpuset-cpus" .. empty_arg,
         "--cpuset-mems" .. empty_arg,
         "--disable-content-trust",
-        "-f" .. clink.argmatcher():addarg(clink.filematches), "--file" .. clink.argmatcher():addarg(clink.filematches),
+        "-f" .. file_arg, "--file" .. file_arg,
         "--force-rm",
-        "--iidfile" .. clink.argmatcher():addarg(clink.filematches),
-        "--isolation" .. clink.argmatcher():addarg({"default", "process", "hyperv"}),
+        "--iidfile" .. file_arg,
+        "--isolation" .. isolation_matcher,
         "--label" .. empty_arg,
         "-m" .. empty_arg, "--memory" .. empty_arg,
         "--memory-swap" .. empty_arg,
-        "--network" .. clink.argmatcher():addarg({ get_networks }),
+        "--network" .. networks_matcher,
         "--no-cache",
         "-o" .. empty_arg, "--output" .. empty_arg,
-        "--platform" .. clink.argmatcher():addarg({"linux/amd64", "linux/arm64", "linux/arm/v7"}),
-        "--progress" .. clink.argmatcher():addarg({"auto", "plain", "tty", "rawjson"}),
+        "--platform" .. platform_matcher,
+        "--progress" .. clink.argmatcher():addarg("auto", "plain", "tty", "rawjson"),
         "--pull",
         "-q", "--quiet",
         "--rm",
@@ -563,83 +575,83 @@ local image_build = clink.argmatcher()
         "--ssh" .. empty_arg,
         "-t" .. empty_arg, "--tag" .. empty_arg,
         "--target" .. empty_arg,
-        "--ulimit" .. empty_arg
-    )
+        "--ulimit" .. empty_arg,
+    })
 
 local image_history = clink.argmatcher()
-    :addarg({ get_images })
-    :addflags(
+    :addarg(get_images)
+    :addflags({
         "--format" .. empty_arg,
         "-H", "--human",
         "--no-trunc",
-        "-q", "--quiet"
-    )
+        "-q", "--quiet",
+    })
 
 local image_import = clink.argmatcher()
     :addarg(clink.filematches)
-    :addflags(
+    :addflags({
         "-c" .. empty_arg, "--change" .. empty_arg,
         "-m" .. empty_arg, "--message" .. empty_arg,
-        "--platform" .. clink.argmatcher():addarg({"linux/amd64", "linux/arm64", "linux/arm/v7"})
-    )
+        "--platform" .. platform_matcher,
+    })
 
 local image_inspect = clink.argmatcher()
-    :addarg({ get_images })
+    :addarg(get_images)
     :addflags("-f" .. empty_arg, "--format" .. empty_arg)
 
 local image_load = clink.argmatcher()
-    :addflags(
-        "-i" .. clink.argmatcher():addarg(clink.filematches), "--input" .. clink.argmatcher():addarg(clink.filematches),
-        "-q", "--quiet"
-    )
+    :addflags({
+        "-i" .. file_arg, "--input" .. file_arg,
+        "-q", "--quiet",
+    })
 
 local image_ls = clink.argmatcher()
-    :addarg({ get_images })
-    :addflags(
+    :addarg(get_images)
+    :addflags({
         "-a", "--all",
         "--digests",
         "-f" .. empty_arg, "--filter" .. empty_arg,
         "--format" .. empty_arg,
         "--no-trunc",
-        "-q", "--quiet"
-    )
+        "-q", "--quiet",
+    })
 
 local image_prune = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-a", "--all",
         "-f", "--force",
-        "--filter" .. empty_arg
-    )
+        "--filter" .. empty_arg,
+    })
 
 local image_pull = clink.argmatcher()
-    :addarg({ get_images })
-    :addflags(
+    :addarg(get_images)
+    :addflags({
         "-a", "--all-tags",
         "--disable-content-trust",
-        "--platform" .. clink.argmatcher():addarg({"linux/amd64", "linux/arm64", "linux/arm/v7"}),
-        "-q", "--quiet"
-    )
+        "--platform" .. platform_matcher,
+        "-q", "--quiet",
+    })
 
 local image_push = clink.argmatcher()
-    :addarg({ get_images })
-    :addflags(
+    :addarg(get_images)
+    :addflags({
         "-a", "--all-tags",
         "--disable-content-trust",
-        "-q", "--quiet"
-    )
+        "-q", "--quiet",
+    })
 
 local image_rm = clink.argmatcher()
-    :addarg({ get_images })
+    :addarg(get_images)
     :addflags("-f", "--force", "--no-prune")
     :loop(1)
 
 local image_save = clink.argmatcher()
-    :addarg({ get_images })
-    :addflags("-o" .. clink.argmatcher():addarg(clink.filematches), "--output" .. clink.argmatcher():addarg(clink.filematches))
+    :addarg(get_images)
+    :addflags("-o" .. file_arg, "--output" .. file_arg)
 
 local image_tag = clink.argmatcher()
-    :addarg({ get_images })
-    :addarg({})
+    :addarg(get_images)
+    :addarg()
 
 local image_parser = clink.argmatcher()
     :addarg({
@@ -661,33 +673,33 @@ local image_parser = clink.argmatcher()
 -- docker volume
 
 local volume_create = clink.argmatcher()
-    :addflags(
-        "-d" .. clink.argmatcher():addarg({"local"}), "--driver" .. clink.argmatcher():addarg({"local"}),
+    :addflags({
+        "-d" .. clink.argmatcher():addarg("local"), "--driver" .. clink.argmatcher():addarg("local"),
         "--label" .. empty_arg,
         "-o" .. empty_arg, "--opt" .. empty_arg,
-        "--name" .. empty_arg
-    )
+        "--name" .. empty_arg,
+    })
 
 local volume_inspect = clink.argmatcher()
-    :addarg({ get_volumes })
+    :addarg(get_volumes)
     :addflags("-f" .. empty_arg, "--format" .. empty_arg)
 
 local volume_ls = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-f" .. empty_arg, "--filter" .. empty_arg,
         "--format" .. empty_arg,
-        "-q", "--quiet"
-    )
+        "-q", "--quiet",
+    })
 
 local volume_prune = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-a", "--all",
         "-f", "--force",
-        "--filter" .. empty_arg
-    )
+        "--filter" .. empty_arg,
+    })
 
 local volume_rm = clink.argmatcher()
-    :addarg({ get_volumes })
+    :addarg(get_volumes)
     :addflags("-f", "--force")
     :loop(1)
 
@@ -704,23 +716,23 @@ local volume_parser = clink.argmatcher()
 -- docker network
 
 local network_connect = clink.argmatcher()
-    :addarg({ get_networks })
-    :addarg({ get_containers })
-    :addflags(
+    :addarg(get_networks)
+    :addarg(get_containers)
+    :addflags({
         "--alias" .. empty_arg,
         "--driver-opt" .. empty_arg,
         "--ip" .. empty_arg,
         "--ip6" .. empty_arg,
-        "--link" .. clink.argmatcher():addarg({ get_containers }),
-        "--link-local-ip" .. empty_arg
-    )
+        "--link" .. containers_matcher,
+        "--link-local-ip" .. empty_arg,
+    })
 
 local network_create = clink.argmatcher()
-    :addflags(
+    :addflags({
         "--attachable",
         "--aux-address" .. empty_arg,
-        "-d" .. clink.argmatcher():addarg({"bridge", "host", "overlay", "macvlan", "none"}),
-        "--driver" .. clink.argmatcher():addarg({"bridge", "host", "overlay", "macvlan", "none"}),
+        "-d" .. network_drivers,
+        "--driver" .. network_drivers,
         "--gateway" .. empty_arg,
         "--ingress",
         "--internal",
@@ -730,38 +742,38 @@ local network_create = clink.argmatcher()
         "--ipv6",
         "--label" .. empty_arg,
         "-o" .. empty_arg, "--opt" .. empty_arg,
-        "--scope" .. clink.argmatcher():addarg({"local", "swarm"}),
-        "--subnet" .. empty_arg
-    )
+        "--scope" .. clink.argmatcher():addarg("local", "swarm"),
+        "--subnet" .. empty_arg,
+    })
 
 local network_disconnect = clink.argmatcher()
-    :addarg({ get_networks })
-    :addarg({ get_containers })
+    :addarg(get_networks)
+    :addarg(get_containers)
     :addflags("-f", "--force")
 
 local network_inspect = clink.argmatcher()
-    :addarg({ get_networks })
-    :addflags(
+    :addarg(get_networks)
+    :addflags({
         "-f" .. empty_arg, "--format" .. empty_arg,
-        "-v", "--verbose"
-    )
+        "-v", "--verbose",
+    })
 
 local network_ls = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-f" .. empty_arg, "--filter" .. empty_arg,
         "--format" .. empty_arg,
         "--no-trunc",
-        "-q", "--quiet"
-    )
+        "-q", "--quiet",
+    })
 
 local network_prune = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-f", "--force",
-        "--filter" .. empty_arg
-    )
+        "--filter" .. empty_arg,
+    })
 
 local network_rm = clink.argmatcher()
-    :addarg({ get_networks })
+    :addarg(get_networks)
     :addflags("-f", "--force")
     :loop(1)
 
@@ -780,29 +792,29 @@ local network_parser = clink.argmatcher()
 -- docker system
 
 local system_df = clink.argmatcher()
-    :addflags(
+    :addflags({
         "--format" .. empty_arg,
-        "-v", "--verbose"
-    )
+        "-v", "--verbose",
+    })
 
 local system_events = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-f" .. empty_arg, "--filter" .. empty_arg,
         "--format" .. empty_arg,
         "--since" .. empty_arg,
-        "--until" .. empty_arg
-    )
+        "--until" .. empty_arg,
+    })
 
 local system_info = clink.argmatcher()
     :addflags("-f" .. empty_arg, "--format" .. empty_arg)
 
 local system_prune = clink.argmatcher()
-    :addflags(
+    :addflags({
         "-a", "--all",
         "-f", "--force",
         "--filter" .. empty_arg,
-        "--volumes"
-    )
+        "--volumes",
+    })
 
 local system_parser = clink.argmatcher()
     :addarg({
@@ -817,7 +829,7 @@ local system_parser = clink.argmatcher()
 
 local buildx_build = clink.argmatcher()
     :addarg(clink.dirmatches)
-    :addflags(
+    :addflags({
         "--add-host" .. empty_arg,
         "--allow" .. empty_arg,
         "--attest" .. empty_arg,
@@ -827,17 +839,17 @@ local buildx_build = clink.argmatcher()
         "--cache-from" .. empty_arg,
         "--cache-to" .. empty_arg,
         "--cgroup-parent" .. empty_arg,
-        "-f" .. clink.argmatcher():addarg(clink.filematches), "--file" .. clink.argmatcher():addarg(clink.filematches),
-        "--iidfile" .. clink.argmatcher():addarg(clink.filematches),
+        "-f" .. file_arg, "--file" .. file_arg,
+        "--iidfile" .. file_arg,
         "--label" .. empty_arg,
         "--load",
-        "--metadata-file" .. clink.argmatcher():addarg(clink.filematches),
-        "--network" .. clink.argmatcher():addarg({ get_networks }),
+        "--metadata-file" .. file_arg,
+        "--network" .. networks_matcher,
         "--no-cache",
         "--no-cache-filter" .. empty_arg,
         "-o" .. empty_arg, "--output" .. empty_arg,
-        "--platform" .. clink.argmatcher():addarg({"linux/amd64", "linux/arm64", "linux/arm/v7"}),
-        "--progress" .. clink.argmatcher():addarg({"auto", "plain", "tty", "rawjson"}),
+        "--platform" .. platform_matcher,
+        "--progress" .. clink.argmatcher():addarg("auto", "plain", "tty", "rawjson"),
         "--provenance" .. empty_arg,
         "--pull",
         "--push",
@@ -848,8 +860,8 @@ local buildx_build = clink.argmatcher()
         "--ssh" .. empty_arg,
         "-t" .. empty_arg, "--tag" .. empty_arg,
         "--target" .. empty_arg,
-        "--ulimit" .. empty_arg
-    )
+        "--ulimit" .. empty_arg,
+    })
 
 local buildx_parser = clink.argmatcher()
     :addarg({
@@ -870,8 +882,8 @@ local buildx_parser = clink.argmatcher()
 -- docker compose
 
 local compose_build = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "--build-arg" .. empty_arg,
         "--compress",
         "--force-rm",
@@ -879,104 +891,111 @@ local compose_build = clink.argmatcher()
         "--no-cache",
         "--no-rm",
         "--parallel",
-        "--progress" .. clink.argmatcher():addarg({"auto", "plain", "tty", "quiet"}),
+        "--progress" .. clink.argmatcher():addarg("auto", "plain", "tty", "quiet"),
         "--pull",
         "-q", "--quiet",
-        "--ssh" .. empty_arg
-    )
+        "--ssh" .. empty_arg,
+    })
 
 local compose_config = clink.argmatcher()
-    :addflags(
-        "--format" .. clink.argmatcher():addarg({"yaml", "json"}),
+    :addflags({
+        "--format" .. clink.argmatcher():addarg("yaml", "json"),
         "--hash" .. empty_arg,
         "--images",
         "--no-interpolate",
         "--no-normalize",
         "--no-path-resolution",
-        "-o" .. clink.argmatcher():addarg(clink.filematches), "--output" .. clink.argmatcher():addarg(clink.filematches),
+        "-o" .. file_arg, "--output" .. file_arg,
         "--profiles",
         "-q", "--quiet",
         "--resolve-image-digests",
         "--services",
-        "--volumes"
-    )
+        "--volumes",
+    })
 
 local compose_down = clink.argmatcher()
-    :addflags(
+    :addflags({
         "--remove-orphans",
-        "--rmi" .. clink.argmatcher():addarg({"all", "local"}),
+        "--rmi" .. clink.argmatcher():addarg("all", "local"),
         "-t" .. empty_arg, "--timeout" .. empty_arg,
-        "-v", "--volumes"
-    )
+        "-v", "--volumes",
+    })
 
 local compose_exec = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "-d", "--detach",
         "-e" .. empty_arg, "--env" .. empty_arg,
         "--index" .. empty_arg,
         "-T", "--no-TTY",
         "--privileged",
         "-u" .. empty_arg, "--user" .. empty_arg,
-        "-w" .. empty_arg, "--workdir" .. empty_arg
-    )
+        "-w" .. empty_arg, "--workdir" .. empty_arg,
+    })
+
+local compose_kill = clink.argmatcher()
+    :addarg(get_compose_services)
+    :addflags({
+        "-s" .. signal_matcher,
+        "--signal" .. signal_matcher,
+    })
 
 local compose_logs = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "-f", "--follow",
         "--no-color",
         "--no-log-prefix",
         "--since" .. empty_arg,
         "-n" .. empty_arg, "--tail" .. empty_arg,
         "-t", "--timestamps",
-        "--until" .. empty_arg
-    )
+        "--until" .. empty_arg,
+    })
 
 local compose_ps = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "-a", "--all",
         "--format" .. format_matcher,
         "--filter" .. empty_arg,
         "--no-trunc",
         "-q", "--quiet",
         "--services",
-        "--status" .. clink.argmatcher():addarg({"paused", "restarting", "removing", "running", "dead", "created", "exited"})
-    )
+        "--status" .. clink.argmatcher():addarg("paused", "restarting", "removing", "running", "dead", "created", "exited"),
+    })
 
 local compose_pull = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "--ignore-buildable",
         "--ignore-pull-failures",
         "--include-deps",
         "--policy" .. pull_policies,
-        "-q", "--quiet"
-    )
+        "-q", "--quiet",
+    })
 
 local compose_push = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "--ignore-push-failures",
         "--include-deps",
-        "-q", "--quiet"
-    )
+        "-q", "--quiet",
+    })
 
 local compose_restart = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "--no-deps",
-        "-t" .. empty_arg, "--timeout" .. empty_arg
-    )
+        "-t" .. empty_arg, "--timeout" .. empty_arg,
+    })
 
 local compose_rm = clink.argmatcher()
-    :addarg({ get_compose_services })
+    :addarg(get_compose_services)
     :addflags("-f", "--force", "-s", "--stop", "-v", "--volumes")
 
 local compose_run = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "--build",
         "-d", "--detach",
         "--entrypoint" .. empty_arg,
@@ -993,27 +1012,27 @@ local compose_run = clink.argmatcher()
         "--use-aliases",
         "-u" .. empty_arg, "--user" .. empty_arg,
         "-v" .. empty_arg, "--volume" .. empty_arg,
-        "-w" .. empty_arg, "--workdir" .. empty_arg
-    )
+        "-w" .. empty_arg, "--workdir" .. empty_arg,
+    })
 
 local compose_stop = clink.argmatcher()
-    :addarg({ get_compose_services })
+    :addarg(get_compose_services)
     :addflags("-t" .. empty_arg, "--timeout" .. empty_arg)
 
 local compose_up = clink.argmatcher()
-    :addarg({ get_compose_services })
-    :addflags(
+    :addarg(get_compose_services)
+    :addflags({
         "--abort-on-container-exit",
         "--abort-on-container-failure",
         "--always-recreate-deps",
-        "--attach" .. clink.argmatcher():addarg({ get_compose_services }),
+        "--attach" .. compose_services_matcher,
         "--attach-dependencies",
         "--build",
         "-d", "--detach",
         "--dry-run",
-        "--exit-code-from" .. clink.argmatcher():addarg({ get_compose_services }),
+        "--exit-code-from" .. compose_services_matcher,
         "--force-recreate",
-        "--no-attach" .. clink.argmatcher():addarg({ get_compose_services }),
+        "--no-attach" .. compose_services_matcher,
         "--no-build",
         "--no-color",
         "--no-deps",
@@ -1028,50 +1047,50 @@ local compose_up = clink.argmatcher()
         "-t" .. empty_arg, "--timeout" .. empty_arg,
         "--timestamps",
         "-w", "--wait",
-        "--wait-timeout" .. empty_arg
-    )
+        "--wait-timeout" .. empty_arg,
+    })
     :loop(1)
 
 local compose_parser = clink.argmatcher()
-    :addflags(
-        "--ansi" .. clink.argmatcher():addarg({"never", "always", "auto"}),
+    :addflags({
+        "--ansi" .. clink.argmatcher():addarg("never", "always", "auto"),
         "--dry-run",
-        "--env-file" .. clink.argmatcher():addarg(clink.filematches),
-        "-f" .. clink.argmatcher():addarg(clink.filematches), "--file" .. clink.argmatcher():addarg(clink.filematches),
+        "--env-file" .. file_arg,
+        "-f" .. file_arg, "--file" .. file_arg,
         "--parallel" .. empty_arg,
         "--profile" .. empty_arg,
-        "--progress" .. clink.argmatcher():addarg({"auto", "plain", "tty", "quiet"}),
+        "--progress" .. clink.argmatcher():addarg("auto", "plain", "tty", "quiet"),
         "-p" .. empty_arg, "--project-name" .. empty_arg,
-        "--project-directory" .. clink.argmatcher():addarg(clink.dirmatches)
-    )
+        "--project-directory" .. dir_arg,
+    })
     :addarg({
-        "attach"    .. clink.argmatcher():addarg({ get_compose_services }),
+        "attach"    .. compose_services_matcher,
         "build"     .. compose_build,
         "config"    .. compose_config,
         "cp",
-        "create"    .. clink.argmatcher():addarg({ get_compose_services }),
+        "create"    .. compose_services_matcher,
         "down"      .. compose_down,
-        "events"    .. clink.argmatcher():addarg({ get_compose_services }),
+        "events"    .. compose_services_matcher,
         "exec"      .. compose_exec,
-        "images"    .. clink.argmatcher():addarg({ get_compose_services }),
-        "kill"      .. clink.argmatcher():addarg({ get_compose_services }):addflags("-s" .. signal_matcher, "--signal" .. signal_matcher),
+        "images"    .. compose_services_matcher,
+        "kill"      .. compose_kill,
         "logs"      .. compose_logs,
         "ls",
-        "pause"     .. clink.argmatcher():addarg({ get_compose_services }),
-        "port"      .. clink.argmatcher():addarg({ get_compose_services }),
+        "pause"     .. compose_services_matcher,
+        "port"      .. compose_services_matcher,
         "ps"        .. compose_ps,
         "pull"      .. compose_pull,
         "push"      .. compose_push,
         "restart"   .. compose_restart,
         "rm"        .. compose_rm,
         "run"       .. compose_run,
-        "start"     .. clink.argmatcher():addarg({ get_compose_services }),
+        "start"     .. compose_services_matcher,
         "stop"      .. compose_stop,
-        "top"       .. clink.argmatcher():addarg({ get_compose_services }),
-        "unpause"   .. clink.argmatcher():addarg({ get_compose_services }),
+        "top"       .. compose_services_matcher,
+        "unpause"   .. compose_services_matcher,
         "up"        .. compose_up,
         "version",
-        "wait"      .. clink.argmatcher():addarg({ get_compose_services }),
+        "wait"      .. compose_services_matcher,
         "watch",
     })
 
@@ -1080,27 +1099,27 @@ local compose_parser = clink.argmatcher()
 
 local context_parser = clink.argmatcher()
     :addarg({
-        "create"    .. clink.argmatcher():addflags(
+        "create"    .. clink.argmatcher():addflags({
                             "--description" .. empty_arg,
                             "--docker" .. empty_arg,
-                            "--from" .. clink.argmatcher():addarg({ get_contexts })
-                        ),
-        "export"    .. clink.argmatcher():addarg({ get_contexts }),
+                            "--from" .. contexts_matcher,
+                        }),
+        "export"    .. contexts_matcher,
         "import",
-        "inspect"   .. clink.argmatcher():addarg({ get_contexts })
+        "inspect"   .. clink.argmatcher():addarg(get_contexts)
                         :addflags("-f" .. empty_arg, "--format" .. empty_arg),
-        "ls"        .. clink.argmatcher():addflags(
+        "ls"        .. clink.argmatcher():addflags({
                             "--format" .. empty_arg,
-                            "-q", "--quiet"
-                        ),
-        "rm"        .. clink.argmatcher():addarg({ get_contexts }):addflags("-f", "--force"):loop(1),
+                            "-q", "--quiet",
+                        }),
+        "rm"        .. clink.argmatcher():addarg(get_contexts):addflags("-f", "--force"):loop(1),
         "show",
-        "update"    .. clink.argmatcher():addarg({ get_contexts })
-                        :addflags(
+        "update"    .. clink.argmatcher():addarg(get_contexts)
+                        :addflags({
                             "--description" .. empty_arg,
-                            "--docker" .. empty_arg
-                        ),
-        "use"       .. clink.argmatcher():addarg({ get_contexts }),
+                            "--docker" .. empty_arg,
+                        }),
+        "use"       .. contexts_matcher,
     })
 
 --------------------------------------------------------------------------------
@@ -1113,12 +1132,12 @@ local plugin_parser = clink.argmatcher()
         "enable",
         "inspect",
         "install",
-        "ls"        .. clink.argmatcher():addflags(
+        "ls"        .. clink.argmatcher():addflags({
                             "-f" .. empty_arg, "--filter" .. empty_arg,
                             "--format" .. empty_arg,
                             "--no-trunc",
-                            "-q", "--quiet"
-                        ),
+                            "-q", "--quiet",
+                        }),
         "push",
         "rm",
         "set",
@@ -1133,10 +1152,10 @@ local trust_parser = clink.argmatcher()
         "inspect",
         "key"       .. clink.argmatcher():addarg({
                             "generate",
-                            "load" .. clink.argmatcher():addarg(clink.filematches),
+                            "load" .. file_arg,
                         }),
-        "revoke"    .. clink.argmatcher():addarg({ get_images }),
-        "sign"      .. clink.argmatcher():addarg({ get_images }),
+        "revoke"    .. clink.argmatcher():addarg(get_images),
+        "sign"      .. clink.argmatcher():addarg(get_images),
         "signer"    .. clink.argmatcher():addarg({
                             "add",
                             "remove",
@@ -1173,21 +1192,21 @@ local scout_parser = clink.argmatcher()
 --------------------------------------------------------------------------------
 -- Top-level docker shortcuts and descriptions.
 
-local docker = clink.argmatcher("docker")
-    :addflags(
-        "--config" .. clink.argmatcher():addarg(clink.dirmatches),
-        "-c" .. clink.argmatcher():addarg({ get_contexts }), "--context" .. clink.argmatcher():addarg({ get_contexts }),
+clink.argmatcher("docker")
+    :addflags({
+        "--config" .. dir_arg,
+        "-c" .. contexts_matcher, "--context" .. contexts_matcher,
         "-D", "--debug",
         "-H" .. empty_arg, "--host" .. empty_arg,
-        "-l" .. clink.argmatcher():addarg({"debug", "info", "warn", "error", "fatal"}),
-        "--log-level" .. clink.argmatcher():addarg({"debug", "info", "warn", "error", "fatal"}),
+        "-l" .. log_levels,
+        "--log-level" .. log_levels,
         "--tls",
-        "--tlscacert" .. clink.argmatcher():addarg(clink.filematches),
-        "--tlscert" .. clink.argmatcher():addarg(clink.filematches),
-        "--tlskey" .. clink.argmatcher():addarg(clink.filematches),
+        "--tlscacert" .. file_arg,
+        "--tlscert" .. file_arg,
+        "--tlskey" .. file_arg,
         "--tlsverify",
-        "-v", "--version"
-    )
+        "-v", "--version",
+    })
     :addarg({
         -- Management commands
         "builder"   .. buildx_parser,
@@ -1221,11 +1240,11 @@ local docker = clink.argmatcher("docker")
         "inspect"   .. container_inspect,
         "kill"      .. container_kill,
         "load"      .. image_load,
-        "login"     .. clink.argmatcher():addflags(
+        "login"     .. clink.argmatcher():addflags({
                             "-p" .. empty_arg, "--password" .. empty_arg,
                             "--password-stdin",
-                            "-u" .. empty_arg, "--username" .. empty_arg
-                        ),
+                            "-u" .. empty_arg, "--username" .. empty_arg,
+                        }),
         "logout",
         "logs"      .. container_logs,
         "pause"     .. container_pause,
@@ -1239,12 +1258,12 @@ local docker = clink.argmatcher("docker")
         "rmi"       .. image_rm,
         "run"       .. container_run,
         "save"      .. image_save,
-        "search"    .. clink.argmatcher():addflags(
+        "search"    .. clink.argmatcher():addflags({
                             "-f" .. empty_arg, "--filter" .. empty_arg,
                             "--format" .. empty_arg,
                             "--limit" .. empty_arg,
-                            "--no-trunc"
-                        ),
+                            "--no-trunc",
+                        }),
         "start"     .. container_start,
         "stats"     .. container_stats,
         "stop"      .. container_stop,
@@ -1252,13 +1271,9 @@ local docker = clink.argmatcher("docker")
         "top"       .. container_top,
         "unpause"   .. container_unpause,
         "update"    .. container_update,
-        "version"   .. clink.argmatcher():addflags(
+        "version"   .. clink.argmatcher():addflags({
                             "-f" .. empty_arg, "--format" .. empty_arg,
-                            "--kubeconfig" .. clink.argmatcher():addarg(clink.filematches)
-                        ),
+                            "--kubeconfig" .. file_arg,
+                        }),
         "wait"      .. container_wait,
     })
-
--- Suppress unused warning for the fluent-API result.
--- luacheck: no unused
-local _ = docker
