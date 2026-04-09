@@ -854,10 +854,7 @@ local flagex__uploadpack = { opteq=true, '--upload-pack'..placeholder_required_a
 local flagex_X_strategyoption = { '-X'..merge_recursive_options, ' option', 'Pass option into the merge strategy' }
 local flagex__strategyoption = { opteq=true, '--strategy-option'..merge_recursive_options, ' option', '' }
 
-local git_options = {
-    "core.editor",
-    "core.pager",
-    "core.excludesfile",
+local custom_git_options = {
     "core.autocrlf"..parser({"true", "false", "input"}),
     "core.trustctime"..parser({"true", "false"}),
     "core.whitespace"..parser({
@@ -870,13 +867,41 @@ local git_options = {
         "trailing-space",
         "-trailing-space"
     }),
-    "commit.template",
     "color.ui"..color_opts, "color.*"..color_opts, "color.branch"..color_opts,
     "color.diff"..color_opts, "color.interactive"..color_opts, "color.status"..color_opts,
-    "help.autocorrect",
-    "merge.tool", "mergetool.*.cmd", "mergetool.trustExitCode"..parser({"true", "false"}), "diff.external",
-    "user.name", "user.email", "user.signingkey",
+    "mergetool.*.cmd", "mergetool.trustExitCode"..parser({"true", "false"}),
 }
+
+local cached_git_options
+local function git_options()
+    if cached_git_options then
+        return cached_git_options
+    end
+
+    local handled_options = {}
+    for _, opt in ipairs(custom_git_options) do
+        if type(opt) == "string" then
+            handled_options[opt] = true
+        elseif type(opt) == "table" then
+            handled_options[opt._key] = true
+        end
+    end
+
+    cached_git_options = custom_git_options
+    local f = io.popen(git.make_command("help --config-for-completion"))
+    if f then
+        for line in f:lines() do
+            if line and #line > 0 then
+                if not handled_options[line] then
+                    table.insert(cached_git_options, line)
+                end
+            end
+        end
+        f:close()
+    end
+
+    return cached_git_options
+end
 
 --------------------------------------------------------------------------------
 -- Reusable groups of flags.
@@ -1644,7 +1669,7 @@ local config_parser = parser()
 :setendofflags()
 -- TODO: subcommands: list, get, set, unset, rename-section, remove-section, edit
 -- TODO: deprecated modes
-:addarg({git_options, hint=argexpected.."name"})
+:addarg({git_options(), hint=argexpected.."name"})
 :_addexflags({
     concat_one_letter_flags=true,
     help_flags,
