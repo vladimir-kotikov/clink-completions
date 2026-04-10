@@ -1669,7 +1669,7 @@ local config_parser = parser()
 :setendofflags()
 -- TODO: subcommands: list, get, set, unset, rename-section, remove-section, edit
 -- TODO: deprecated modes
-:addarg({git_options(), hint=argexpected.."name"})
+:addarg({git_options, hint=argexpected.."name"})
 :_addexflags({
     concat_one_letter_flags=true,
     help_flags,
