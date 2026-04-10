@@ -7,6 +7,11 @@ if not clink_version.supports_argmatcher_delayinit then
     return
 end
 
+local help_parser = require('help_parser')
+if not help_parser then
+    return
+end
+
 require('arghelper')
 
 -- Table of special targets to always ignore.
@@ -146,4 +151,4 @@ local make_parser = clink.argmatcher("make")
 :addarg({get_targets})
 :loop()
 
-require('help_parser').run(make_parser, 'gnu', 'make --help', nil)
+help_parser.run(make_parser, 'gnu', 'make --help', nil)

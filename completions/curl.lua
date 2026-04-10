@@ -4,4 +4,9 @@ if not clink_version.supports_argmatcher_delayinit then
     return
 end
 
-require('help_parser').make('curl', '--help all', 'curl')
+local help_parser = require('help_parser')
+if not help_parser then
+    return
+end
+
+help_parser.make('curl', '--help all', 'curl')

@@ -8,8 +8,9 @@ local exports = {}
 --------------------------------------------------------------------------------
 local clink_version = require('clink_version')
 if not clink_version.has_linked_setdelayinit_fix then
-    log.info("rust_helper.lua requires a newer version of Clink; please upgrade.")
-    return
+    local report = log and log.info or print
+    report("The rust_helper.lua module requires a newer version of Clink; please upgrade.")
+    return false
 end
 
 --------------------------------------------------------------------------------

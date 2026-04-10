@@ -4,6 +4,11 @@ if not clink_version.supports_argmatcher_delayinit then
     return
 end
 
+local help_parser = return('help_parser')
+if not help_parser then
+    return
+end
+
 local function closure(parser)
     -- This is a dirty hack.  I don't want to invest in a reusable clean
     -- mechanism right now.
@@ -22,4 +27,4 @@ local function closure(parser)
     end
 end
 
-require('help_parser').make('xcopy', '/?', nil, {concat=true}, closure)
+help_parser.make('xcopy', '/?', nil, {concat=true}, closure)
