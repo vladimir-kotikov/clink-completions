@@ -854,10 +854,10 @@ local flagex__uploadpack = { opteq=true, '--upload-pack'..placeholder_required_a
 local flagex_X_strategyoption = { '-X'..merge_recursive_options, ' option', 'Pass option into the merge strategy' }
 local flagex__strategyoption = { opteq=true, '--strategy-option'..merge_recursive_options, ' option', '' }
 
-local custom_git_options = {
-    "core.autocrlf"..parser({"true", "false", "input"}),
-    "core.trustctime"..parser({"true", "false"}),
-    "core.whitespace"..parser({
+local custom_config_vars = {
+    ["core.autocrlf"] = parser({"true", "false", "input"}),
+    ["core.trustctime"] = parser({"true", "false"}),
+    ["core.whitespace"] = parser({
         "cr-at-eol",
         "-cr-at-eol",
         "indent-with-non-tab",
@@ -867,40 +867,87 @@ local custom_git_options = {
         "trailing-space",
         "-trailing-space"
     }),
-    "color.ui"..color_opts, "color.*"..color_opts, "color.branch"..color_opts,
-    "color.diff"..color_opts, "color.interactive"..color_opts, "color.status"..color_opts,
-    "mergetool.*.cmd", "mergetool.trustExitCode"..parser({"true", "false"}),
+    ["color."] = color_opts,
+    ["mergetool.*.cmd"] = true,
+    ["mergetool.trustExitCode"] = parser({"true", "false"}),
 }
 
-local cached_git_options
-local function git_options()
-    if cached_git_options then
-        return cached_git_options
+local function join_config_var_parser(name)
+    local link_parser = custom_config_vars[name] or custom_config_vars[name:match("^([^.]+)%.$")]
+    if type(link_parser) == "table" then
+        return name..link_parser
     end
+    return name
+end
 
-    local handled_options = {}
-    for _, opt in ipairs(custom_git_options) do
-        if type(opt) == "string" then
-            handled_options[opt] = true
-        elseif type(opt) == "table" then
-            handled_options[opt._key] = true
+local cached_config_vars
+local function get_cached_config_vars()
+    if not cached_config_vars then
+        cached_config_vars = {}
+
+        local seen = {}
+
+        local f = io.popen(git.make_command("help --config-for-completion"))
+        if f then
+            for line in f:lines() do
+                if line and #line > 0 and line[-1] ~= "." then
+                    local m = join_config_var_parser(line)
+                    table.insert(cached_config_vars, m)
+                    seen[line] = true
+                end
+            end
+            f:close()
         end
-    end
 
-    cached_git_options = custom_git_options
-    local f = io.popen(git.make_command("help --config-for-completion"))
-    if f then
-        for line in f:lines() do
-            if line and #line > 0 then
-                if not handled_options[line] then
-                    table.insert(cached_git_options, line)
+        for m, value in pairs(custom_config_vars) do
+            if value == true then -- Only when exact match!
+                if not seen[m] then
+                    table.insert(cached_config_vars, m)
                 end
             end
         end
-        f:close()
+    end
+    return cached_config_vars
+end
+
+local function get_config_vars(_, _, _, _, user_data)
+    local matches = w()
+    local seen = {}
+
+    if user_data and (user_data.all or not user_data.existing) then
+        for _, m in ipairs(get_cached_config_vars()) do
+            table.insert(matches, m)
+        end
+
+        if user_data and user_data.section then
+            matches:map(function(name)
+                name = name:match("^([^.]+)")
+                if not seen[name] then
+                    seen[name] = true
+                    return name
+                end
+            end)
+        end
+    else
+        local f = io.popen(git.make_command("config --list --name-only"))
+        if f then
+            for line in f:lines() do
+                if line and #line > 0 then
+                    if user_data and user_data.section then
+                        line = line:match("^([^.]+)")
+                    end
+                    if line and not seen[line] then
+                        local m = join_config_var_parser(line)
+                        table.insert(matches, m)
+                        seen[line] = true
+                    end
+                end
+            end
+            f:close()
+        end
     end
 
-    return cached_git_options
+    return matches
 end
 
 --------------------------------------------------------------------------------
@@ -1665,13 +1712,32 @@ local commit_parser = parser()
     "--",
 })
 
+local function config_onarg(arg_index, word, _, _, user_data)
+    if arg_index == 0 then
+        -- TODO:  respect --global, --local, --system, --worktree, -f, --file,
+        -- and --blob flags when invoking git to list config vars.
+        if word == "--add" then
+            user_data.all = true
+        elseif word == "--rename-section" or word == "--remove-section" then
+            user_data.section = true
+        elseif word:match("^%-%-get") or
+                word:match("^%-%-unset") or
+                word == "--replace-all" or
+                word == "--rename-section" or
+                word == "--remove-section" then
+            user_data.existing = true
+        end
+    end
+end
+
 local config_parser = parser()
 :setendofflags()
 -- TODO: subcommands: list, get, set, unset, rename-section, remove-section, edit
 -- TODO: deprecated modes
-:addarg({git_options, hint=argexpected.."name"})
+:addarg({get_config_vars, hint=argexpected.."name"})
 :_addexflags({
     concat_one_letter_flags=true,
+    onarg=config_onarg,
     help_flags,
     "--replace-all",
     "--add",
@@ -3171,5 +3237,6 @@ if clink.onbeginedit then
         cached_commands = nil
         cached_guides = nil
         cached_all_commands = nil
+        cached_config_vars = nil
     end)
 end
