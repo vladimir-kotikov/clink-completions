@@ -4,7 +4,7 @@ if not clink_version.supports_argmatcher_delayinit then
     return
 end
 
-local help_parser = return('help_parser')
+local help_parser = require('help_parser')
 if not help_parser then
     return
 end
