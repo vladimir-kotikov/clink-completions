@@ -798,6 +798,7 @@ local clone_filter_arg = parser({fromhistory=true})
 local color_opts = parser({"true", "false", "always"})
 local commit_trailer_arg = parser({fromhistory=true})
 local config_arg = parser({fromhistory=true})
+local config_types = parser({"bool", "int", "bool-or-int", "path", "expiry-date", "color"})
 local contextlines_arg = parser({fromhistory=true})
 local depth_arg = parser({fromhistory=true})
 local diff_filter_arg = parser({fromhistory=true})
@@ -906,6 +907,12 @@ local function get_cached_config_vars()
                 end
             end
         end
+
+        table.sort(cached_config_vars, function(a, b)
+            local an = (type(a) == "table") and a._key or a
+            local bn = (type(b) == "table") and b._key or b
+            return an < bn
+        end)
     end
     return cached_config_vars
 end
@@ -914,12 +921,13 @@ local function get_config_vars(_, _, _, _, user_data)
     local matches = w()
     local seen = {}
 
-    if user_data and (user_data.all or not user_data.existing) then
+    local shared_data = user_data and user_data.shared_user_data or {}
+    if shared_data.all or not shared_data.existing then
         for _, m in ipairs(get_cached_config_vars()) do
             table.insert(matches, m)
         end
 
-        if user_data and user_data.section then
+        if shared_data.section then
             matches:map(function(name)
                 name = name:match("^([^.]+)")
                 if not seen[name] then
@@ -929,11 +937,12 @@ local function get_config_vars(_, _, _, _, user_data)
             end)
         end
     else
-        local f = io.popen(git.make_command("config --list --name-only"))
+        local file_flags = shared_data.file_flags or ""
+        local f = io.popen(git.make_command("config --list --name-only "..file_flags))
         if f then
             for line in f:lines() do
                 if line and #line > 0 then
-                    if user_data and user_data.section then
+                    if shared_data.section then
                         line = line:match("^([^.]+)")
                     end
                     if line and not seen[line] then
@@ -946,6 +955,8 @@ local function get_config_vars(_, _, _, _, user_data)
             f:close()
         end
     end
+
+    matches.nosort = true
 
     return matches
 end
@@ -1712,72 +1723,262 @@ local commit_parser = parser()
     "--",
 })
 
-local function config_onarg(arg_index, word, _, _, user_data)
-    if arg_index == 0 then
-        -- TODO:  respect --global, --local, --system, --worktree, -f, --file,
-        -- and --blob flags when invoking git to list config vars.
-        if word == "--add" then
-            user_data.all = true
-        elseif word == "--rename-section" or word == "--remove-section" then
-            user_data.section = true
-        elseif word:match("^%-%-get") or
-                word:match("^%-%-unset") or
-                word == "--replace-all" or
-                word == "--rename-section" or
-                word == "--remove-section" then
-            user_data.existing = true
+local config_parser
+do -- Mitigate "too many local variables" Lua error.
+    local function config_subcommand_onarg(arg_index, word, word_index, line_state, user_data)
+        local shared_data = user_data and user_data.shared_user_data or {}
+        if arg_index == 0 then
+            if word == "--global" or word == "--no-global" or
+                    word == "--system" or word == "--no-system" or
+                    word == "--local" or word == "--no-local" or
+                    word == "--worktree" or word == "--no-worktree" or
+                    word == "-f" or word == "--file" or word == "--no-file" or
+                    word == "--blob" or word == "--no-file" then
+                local ff = shared_data.file_flags or ""
+                if word == "-f" or word == "--file" or word == "--blob" then
+                    local next_word = line_state:getword(word_index + 1)
+                    if next_word and next_word ~= "" then
+                        ff = ff..string.format(' %s "%s"', word, next_word)
+                    end
+                else
+                    ff = ff.." "..word
+                end
+                shared_data.file_flags = ff
+            end
+        elseif arg_index == 1 then
+            if word == "set" then
+                shared_data.all = true
+            elseif word == "get" or
+                    word == "unset" or
+                    word == "rename-section" or
+                    word == "remove-section" then
+                shared_data.existing = true
+            end
+            if word == "rename-section" or
+                    word == "remove-section" then
+                shared_data.section = true
+            end
         end
     end
-end
 
-local config_parser = parser()
-:setendofflags()
--- TODO: subcommands: list, get, set, unset, rename-section, remove-section, edit
--- TODO: deprecated modes
-:addarg({get_config_vars, hint=argexpected.."name"})
-:_addexflags({
-    concat_one_letter_flags=true,
-    onarg=config_onarg,
-    help_flags,
-    "--replace-all",
-    "--add",
-    "--get",
-    "--get-all",
-    "--get-regexp",
-    { opteq=true, "--get-urlmatch"..placeholder_required_arg, " name URL", "" },
-    "--global",
-    "--system",
-    "--local",
-    "--worktree",
-    { "-f"..files_parser, " config-file", "Write to specified file" },
-    { opteq=true, "--file"..files_parser, " config-file", "" },
-    { opteq=true, "--blob"..placeholder_required_arg, " blob", "" },
-    "--remove-section",
-    "--rename-section",
-    "--unset",
-    "--unset-all",
-    { "-l", "List variables and their values" },
-    "--list",
-    "--fixed-value",
-    { opteq=true, "--type="..parser({"bool", "int", "bool-or-int", "path", "expiry-date", "color"}) },
-    "--no-type",
-    --"--bool",
-    --"--int",
-    --"--bool-or-int",
-    --"--path",
-    --"--expiry-date",
-    { "-z", "Use NUL to delimit values" },
-    "--null",
-    "--name-only",
-    "--show-origin",
-    "--show-scope",
-    { opteq=true, "--get-color"..placeholder_required_arg, " name [default]", "" },
-    { opteq=true, "--get-colorbool"..placeholder_required_arg, " name", "" },
-    { "-e", "Open editor for specified config file" },
-    "--edit",
-    "--includes", "--no-includes",
-    { opteq=true, "--default"..placeholder_required_arg, " value", "" },
-})
+    local function config_onarg(arg_index, word, word_index, line_state, user_data)
+        if arg_index == 0 then
+            local shared_data = user_data and user_data.shared_user_data or {}
+            if word == "--add" then
+                shared_data.all = true
+            elseif word:match("^%-%-get") or
+                    word:match("^%-%-unset") or
+                    word == "--replace-all" or
+                    word == "--rename-section" or
+                    word == "--remove-section" then
+                shared_data.existing = true
+            end
+            if word == "--rename-section" or word == "--remove-section" then
+                shared_data.section = true
+            end
+        end
+        config_subcommand_onarg(arg_index, word, word_index, line_state, user_data)
+    end
+
+    local config_file_flags = {
+        { "--global" },
+        { "--no-global" },
+        { "--system" },
+        { "--no-system" },
+        { "--local" },
+        { "--no-local" },
+        { "--worktree" },
+        { "--no-worktree" },
+        { "-f"..files_parser, " config-file", "Use given config file" },
+        { opteq=true, "--file"..files_parser, " config-file", "" },
+        { "--no-file" },
+        { opteq=true, "--blob"..placeholder_required_arg, " blob", "" },
+        { "--no-blob" },
+    }
+
+    local config_display_flags = {
+        { "-z", "Use NUL to delimit values" },
+        { "--null" },
+        { "--no-null" },
+        { "--name-only" },
+        { "--no-name-only" },
+        { "--show-origin" },
+        { "--no-show-origin" },
+        { "--show-scope" },
+        { "--no-show-scope" },
+        { "--show-names" },
+        { "--no-show-names" },
+    }
+
+    local config_default_flag = {
+        { opteq=true, "--default"..placeholder_required_arg, " value", "" },
+        { "--no-default" },
+    }
+
+    local config_comment_flag = {
+        { opteq=true, "--comment"..placeholder_required_arg, " value", "" },
+        { "--no-comment" },
+    }
+
+    local config_value_flag = {
+        { opteq=true, "--value"..placeholder_required_arg, " value", "" },
+        { "--fixed-value" },
+    }
+
+    local config_type_flag = {
+        { "-t"..config_types, " type", "Value is given this type" },
+        { opteq=true, "--type="..config_types, "type", "" },
+        -- TODO:  should the --bool and etc flags go here as well?
+    }
+
+    local config_list_parser = parser()
+    :_addexflags({
+        onarg=config_subcommand_onarg,
+        help_flags,
+        config_file_flags,
+        config_display_flags,
+        "--includes", "--no-includes",
+    })
+    :nofiles()
+
+    local config_get_parser = parser()
+    :_addexflags({
+        onarg=config_subcommand_onarg,
+        help_flags,
+        config_file_flags,
+        config_display_flags,
+        "--includes", "--no-includes",
+        "--all",
+        "--regexp",
+        config_value_flag,
+        config_default_flag,
+    })
+    :addarg(get_config_vars)
+    :nofiles()
+
+    local config_set_parser = parser()
+    :_addexflags({
+        onarg=config_subcommand_onarg,
+        help_flags,
+        config_file_flags,
+        config_type_flag,
+        "--all",
+        config_value_flag,
+    })
+    :addarg(get_config_vars)
+    :addarg()
+    :nofiles()
+
+    local config_unset_parser = parser()
+    :_addexflags({
+        onarg=config_subcommand_onarg,
+        help_flags,
+        config_file_flags,
+        "--all",
+        config_value_flag,
+    })
+    :addarg(get_config_vars)
+    :nofiles()
+
+    local config_rename_section_parser = parser()
+    :_addexflags({
+        onarg=config_subcommand_onarg,
+        help_flags,
+        config_file_flags,
+    })
+    :addarg(get_config_vars)
+    :addarg()
+    :nofiles()
+
+    local config_remove_section_parser = parser()
+    :_addexflags({
+        onarg=config_subcommand_onarg,
+        help_flags,
+        config_file_flags,
+    })
+    :addarg(get_config_vars)
+    :nofiles()
+
+    local config_edit_parser = parser()
+    :_addexflags({
+        help_flags,
+        config_file_flags,
+    })
+    :nofiles()
+
+    local config_subcommands_index = { "list", "get", "set", "unset", "rename-section", "remove-section", "edit" }
+    for _, name in ipairs(config_subcommands_index) do
+        config_subcommands_index[name] = true
+    end
+
+    local function config_display_filter()
+        if clink.ondisplaymatches then
+            clink.ondisplaymatches(function(matches)
+                for _, m in ipairs(matches) do
+                    if config_subcommands_index[m.match] then
+                        m.type = "cmd"
+                    end
+                end
+                return matches
+            end)
+        end
+        return {}
+    end
+
+    config_parser = parser()
+    :setendofflags()
+    :_addexarg({
+        onarg=config_onarg,
+        config_display_filter,
+        { "list"..config_list_parser, "List config vars" },
+        { "get"..config_get_parser, " name", "Get config var" },
+        { "set"..config_set_parser, " name value", "Set config var" },
+        { "unset"..config_unset_parser, " name", "Unset config var" },
+        { "rename-section"..config_rename_section_parser, " old-name new-name", "Rename a section" },
+        { "remove-section"..config_remove_section_parser, " name", "Remove a section" },
+        { "edit"..config_edit_parser, "Open in editor" },
+        get_config_vars,
+        hint=argexpected.."name",
+    })
+    :_addexflags({
+        concat_one_letter_flags=true,
+        onarg=config_onarg,
+        help_flags,
+        config_file_flags,
+        config_display_flags,
+        -- Action
+        { "--get", " name [value-pattern]", "" },
+        { "--get-all", " key [value-pattern]", "" },
+        { "--get-regexp", " name-regex [value-pattern]", "" },
+        { "--get-urlmatch", " section[.var] URL", "" },
+        { "--replace-all", " name value [value-pattern]", "" },
+        { "--add", " name value", "" },
+        { "--unset", " name [value-pattern]", "" },
+        { "--unset-all", " name [value-pattern]", "" },
+        { "--rename-section", " old-name new-name", "" },
+        { "--remove-section", " name", "" },
+        { "-l", "List variables and their values" },
+        "--list",
+        { "-e", "Open editor for specified config file" },
+        "--edit",
+        { "--get-color", " slot [default]", "" },
+        { "--get-colorbool", " slot [stdout-is-tty]", "" },
+        -- Type
+        config_type_flag,
+        "--no-type",
+        "--bool",
+        "--int",
+        "--bool-or-int",
+        "--bool-or-str",
+        "--path",
+        "--expiry-date",
+        -- Other
+        config_default_flag,
+        config_comment_flag,
+        "--fixed-value", "--no-fixed-value",
+        "--includes", "--no-includes",
+    })
+end
 
 local diff_parser = parser()
 :setendofflags()
