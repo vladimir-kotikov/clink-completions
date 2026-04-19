@@ -18,7 +18,7 @@ local cached_images
 local cached_volumes
 local cached_networks
 local cached_contexts
-local cached_compose_services
+local cached_compose_services = {}
 
 local function reset_cache()
     cached_containers = nil
@@ -27,7 +27,7 @@ local function reset_cache()
     cached_volumes = nil
     cached_networks = nil
     cached_contexts = nil
-    cached_compose_services = nil
+    cached_compose_services = {}
 end
 
 if clink.onbeginedit then
@@ -45,6 +45,101 @@ local function exec_docker(args)
     end
     f:close()
     return result
+end
+
+-- Compose-global flags accepted before the subcommand.
+-- Values: false = boolean flag, true = takes a value but not forwarded to
+-- `config --services`, "forward" = takes a value and forwarded.
+local compose_global_flags = {
+    ["--all-resources"] = false,
+    ["--ansi"] = true,
+    ["--compatibility"] = false,
+    ["--dry-run"] = false,
+    ["--env-file"] = "forward",
+    ["-f"] = "forward",
+    ["--file"] = "forward",
+    ["--parallel"] = true,
+    ["--profile"] = "forward",
+    ["--progress"] = true,
+    ["-p"] = "forward",
+    ["--project-name"] = "forward",
+    ["--project-directory"] = "forward",
+}
+
+local function quote_arg(arg)
+    arg = arg:gsub('"', '\\"')
+    if arg:sub(-1) == "\\" then
+        arg = arg .. "\\"
+    end
+    return '"' .. arg .. '"'
+end
+
+local function parse_compose_global_flag(word)
+    if compose_global_flags[word] ~= nil then
+        return word
+    end
+
+    local long_flag, long_value = word:match("^(%-%-[%w%-]+)=(.*)$")
+    if long_flag and compose_global_flags[long_flag] then
+        return long_flag, long_value
+    end
+
+    local short_flag, short_value = word:match("^(%-[fp])=(.*)$")
+    if short_flag and compose_global_flags[short_flag] then
+        return short_flag, short_value
+    end
+
+    short_flag = word:sub(1, 2)
+    if compose_global_flags[short_flag] and #word > 2 then
+        return short_flag, word:sub(3)
+    end
+end
+
+local function get_compose_config_args(line_state)
+    local cwi = line_state:getcommandwordindex()
+    if not cwi then
+        return {}
+    end
+
+    local compose_word = line_state:getword(cwi + 1)
+    if not compose_word or compose_word:lower() ~= "compose" then
+        return {}
+    end
+
+    local args = {}
+    local pending_flag
+    for i = cwi + 2, line_state:getwordcount() do
+        local info = line_state:getwordinfo(i)
+        if info and not info.redir then
+            local word = line_state:getword(i)
+            if pending_flag then
+                if compose_global_flags[pending_flag] == "forward" then
+                    table.insert(args, pending_flag)
+                    table.insert(args, word)
+                end
+                pending_flag = nil
+            else
+                local flag, value = parse_compose_global_flag(word)
+                if flag then
+                    local flag_type = compose_global_flags[flag]
+                    if flag_type then
+                        if value ~= nil then
+                            if flag_type == "forward" then
+                                table.insert(args, flag)
+                                table.insert(args, value)
+                            end
+                        else
+                            pending_flag = flag
+                        end
+                    end
+                else
+                    break
+                end
+            end
+        end
+    end
+
+    return args
 end
 
 local function get_containers()
@@ -95,11 +190,26 @@ local function get_contexts()
     return cached_contexts
 end
 
-local function get_compose_services()
-    if not cached_compose_services then
-        cached_compose_services = exec_docker("compose config --services")
+local function get_compose_services(_, _, line_state) -- luacheck: no unused args
+    local docker_args = { "compose" }
+    local compose_args = get_compose_config_args(line_state)
+    local cache_key = table.concat(compose_args, "\n")
+
+    if not cached_compose_services[cache_key] then
+        for _, arg in ipairs(compose_args) do
+            table.insert(docker_args, arg)
+        end
+        table.insert(docker_args, "config")
+        table.insert(docker_args, "--services")
+
+        local quoted_args = {}
+        for i, arg in ipairs(docker_args) do
+            quoted_args[i] = quote_arg(arg)
+        end
+        cached_compose_services[cache_key] = exec_docker(table.concat(quoted_args, " "))
     end
-    return cached_compose_services
+
+    return cached_compose_services[cache_key]
 end
 
 --------------------------------------------------------------------------------
@@ -1053,7 +1163,9 @@ local compose_up = clink.argmatcher()
 
 local compose_parser = clink.argmatcher()
     :addflags({
+        "--all-resources",
         "--ansi" .. clink.argmatcher():addarg("never", "always", "auto"),
+        "--compatibility",
         "--dry-run",
         "--env-file" .. file_arg,
         "-f" .. file_arg, "--file" .. file_arg,
