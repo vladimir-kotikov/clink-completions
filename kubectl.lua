@@ -80,4 +80,3 @@ local kubectl_parser = parser(
 
 clink.arg.register_parser("kubectl", kubectl_parser)
 clink.arg.register_parser("oc", kubectl_parser)
-clink.arg.register_parser("oc.exe", kubectl_parser)
