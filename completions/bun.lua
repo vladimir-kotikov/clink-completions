@@ -616,15 +616,3 @@ clink.argmatcher("bun")
     { "x", description = "Execute a package binary (CLI), installing if needed" }
 )
 -- luacheck: pop
-
--- bunx is equivalent to `bun x`.
-clink.argmatcher("bunx")
-:addarg({clink.filematches})
-:addflags(
-    "--bun",
-    "-p", "--package",
-    "--no-install",
-    "--verbose",
-    "--silent",
-    "-h", "--help"
-)
