@@ -88,7 +88,7 @@ exports.ext_files = function (...)
         return function (word)
             local matches = clink.dirmatches(word.."*")
             for _, wild in ipairs(wildcards) do
-                for _, m in ipairs(clink.filematches(word..wild)) do
+                for _, m in ipairs(clink.filematchesexact(word..wild)) do
                     table.insert(matches, m)
                 end
             end
