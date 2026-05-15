@@ -117,23 +117,7 @@ local function new_pm_matcher()
     return m
 end
 
---------------------------------------------------------------------------------
--- Runtime and build/test matchers.
-
-local run_matcher = clink.argmatcher()
-run_matcher:addarg({run_targets})
-run_matcher:addflags(
-    "--silent",
-    "--elide-lines=",
-    "-F", "--filter=",
-    "-b", "--bun",
-    "--shell=",
-    "--shell=bun",
-    "--shell=system",
-    "--workspaces",
-    "--parallel",
-    "--sequential",
-    "--no-exit-on-error",
+local shared_runtime_flags = {
     "--watch",
     "--hot",
     "--no-clear-screen",
@@ -193,6 +177,39 @@ run_matcher:addflags(
     "--user-agent=",
     "--cron-title=",
     "--cron-period=",
+    "--silent",
+    "--elide-lines=",
+    "-F", "--filter=",
+    "-b", "--bun",
+    "--shell=",
+    "--shell=bun",
+    "--shell=system",
+    "--workspaces",
+    "--parallel",
+    "--sequential",
+    "--no-exit-on-error",
+    "--env-file=",
+    "--no-env-file",
+    "--cwd=",
+    "-c", "--config=",
+    "-h", "--help",
+}
+
+local function add_runtime_flags(argmatcher, extra_flags)
+    argmatcher:addflags(table.unpack(shared_runtime_flags))
+    if extra_flags then
+        argmatcher:addflags(table.unpack(extra_flags))
+    end
+
+    return argmatcher
+end
+
+--------------------------------------------------------------------------------
+-- Runtime and build/test matchers.
+
+local run_matcher = clink.argmatcher()
+:addarg({run_targets})
+add_runtime_flags(run_matcher, {
     "--main-fields=",
     "--preserve-symlinks",
     "--preserve-symlinks-main",
@@ -211,16 +228,11 @@ run_matcher:addflags(
     "--jsx-runtime=classic",
     "--jsx-side-effects",
     "--ignore-dce-annotations",
-    "--env-file=",
-    "--no-env-file",
-    "--cwd=",
-    "-c", "--config=",
-    "-h", "--help"
-)
+})
 
 local test_matcher = clink.argmatcher()
-test_matcher:addarg({clink.filematches}):loop(1)
-test_matcher:addflags(
+:addarg({clink.filematches}):loop(1)
+:addflags(
     "--timeout=",
     "-u", "--update-snapshots",
     "--rerun-each=",
@@ -255,8 +267,8 @@ test_matcher:addflags(
 )
 
 local build_matcher = clink.argmatcher()
-build_matcher:addarg({clink.filematches}):loop(1)
-build_matcher:addflags(
+:addarg({clink.filematches}):loop(1)
+:addflags(
     "--production",
     "--compile",
     "--compile-exec-argv=",
@@ -330,8 +342,8 @@ build_matcher:addflags(
 -- Package-oriented subcommands.
 
 local install_matcher = new_pm_matcher()
-install_matcher:addarg({matchers.dirs}):loop(1)
-install_matcher:addflags(
+:addarg({matchers.dirs}):loop(1)
+:addflags(
     "--filter=",
     "-d", "--dev",
     "--optional",
@@ -342,7 +354,7 @@ install_matcher:addflags(
 )
 
 local add_matcher = new_pm_matcher()
-add_matcher:addflags(
+:addflags(
     "-d", "--dev",
     "--optional",
     "--peer",
@@ -352,11 +364,11 @@ add_matcher:addflags(
 )
 
 local remove_matcher = new_pm_matcher()
-remove_matcher:addarg({modules}):loop(1)
+:addarg({modules}):loop(1)
 
 local update_matcher = new_pm_matcher()
-update_matcher:addarg({modules}):loop(1)
-update_matcher:addflags(
+:addarg({modules}):loop(1)
+:addflags(
     "--latest",
     "-i", "--interactive",
     "--filter=",
@@ -364,7 +376,7 @@ update_matcher:addflags(
 )
 
 local audit_matcher = clink.argmatcher()
-audit_matcher:addflags(
+:addflags(
     "--json",
     "--audit-level=",
     "--ignore=",
@@ -372,22 +384,22 @@ audit_matcher:addflags(
 )
 
 local info_matcher = new_pm_matcher()
-info_matcher:addflags("--json")
+:addflags("--json")
 
 local outdated_matcher = new_pm_matcher()
-outdated_matcher:addflags(
+:addflags(
     "-F", "--filter=",
     "-r", "--recursive"
 )
 
 local link_matcher = new_pm_matcher()
-link_matcher:addarg({modules}):loop(1)
+:addarg({modules}):loop(1)
 
 local unlink_matcher = new_pm_matcher()
 
 local publish_matcher = new_pm_matcher()
-publish_matcher:addarg({clink.filematches}):loop(1)
-publish_matcher:addflags(
+:addarg({clink.filematches}):loop(1)
+:addflags(
     "--access=",
     "--tag=",
     "--otp=",
@@ -397,8 +409,8 @@ publish_matcher:addflags(
 )
 
 local patch_matcher = new_pm_matcher()
-patch_matcher:addarg({modules, clink.filematches}):loop(1)
-patch_matcher:addflags(
+:addarg({modules, clink.filematches}):loop(1)
+:addflags(
     "--commit",
     "--patches-dir="
 )
@@ -407,10 +419,10 @@ patch_matcher:addflags(
 -- Other subcommands.
 
 local why_matcher = clink.argmatcher()
-why_matcher:addflags("--top", "--depth")
+:addflags("--top", "--depth")
 
 local x_matcher = clink.argmatcher()
-x_matcher:addflags(
+:addflags(
     "--bun",
     "-p", "--package",
     "--no-install",
@@ -420,8 +432,8 @@ x_matcher:addflags(
 )
 
 local init_matcher = clink.argmatcher()
-init_matcher:addarg({matchers.dirs}):loop(1)
-init_matcher:addflags(
+:addarg({matchers.dirs}):loop(1)
+:addflags(
     "--help",
     "-y", "--yes",
     "-m", "--minimal",
@@ -431,17 +443,17 @@ init_matcher:addflags(
 )
 
 local feedback_matcher = clink.argmatcher()
-feedback_matcher:addarg({clink.filematches}):loop(1)
-feedback_matcher:addflags(
+:addarg({clink.filematches}):loop(1)
+:addflags(
     "-e", "--email",
     "-h", "--help"
 )
 
 local upgrade_matcher = clink.argmatcher()
-upgrade_matcher:addflags("--canary", "-h", "--help")
+:addflags("--canary", "-h", "--help")
 
 local pm_matcher = clink.argmatcher()
-pm_matcher:addarg({
+:addarg({
     "scan",
     "pack" .. clink.argmatcher():addflags(
         "--dry-run",
@@ -478,7 +490,7 @@ local exec_matcher = run_matcher
 --------------------------------------------------------------------------------
 -- Main bun argmatcher.
 
-clink.argmatcher("bun")
+local bun_matcher = clink.argmatcher("bun")
 :addarg({
     "add"      .. add_matcher,
     "a"        .. add_matcher,
@@ -510,87 +522,12 @@ clink.argmatcher("bun")
     "x"        .. x_matcher,
     run_targets,
 })
-:addflags(
-    "--watch",
-    "--hot",
-    "--no-clear-screen",
-    "--smol",
-    "-r", "--preload=",
-    "--require=",
-    "--import=",
-    "--inspect=",
-    "--inspect-wait=",
-    "--inspect-brk=",
-    "--cpu-prof",
-    "--cpu-prof-name=",
-    "--cpu-prof-dir=",
-    "--cpu-prof-md",
-    "--cpu-prof-interval=",
-    "--heap-prof",
-    "--heap-prof-name=",
-    "--heap-prof-dir=",
-    "--heap-prof-md",
-    "--if-present",
-    "--no-install",
-    "--install=",
-    "--install=auto",
-    "--install=fallback",
-    "--install=force",
-    "-i",
-    "-e", "--eval=",
-    "-p", "--print=",
-    "--prefer-offline",
-    "--prefer-latest",
-    "--port=",
-    "--conditions=",
-    "--fetch-preconnect=",
-    "--max-http-header-size=",
-    "--dns-result-order=",
-    "--dns-result-order=verbatim",
-    "--dns-result-order=ipv4first",
-    "--dns-result-order=ipv6first",
-    "--expose-gc",
-    "--no-deprecation",
-    "--throw-deprecation",
-    "--title=",
-    "--zero-fill-buffers",
-    "--use-system-ca",
-    "--use-openssl-ca",
-    "--use-bundled-ca",
-    "--redis-preconnect",
-    "--sql-preconnect",
-    "--no-addons",
-    "--unhandled-rejections=",
-    "--unhandled-rejections=strict",
-    "--unhandled-rejections=throw",
-    "--unhandled-rejections=warn",
-    "--unhandled-rejections=none",
-    "--unhandled-rejections=warn-with-error-code",
-    "--console-depth=",
-    "--user-agent=",
-    "--cron-title=",
-    "--cron-period=",
-    "--silent",
-    "--elide-lines=",
+add_runtime_flags(bun_matcher, {
     "-v", "--version",
     "--revision",
-    "-F", "--filter=",
-    "-b", "--bun",
-    "--shell=",
-    "--shell=bun",
-    "--shell=system",
-    "--workspaces",
-    "--parallel",
-    "--sequential",
-    "--no-exit-on-error",
-    "--env-file=",
-    "--no-env-file",
-    "--cwd=",
-    "-c", "--config=",
-    "-h", "--help"
-)
--- luacheck: push max line length 130
+})
 :adddescriptions(
+    -- luacheck: push max line length 130
     { "add", "a", description = "Add a dependency to package.json" },
     { "audit", description = "Check installed packages for vulnerabilities" },
     { "build", description = "Bundle TypeScript & JavaScript into a single file" },
@@ -614,5 +551,5 @@ clink.argmatcher("bun")
     { "upgrade", description = "Upgrade Bun to the latest version, or optionally the latest canary version" },
     { "why", description = "Show the dependency chain that leads to a package" },
     { "x", description = "Execute a package binary (CLI), installing if needed" }
+    -- luacheck: pop
 )
--- luacheck: pop
