@@ -25,10 +25,12 @@ local function scripts()
     if not pkg or not pkg.scripts then return w() end
 
     local matches = {}
+    local script_icon = ''
+
     for name, cmd in pairs(pkg.scripts) do
         local description = type(cmd) == "string" and cmd or tostring(cmd)
         description = description:gsub("[\r\n]+", " "):gsub("%s+", " ")
-        table.insert(matches, { match=name, description=description, type="none" })
+        table.insert(matches, { match=name, display=script_icon .. " " .. name, description=description, type="none" })
     end
     table.sort(matches, function(a, b) return a.match < b.match end)
     return matches
