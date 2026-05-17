@@ -1,5 +1,6 @@
 -- Completions for pnpm.
 -- luacheck: ignore clink
+-- luacheck: globals matchicons
 
 local JSON = require("JSON")
 function JSON:assert () end  -- luacheck: no unused args
@@ -14,7 +15,14 @@ local pkg_arg = clink.argmatcher():addarg({fromhistory=true})
 local modules_arg = clink.argmatcher():addarg(matchers.create_dirs_matcher('node_modules/*'))
 local level_arg = clink.argmatcher():addarg({"debug", "info", "warn", "error"})
 local reporter_arg = clink.argmatcher():addarg({"append-only", "default", "ndjson", "silent"})
-local bool_color_flags = {"--color", "--no-color"}
+
+local function addicon(m, icon)
+    if matchicons and matchicons.addicontomatch then
+        return matchicons.addicontomatch(m, icon)
+    else
+        return m
+    end
+end
 
 local function scripts()
     local package_json = io.open('package.json')
@@ -30,16 +38,16 @@ local function scripts()
     for name, cmd in pairs(pkg.scripts) do
         local description = type(cmd) == "string" and cmd or tostring(cmd)
         description = description:gsub("[\r\n]+", " "):gsub("%s+", " ")
-        table.insert(matches, { match=name, display=script_icon .. " " .. name, description=description, type="none" })
+        table.insert(matches, addicon({ match=name, description=description, type="file" }, script_icon))
     end
     table.sort(matches, function(a, b) return a.match < b.match end)
     return matches
 end
 
-local function add_flags(matcher, flags)
-    matcher:addflags(table.unpack(flags))
-    return matcher
-end
+local bool_color_flags = {
+    "--color",
+    "--no-color"
+}
 
 local shared_flags = {
     "--aggregate-output",
@@ -71,12 +79,12 @@ local install_output_flags = {
 }
 
 local install_matcher = clink.argmatcher():addarg(pkg_arg):loop(1)
-add_flags(install_matcher, bool_color_flags)
-add_flags(install_matcher, shared_flags)
-add_flags(install_matcher, store_flags)
-add_flags(install_matcher, recursive_flags)
-add_flags(install_matcher, install_output_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    store_flags,
+    recursive_flags,
+    install_output_flags,
     "--frozen-lockfile", "--no-frozen-lockfile",
     "--verify-store-integrity", "--no-verify-store-integrity",
     "-D", "--dev",
@@ -115,11 +123,11 @@ add_flags(install_matcher, install_output_flags)
 )
 
 local add_matcher = clink.argmatcher():addarg(pkg_arg):loop(1)
-add_flags(add_matcher, bool_color_flags)
-add_flags(add_matcher, shared_flags)
-add_flags(add_matcher, store_flags)
-add_flags(add_matcher, recursive_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    store_flags,
+    recursive_flags,
     "-E", "--save-exact",
     "--no-save-exact",
     "--save-workspace-protocol",
@@ -141,10 +149,10 @@ add_flags(add_matcher, recursive_flags)
 )
 
 local dedupe_matcher = clink.argmatcher()
-add_flags(dedupe_matcher, bool_color_flags)
-add_flags(dedupe_matcher, shared_flags)
-add_flags(dedupe_matcher, store_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    store_flags,
     "--check",
     "--ignore-scripts",
     "--offline",
@@ -154,9 +162,9 @@ add_flags(dedupe_matcher, store_flags)
 )
 
 local fetch_matcher = clink.argmatcher()
-add_flags(fetch_matcher, bool_color_flags)
-add_flags(fetch_matcher, shared_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
     "-D", "--dev",
     "-P", "--prod",
     "-w", "--workspace-root"
@@ -165,21 +173,25 @@ add_flags(fetch_matcher, shared_flags)
 local import_matcher = clink.argmatcher():addflags("-h", "--help")
 
 local install_test_matcher = clink.argmatcher()
-add_flags(install_test_matcher, bool_color_flags)
-add_flags(install_test_matcher, shared_flags)
-add_flags(install_test_matcher, store_flags)
-add_flags(install_test_matcher, recursive_flags)
-add_flags(install_test_matcher, install_output_flags)
+:addflags(
+    bool_color_flags,
+    shared_flags,
+    store_flags,
+    recursive_flags,
+    install_output_flags
+)
 
 local link_matcher = clink.argmatcher():addarg({matchers.dirs, modules_arg}):loop(1)
-add_flags(link_matcher, bool_color_flags)
-add_flags(link_matcher, shared_flags)
-:addflags("-w", "--workspace-root")
+:addflags(
+    bool_color_flags,
+    shared_flags,
+    "-w", "--workspace-root"
+)
 
 local prune_matcher = clink.argmatcher()
-add_flags(prune_matcher, bool_color_flags)
-add_flags(prune_matcher, shared_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
     "--ignore-scripts",
     "--no-optional",
     "--prod",
@@ -187,19 +199,19 @@ add_flags(prune_matcher, shared_flags)
 )
 
 local rebuild_matcher = clink.argmatcher():addarg(modules_arg):loop(1)
-add_flags(rebuild_matcher, bool_color_flags)
-add_flags(rebuild_matcher, shared_flags)
-add_flags(rebuild_matcher, recursive_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    recursive_flags,
     "--pending",
     "--store-dir" .. dir_arg
 )
 
 local remove_matcher = clink.argmatcher():addarg(modules_arg):loop(1)
-add_flags(remove_matcher, bool_color_flags)
-add_flags(remove_matcher, shared_flags)
-add_flags(remove_matcher, recursive_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    recursive_flags,
     "--global-dir" .. dir_arg,
     "-D", "--save-dev",
     "-O", "--save-optional",
@@ -207,15 +219,17 @@ add_flags(remove_matcher, recursive_flags)
 )
 
 local unlink_matcher = clink.argmatcher():addarg(modules_arg):loop(1)
-add_flags(unlink_matcher, bool_color_flags)
-add_flags(unlink_matcher, shared_flags)
-add_flags(unlink_matcher, recursive_flags)
+:addflags(
+    bool_color_flags,
+    shared_flags,
+    recursive_flags
+)
 
 local update_matcher = clink.argmatcher():addarg(modules_arg):loop(1)
-add_flags(update_matcher, bool_color_flags)
-add_flags(update_matcher, shared_flags)
-add_flags(update_matcher, recursive_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    recursive_flags,
     "--depth" .. empty_arg,
     "-D", "--dev",
     "-g", "--global",
@@ -248,8 +262,8 @@ local audit_matcher = clink.argmatcher()
 
 local licenses_matcher = clink.argmatcher()
 :addarg({"ls", "list"})
-add_flags(licenses_matcher, recursive_flags)
 :addflags(
+    recursive_flags,
     "-D", "--dev",
     "--json",
     "--long",
@@ -258,10 +272,10 @@ add_flags(licenses_matcher, recursive_flags)
 )
 
 local list_matcher = clink.argmatcher():addarg(modules_arg):loop(1)
-add_flags(list_matcher, bool_color_flags)
-add_flags(list_matcher, shared_flags)
-add_flags(list_matcher, recursive_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    recursive_flags,
     "--depth" .. empty_arg,
     "-D", "--dev",
     "--exclude-peers",
@@ -277,10 +291,10 @@ add_flags(list_matcher, recursive_flags)
 )
 
 local outdated_matcher = clink.argmatcher():addarg(modules_arg):loop(1)
-add_flags(outdated_matcher, bool_color_flags)
-add_flags(outdated_matcher, shared_flags)
-add_flags(outdated_matcher, recursive_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    recursive_flags,
     "--compatible",
     "-D", "--dev",
     "--format" .. clink.argmatcher():addarg({"table", "list", "json"}),
@@ -293,10 +307,10 @@ add_flags(outdated_matcher, recursive_flags)
 )
 
 local why_matcher = clink.argmatcher():addarg(modules_arg):loop(1)
-add_flags(why_matcher, bool_color_flags)
-add_flags(why_matcher, shared_flags)
-add_flags(why_matcher, recursive_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    recursive_flags,
     "--depth" .. empty_arg,
     "-D", "--dev",
     "--exclude-peers",
@@ -321,9 +335,9 @@ local dlx_matcher = clink.argmatcher():addarg(pkg_arg):loop(1)
 )
 
 local exec_matcher = clink.argmatcher():addarg(empty_arg):loop(1)
-add_flags(exec_matcher, bool_color_flags)
-add_flags(exec_matcher, shared_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
     "-c", "--shell-mode",
     "--no-reporter-hide-prefix",
     "--parallel",
@@ -335,10 +349,10 @@ add_flags(exec_matcher, shared_flags)
 local ignored_builds_matcher = clink.argmatcher()
 
 local run_matcher = clink.argmatcher():addarg({scripts}):addarg(empty_arg):loop(1)
-add_flags(run_matcher, bool_color_flags)
-add_flags(run_matcher, shared_flags)
-add_flags(run_matcher, recursive_flags)
 :addflags(
+    bool_color_flags,
+    shared_flags,
+    recursive_flags,
     "--if-present",
     "--no-bail",
     "--parallel",
@@ -347,15 +361,6 @@ add_flags(run_matcher, recursive_flags)
     "--resume-from" .. empty_arg,
     "--sequential"
 )
-
-local function top_level_scripts()
-    local matches = {}
-    local scripts_matches = scripts()
-    for i = 1, #scripts_matches do
-        table.insert(matches, scripts_matches[i])
-    end
-    return matches
-end
 
 local start_matcher = clink.argmatcher():addarg(empty_arg):loop(1)
 local test_matcher = clink.argmatcher():addarg(empty_arg):loop(1)
@@ -375,8 +380,10 @@ local config_matcher = clink.argmatcher()
 )
 
 local deploy_matcher = clink.argmatcher():addarg(dir_arg)
-add_flags(deploy_matcher, recursive_flags)
-:addflags("-D", "--dev", "--legacy", "--no-optional", "-P", "--prod")
+:addflags(
+    recursive_flags,
+    "-D", "--dev", "--legacy", "--no-optional", "-P", "--prod"
+)
 
 local doctor_matcher = clink.argmatcher()
 local init_matcher = clink.argmatcher():addflags(
@@ -386,8 +393,8 @@ local init_matcher = clink.argmatcher():addflags(
 )
 
 local pack_matcher = clink.argmatcher()
-add_flags(pack_matcher, recursive_flags)
 :addflags(
+    recursive_flags,
     "--dry-run",
     "--json",
     "--out" .. file_arg,
@@ -396,8 +403,8 @@ add_flags(pack_matcher, recursive_flags)
 )
 
 local publish_matcher = clink.argmatcher():addarg({file_arg, dir_arg})
-add_flags(publish_matcher, recursive_flags)
 :addflags(
+    recursive_flags,
     "--access" .. clink.argmatcher():addarg({"public", "restricted"}),
     "--dry-run",
     "--force",
@@ -501,7 +508,7 @@ clink.argmatcher("pnpm")
     "find-hash" .. find_hash_matcher,
     "store" .. store_matcher,
     "cache" .. cache_matcher,
-    { top_level_scripts },
+    { scripts },
 })
 :addflags(
     "-h", "--help",
