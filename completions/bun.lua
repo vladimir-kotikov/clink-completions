@@ -1,5 +1,6 @@
 ﻿-- Completions for Bun (https://bun.sh)
 -- luacheck: ignore clink
+-- luacheck: globals matchicons
 
 local JSON = require("JSON")
 -- silence JSON parsing errors
@@ -14,6 +15,14 @@ local run_file_matches = matchers.ext_files(
     "*.js", "*.cjs", "*.mjs", "*.mts", "*.cts", "*.ts", "*.tsx", "*.jsx"
 )
 
+local function addicon(m, icon)
+    if matchicons and matchicons.addicontomatch then
+        return matchicons.addicontomatch(m, icon)
+    else
+        return m
+    end
+end
+
 local function scripts()
     local package_json = io.open('package.json')
     if package_json == nil then return w() end
@@ -27,7 +36,7 @@ local function scripts()
     for name, cmd in pairs(pkg.scripts) do
         local description = type(cmd) == "string" and cmd or tostring(cmd)
         description = description:gsub("[\r\n]+", " "):gsub("%s+", " ")
-        table.insert(matches, { match=name, display=script_icon.." "..name, description=description, type="none" })
+        table.insert(matches, addicon({ match=name, description=description, type="file" }, script_icon))
     end
 
     table.sort(matches, function(a, b)
