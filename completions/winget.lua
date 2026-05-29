@@ -564,7 +564,7 @@ local upgrade_parser = clink.argmatcher()
     {               "--include-unknown",                                        "Upgrade packages even if their current version cannot be determined" },
 })
 :addarg({winget_complete})
-:nofiles()
+:loop(1)
 
 local validate_parser = clink.argmatcher()
 :_addexflags({
