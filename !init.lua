@@ -11,12 +11,5 @@ if not package.path:find(modules_path, 1, true--[[plain]]) then
     package.path = modules_path..";"..package.path
 end
 
--- Explicitly set the completions dir, in case something (such as Cmder)
--- manually loads completion scripts with them being in a Clink script path.
-if os.setenv then
-    local completions_path = parent_path.."completions"
-    local env = os.getenv("CLINK_COMPLETIONS_DIR") or ""
-    if not env:find(completions_path, 1, true--[[plain]]) then
-        os.setenv("CLINK_COMPLETIONS_DIR", env .. (#env > 0 and ";" or "") .. completions_path)
-    end
-end
+-- Do shared initialization work.  The require() ensures it happens only once.
+require("init_clink_completions")

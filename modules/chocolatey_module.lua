@@ -113,9 +113,12 @@ local chocolatey_parser = parser({
     "uninstall"..cuninst_parser
     }, "/?")
 
-clink.arg.register_parser("choco", chocolatey_parser)
-clink.arg.register_parser("chocolatey", chocolatey_parser)
-clink.arg.register_parser("cinst", cinst_parser)
-clink.arg.register_parser("clist", clist_parser)
-clink.arg.register_parser("cuninst", cuninst_parser)
-clink.arg.register_parser("cup", cup_parser)
+local exports = {
+    chocolatey_parser = chocolatey_parser,
+    cinst_parser = cinst_parser,
+    clist_parser = clist_parser,
+    cuninst_parser = cuninst_parser,
+    cup_parser = cup_parser,
+}
+
+return exports
