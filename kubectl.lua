@@ -78,5 +78,11 @@ local kubectl_parser = parser(
 	}
 )
 
-clink.arg.register_parser("kubectl", kubectl_parser)
-clink.arg.register_parser("oc", kubectl_parser)
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+for _, cmd in ipairs({"kubectl", "oc"}) do
+    if has_cmd(cmd) then clink.arg.register_parser(cmd, kubectl_parser) end
+end

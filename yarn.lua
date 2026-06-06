@@ -222,4 +222,11 @@ local yarn_parser = parser({
     "--version"
 )
 
-clink.arg.register_parser("yarn", yarn_parser)
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+if has_cmd("yarn") then
+    clink.arg.register_parser("yarn", yarn_parser)
+end

@@ -490,4 +490,12 @@ scoop_parser:set_arguments(
         "which"
     }
 )
-clink.arg.register_parser("scoop", scoop_parser)
+
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+if has_cmd("scoop") then
+    clink.arg.register_parser("scoop", scoop_parser)
+end

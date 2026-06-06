@@ -95,5 +95,11 @@ local cordova_parser = parser(
     "-v", "--version",
     "-d", "--verbose")
 
-clink.arg.register_parser("cordova", cordova_parser)
-clink.arg.register_parser("cordova-dev", cordova_parser)
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+for _, cmd in ipairs({"cordova", "cordova-dev"}) do
+    if has_cmd(cmd) then clink.arg.register_parser(cmd, cordova_parser) end
+end

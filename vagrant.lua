@@ -137,5 +137,12 @@ local help_parser = parser({
     "help" .. parser(vagrant_parser:flatten_argument(1))
 })
 
-clink.arg.register_parser("vagrant", vagrant_parser)
-clink.arg.register_parser("vagrant", help_parser)
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+if has_cmd("vagrant") then
+    clink.arg.register_parser("vagrant", vagrant_parser)
+    clink.arg.register_parser("vagrant", help_parser)
+end

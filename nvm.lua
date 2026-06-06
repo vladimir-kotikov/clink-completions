@@ -43,4 +43,11 @@ local nvm_parser = parser({
     "version", "v"
 }, "-h", "--help", "-v", "--version")
 
-clink.arg.register_parser("nvm", nvm_parser)
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+if has_cmd("nvm") then
+    clink.arg.register_parser("nvm", nvm_parser)
+end

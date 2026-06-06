@@ -212,7 +212,14 @@ local npm_parser = parser({
     "-h", "--version"
 )
 
-clink.arg.register_parser("npm", npm_parser)
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+if has_cmd("npm") then
+    clink.arg.register_parser("npm", npm_parser)
+end
 
 local function escape_percents(s)
     return s:gsub('%%', '%%%%')

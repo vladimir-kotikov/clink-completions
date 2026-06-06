@@ -191,4 +191,11 @@ local ng_parser = parser({
     "github-pages:deploy"..github_pages_parser
 })
 
-clink.arg.register_parser("ng", ng_parser)
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+if has_cmd("ng") then
+    clink.arg.register_parser("ng", ng_parser)
+end

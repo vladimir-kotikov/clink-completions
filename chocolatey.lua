@@ -1,8 +1,8 @@
 local w = require('tables').wrap
 local path = require('path')
+local install = clink.get_env('chocolateyinstall')
 
 local packages = function (token)
-    local install = clink.get_env('chocolateyinstall')
     if install then
         return w(clink.find_dirs(clink.get_env('chocolateyinstall')..'/lib/*'))
         :filter(function(dir)
@@ -113,9 +113,11 @@ local chocolatey_parser = parser({
     "uninstall"..cuninst_parser
     }, "/?")
 
-clink.arg.register_parser("choco", chocolatey_parser)
-clink.arg.register_parser("chocolatey", chocolatey_parser)
-clink.arg.register_parser("cinst", cinst_parser)
-clink.arg.register_parser("clist", clist_parser)
-clink.arg.register_parser("cuninst", cuninst_parser)
-clink.arg.register_parser("cup", cup_parser)
+if install then
+    clink.arg.register_parser("choco", chocolatey_parser)
+    clink.arg.register_parser("chocolatey", chocolatey_parser)
+    clink.arg.register_parser("cinst", cinst_parser)
+    clink.arg.register_parser("clist", clist_parser)
+    clink.arg.register_parser("cuninst", cuninst_parser)
+    clink.arg.register_parser("cup", cup_parser)
+end

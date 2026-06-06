@@ -92,4 +92,11 @@ local coho_parser = parser(
     "-h"
     )
 
-clink.arg.register_parser("coho", coho_parser)
+local function has_cmd(cmd)
+    local ok = os.execute("where " .. cmd .. " >nul 2>nul")
+    return ok == true or ok == 0
+end
+
+if has_cmd("coho") then
+    clink.arg.register_parser("coho", coho_parser)
+end
