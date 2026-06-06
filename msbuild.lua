@@ -37,6 +37,7 @@ end
 --[[
 // vim: set et:
 --]]
+local defer = require('defer_completions')
 require('arghelper')
 
 -- luacheck: no max line length
@@ -242,6 +243,6 @@ for _,e in ipairs(source) do
     end
 end
 
-clink.argmatcher('msbuild')
+defer.argmatcher('msbuild')
 :_addexflags(msbuild_parser_data.exflags)
 :hideflags(msbuild_parser_data.hideflags)

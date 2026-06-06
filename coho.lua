@@ -1,3 +1,5 @@
+local defer = require("defer_completions")
+
 local parser = clink.arg.new_parser
 
 local repos = {
@@ -92,4 +94,4 @@ local coho_parser = parser(
     "-h"
     )
 
-clink.arg.register_parser("coho", coho_parser)
+defer.register_parser("coho", coho_parser)

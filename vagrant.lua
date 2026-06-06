@@ -1,3 +1,4 @@
+local defer = require('defer_completions')
 local matchers = require('matchers')
 local path = require('path')
 local parser = clink.arg.new_parser
@@ -137,5 +138,5 @@ local help_parser = parser({
     "help" .. parser(vagrant_parser:flatten_argument(1))
 })
 
-clink.arg.register_parser("vagrant", vagrant_parser)
-clink.arg.register_parser("vagrant", help_parser)
+defer.register_parser("vagrant", vagrant_parser)
+defer.register_parser("vagrant", help_parser)

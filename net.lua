@@ -1,4 +1,5 @@
 local clink_version = require('clink_version')
+local defer = require('defer_completions')
 
 local function args(...)
     if clink_version.new_api then
@@ -80,10 +81,10 @@ local help_table =
 }
 
 if clink_version.new_api then
-    clink.argmatcher("net")
+    defer.argmatcher("net")
     :addflags("/?")
     :addarg(net_table, help_table)
 else
-    clink.arg.register_parser("net", clink.arg.new_parser(net_table), "/?")
-    clink.arg.register_parser("net", clink.arg.new_parser(help_table))
+    defer.register_parser("net", clink.arg.new_parser(net_table), "/?")
+    defer.register_parser("net", clink.arg.new_parser(help_table))
 end

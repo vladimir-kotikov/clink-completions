@@ -8,6 +8,7 @@ function JSON:assert () end  -- luacheck: no unused args
 local color = require('color')
 local w = require('tables').wrap
 local matchers = require('matchers')
+local defer = require('defer_completions')
 
 ---
  -- Queries config options value using 'npm config' call
@@ -212,7 +213,7 @@ local npm_parser = parser({
     "-h", "--version"
 )
 
-clink.arg.register_parser("npm", npm_parser)
+defer.register_parser("npm", npm_parser)
 
 local function escape_percents(s)
     return s:gsub('%%', '%%%%')
