@@ -1,3 +1,4 @@
+local defer = require('defer_completions')
 local matchers = require('matchers')
 local standalone = not clink or not clink.argmatcher
 local clink_version = require('clink_version')
@@ -431,4 +432,4 @@ dotnet_parser:add_flags(
     "--help", "--info", "--list-sdks", "--list-runtimes"
 )
 
-clink.arg.register_parser("dotnet", dotnet_parser)
+defer.register_parser("dotnet", dotnet_parser)

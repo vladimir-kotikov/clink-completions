@@ -1,3 +1,4 @@
+local defer = require("defer_completions")
 local matchers = require("matchers")
 local w = require("tables").wrap
 
@@ -162,4 +163,4 @@ local pipenv_parser =
     "--version"
 )
 
-clink.arg.register_parser("pipenv", pipenv_parser)
+defer.register_parser("pipenv", pipenv_parser)

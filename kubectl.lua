@@ -1,4 +1,5 @@
 local w = require('tables').wrap
+local defer = require('defer_completions')
 local parser = clink.arg.new_parser
 
 local function exec_kubectl(arguments, template)
@@ -78,5 +79,5 @@ local kubectl_parser = parser(
 	}
 )
 
-clink.arg.register_parser("kubectl", kubectl_parser)
-clink.arg.register_parser("oc", kubectl_parser)
+defer.register_parser("kubectl", kubectl_parser)
+defer.register_parser("oc", kubectl_parser)

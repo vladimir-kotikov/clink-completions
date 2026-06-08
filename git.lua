@@ -4,6 +4,7 @@ local matchers = require('matchers')
 local w = require('tables').wrap
 local clink_version = require('clink_version')
 local color = require('color')
+local defer = require('defer_completions')
 require('arghelper')
 local parser = function (...)
     local p = clink.arg.new_parser(...)
@@ -3429,8 +3430,8 @@ else
     init(git_parser, false--[[full_init]])
 end
 
-clink.arg.register_parser("git", git_parser)
-clink.arg.register_parser("gitk", gitk_parser)
+defer.register_parser("git", git_parser)
+defer.register_parser("gitk", gitk_parser)
 
 if clink.onbeginedit then
     clink.onbeginedit(function()

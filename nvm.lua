@@ -1,3 +1,4 @@
+local defer = require('defer_completions')
 local path = require('path')
 local w = require('tables').wrap
 local parser = clink.arg.new_parser
@@ -43,4 +44,4 @@ local nvm_parser = parser({
     "version", "v"
 }, "-h", "--help", "-v", "--version")
 
-clink.arg.register_parser("nvm", nvm_parser)
+defer.register_parser("nvm", nvm_parser)

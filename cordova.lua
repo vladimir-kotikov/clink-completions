@@ -1,5 +1,6 @@
 --preamble: common routines
 
+local defer = require('defer_completions')
 local matchers = require('matchers')
 
 local platforms = matchers.create_dirs_matcher('platforms/*')
@@ -95,5 +96,5 @@ local cordova_parser = parser(
     "-v", "--version",
     "-d", "--verbose")
 
-clink.arg.register_parser("cordova", cordova_parser)
-clink.arg.register_parser("cordova-dev", cordova_parser)
+defer.register_parser("cordova", cordova_parser)
+defer.register_parser("cordova-dev", cordova_parser)

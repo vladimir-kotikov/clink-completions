@@ -1,3 +1,5 @@
+local defer = require("defer_completions")
+
 local parser = clink.arg.new_parser
 
 local addon_parser = parser({
@@ -191,4 +193,4 @@ local ng_parser = parser({
     "github-pages:deploy"..github_pages_parser
 })
 
-clink.arg.register_parser("ng", ng_parser)
+defer.register_parser("ng", ng_parser)

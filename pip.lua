@@ -1,3 +1,4 @@
+local defer = require("defer_completions")
 local matchers = require("matchers")
 local w = require("tables").wrap
 
@@ -254,4 +255,4 @@ local pip_parser =
 )
 pip_parser:add_flags(pip_default_flags)
 
-clink.arg.register_parser("pip", pip_parser)
+defer.register_parser("pip", pip_parser)

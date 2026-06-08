@@ -2,6 +2,7 @@
 -- https://github.com/dodmi/Clink-Addons
 
 local clink_version = require('clink_version')
+local defer = require('defer_completions')
 
 local w = require('tables').wrap
 local parser = clink.arg.new_parser
@@ -315,5 +316,4 @@ local ssh_parser = parser({hosts_with_port_flag},
     ["-w"] = { " local_tun[:remote_tun]", "" },
 })
 
-clink.arg.register_parser("ssh", ssh_parser)
-
+defer.register_parser("ssh", ssh_parser)

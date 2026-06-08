@@ -1,5 +1,6 @@
 local JSON = require("JSON")
 
+local defer = require("defer_completions")
 local matchers = require("matchers")
 local path = require("path")
 local w = require("tables").wrap
@@ -490,4 +491,5 @@ scoop_parser:set_arguments(
         "which"
     }
 )
-clink.arg.register_parser("scoop", scoop_parser)
+
+defer.register_parser("scoop", scoop_parser)

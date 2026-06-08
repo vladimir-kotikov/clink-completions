@@ -5,6 +5,7 @@ local JSON = require("JSON")
 -- silence JSON parsing errors
 function JSON:assert () end  -- luacheck: no unused args
 
+local defer = require('defer_completions')
 local w = require('tables').wrap
 local matchers = require('matchers')
 local color = require('color')
@@ -222,4 +223,4 @@ local yarn_parser = parser({
     "--version"
 )
 
-clink.arg.register_parser("yarn", yarn_parser)
+defer.register_parser("yarn", yarn_parser)
