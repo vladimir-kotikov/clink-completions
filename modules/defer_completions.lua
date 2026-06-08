@@ -9,10 +9,6 @@ local clink_version = require("clink_version")
 
 local deferred = {}
 
--- Clink v1.3.23 and newer can load scripts on demand from the completions\
--- directory, but older versions need to preload them.
-local need_preload = not clink_version.supports_completions_directory
-
 local function new_deferred(name)
     local d = deferred[name]
     local existed = d and true or nil
@@ -21,6 +17,20 @@ local function new_deferred(name)
         deferred[name] = d
     end
     return d, existed
+end
+
+local function need_preload()
+    -- Clink v1.3.23 and newer can load scripts on demand from the completions\
+    -- directory, but older versions need to preload them.
+    if not clink_version.supports_completions_directory then
+        return true
+    end
+
+    local env = os.getenv("CLINK_COMPLETIONS_PRELOAD") or ""
+    local num = tonumber(env) or 0
+    if num > 0 then
+        return true
+    end
 end
 
 local function argmatcher(...)
@@ -32,7 +42,7 @@ local function argmatcher(...)
     end
     local name = t[1]
 
-    if need_preload or os.getenv("CLINK_COMPLETIONS_PRELOAD") then
+    if need_preload() then
         return clink.argmatcher(name)
     end
 
@@ -50,8 +60,9 @@ local function argmatcher(...)
 end
 
 local function register_parser(name, parser)
-    if need_preload or os.getenv("CLINK_COMPLETIONS_PRELOAD") then
+    if need_preload() then
         clink.arg.register_parser(name, parser)
+        return
     end
 
     local d = new_deferred(name)
