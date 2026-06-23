@@ -75,23 +75,25 @@ end
 
 local function realize(name)
     local d = deferred[name]        -- Get the deferred entry.
-    if d.argmatcher then
-        local a = clink.argmatcher(name)
-        -- Empty the new argmatcher completely.
-        for n in pairs(a) do
-            a[n] = nil
+    if d then
+        if d.argmatcher then
+            local a = clink.argmatcher(name)
+            -- Empty the new argmatcher completely.
+            for n in pairs(a) do
+                a[n] = nil
+            end
+            -- Overlay it with the contents from the deferred argmatcher.
+            for n, v in pairs(d.argmatcher) do
+                a[n] = v
+            end
+        else
+            -- Register the deferred parsers.
+            for _, p in ipairs(d) do
+                clink.arg.register_parser(name, p)
+            end
         end
-        -- Overlay it with the contents from the deferred argmatcher.
-        for n, v in pairs(d.argmatcher) do
-            a[n] = v
-        end
-    else
-        -- Register the deferred parsers.
-        for _, p in ipairs(d) do
-            clink.arg.register_parser(name, p)
-        end
+        deferred[name] = nil        -- Free the deferred entry.
     end
-    deferred[name] = nil            -- Free the deferred entry.
 end
 
 local exports = {
