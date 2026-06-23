@@ -80,8 +80,11 @@ end
 exports.concat = function (...)
     local input = {...}
     local ret = {}
+    local i = 1
+    local num = #input
 
-    for _,arg in ipairs(input) do
+    while i <= num do
+        local arg = input[i]
         if type(arg) == 'table' then
             for _,v in ipairs(arg) do
                 table.insert(ret, v)
@@ -89,6 +92,7 @@ exports.concat = function (...)
         elseif arg ~= nil then
             table.insert(ret, arg)
         end
+        i = i + 1
     end
 
     return ret
