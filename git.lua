@@ -327,17 +327,6 @@ local function remotes(token)  -- luacheck: no unused args
     return result
 end
 
-local function local_or_remote_branches(token)
-    -- Try to resolve .git directory location
-    local git_dir = git.get_git_common_dir()
-    if not git_dir then return w() end
-
-    return list_refs(git_dir, 'heads', 'remotes')
-    :filter(function(branch)
-        return clink.is_match(token, branch)
-    end)
-end
-
 local function add_spec_generator(token)
     if has_dot_dirs(token) then
         return addicons(file_matches(token))
@@ -465,11 +454,11 @@ end
 local function __common_spec_generator_nosort(token, mode)
     local git_dir = git.get_git_common_dir()
 
-    local refs = list_refs(git_dir)
+    -- Get branch names.
 
+    local refs = list_refs(git_dir)
     local local_branches = filter_refs(refs, 'heads')
     local local_branches_idx = make_indexed_table(local_branches)
-
     local remote_branches = filter_refs(refs, 'remotes')
     local remote_branches_idx = make_indexed_table(remote_branches)
 
@@ -483,50 +472,59 @@ local function __common_spec_generator_nosort(token, mode)
         end)
     local predicted_branches_idx = make_indexed_table(predicted_branches)
 
-    local tag_names = filter_refs(refs, 'tags')
-
-    local function files_filter(name)
-        name = path.normalise(name, '/')
-        return not predicted_branches_idx[name] and not remote_branches_idx[name] and not local_branches_idx[name]
-    end
-    local files = mode:find("checkout") and list_git_status_files(token, "-uno"):filter(files_filter) or w()
+    -- Collect the matches.
 
     local filtered_color = color.get_clink_color('color.filtered')
     local local_pre = filtered_color
-    local predicted_pre = '*'
     local remote_pre = filtered_color
-    local tag_pre = color.get_clink_color('color.doskey')
-    if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
-        predicted_pre = color.get_clink_color('color.git.star')..predicted_pre..filtered_color
-    end
 
-    local mapped = {
-        files:map(map_file):map(function (match) return addicon(match, "", color_git) end),
-        local_branches:map(function(branch)
-            return addicon({ match=branch, display=local_pre..branch, type='arg' }, "", color_git)
-        end),
-        predicted_branches:map(function(branch)
-            return addicon({ match=branch, display=predicted_pre..branch, type='arg' }, "", color_git)
-        end),
-        remote_branches:map(function(branch)
-            return addicon({ match=branch, display=remote_pre..branch, type='arg' }, "", color_git)
-        end),
-        tag_names:map(function(tag)
-            return addicon({ match=tag, display=tag_pre..tag, type='arg' }, "", extract_sgr(tag_pre))
-        end),
-    }
+    local mapped = {}
 
-    local result = w()
-    for _, t in ipairs(mapped) do
-        for _, m in ipairs(t) do
-            table.insert(result, m)
+    if mode:find("status") then
+        local function files_filter(name)
+            name = path.normalise(name, '/')
+            return not predicted_branches_idx[name] and not remote_branches_idx[name] and not local_branches_idx[name]
         end
+
+        local files = list_git_status_files(token, "-uno"):filter(files_filter)
+        table.insert(mapped, files:map(map_file):map(function (match)
+            return addicon(match, "", color_git)
+        end))
     end
-    return result
+
+    table.insert(mapped, local_branches:map(function(branch)
+        return addicon({ match=branch, display=local_pre..branch, type='arg' }, "", color_git)
+    end))
+
+    if mode:find("predicted") then
+        local predicted_pre = '*'
+        if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
+            predicted_pre = color.get_clink_color('color.git.star')..predicted_pre..filtered_color
+        end
+        table.insert(mapped, predicted_branches:map(function(branch)
+            return addicon({ match=branch, display=predicted_pre..branch, type='arg' }, "", color_git)
+        end))
+    end
+
+    table.insert(mapped, remote_branches:map(function(branch)
+        return addicon({ match=branch, display=remote_pre..branch, type='arg' }, "", color_git)
+    end))
+
+    if mode:find("tags") then
+        local tag_names = filter_refs(refs, 'tags')
+
+        local tag_pre = color.get_clink_color('color.doskey')
+        table.insert(mapped, tag_names:map(function(tag)
+            return addicon({ match=tag, display=tag_pre..tag, type='arg' }, "", extract_sgr(tag_pre))
+        end))
+    end
+
+    return w():concat(mapped)
 end
 
 local function __common_spec_generator(token, mode)
     local result
+    mode = mode or ""
     if not has_dot_dirs(token) then
         if clink_version.supports_argmatcher_nosort then
             result = __common_spec_generator_nosort(token, mode)
@@ -536,7 +534,10 @@ local function __common_spec_generator(token, mode)
             result = __common_spec_generator_049(token, mode)
         end
     end
-    result = (result or w()):concat(file_matches(token))
+    result = result or w()
+    if mode:find("files") then
+        result = result:concat(file_matches(token))
+    end
     if clink_version.supports_argmatcher_nosort then
         result.nosort = true
     end
@@ -544,11 +545,30 @@ local function __common_spec_generator(token, mode)
 end
 
 local function checkout_spec_generator(token)
-    return __common_spec_generator(token, "checkout")
+    return __common_spec_generator(token, "status predicted tags files")
 end
 
 local function log_spec_generator(token)
-    return __common_spec_generator(token, "log")
+    return __common_spec_generator(token, "tags files")
+end
+
+local function switch_spec_generator(token)
+    return __common_spec_generator(token, "predicted")
+end
+
+local function local_or_remote_branches(token)
+    if clink_version.supports_argmatcher_nosort then
+        return __common_spec_generator(token)
+    else
+        -- Try to resolve .git directory location
+        local git_dir = git.get_git_common_dir()
+        if not git_dir then return w() end
+
+        return list_refs(git_dir, 'heads', 'remotes')
+        :filter(function(branch)
+            return clink.is_match(token, branch)
+        end)
+    end
 end
 
 local function checkout_dashdash(token, _, _, _, user_data)
@@ -2738,7 +2758,7 @@ end
 
 local switch_parser = parser()
 :setendofflags()
-:addarg({local_or_remote_branches, hint=switch_arg_hint})
+:addarg({switch_spec_generator, hint=switch_arg_hint})
 :_addexflags({
     concat_one_letter_flags=true,
     onarg=switch_onarg,
