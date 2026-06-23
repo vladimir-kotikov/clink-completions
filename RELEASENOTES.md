@@ -1,5 +1,18 @@
 # Release Notes
 
+## 0.7.0 (TBD)
+
+  * [docker] Get compose services from specified file (#210).
+  * [k8s] Add `oc` as alias for kubectl (#211).
+  * Added completions for `bun` (#212).
+  * Added completions for `pnpm` (#213).
+  * Changed `winget` completions to loop for multiple winget upgrade packages (#216).
+  * Changed to avoid preloading argmatchers; now they're loaded on demand, which lets executable coloring show whether the command is present on the computer.
+  * [git] Updated completions for `git switch` to include branch predictions (like `git checkout` completions).
+  * [git] Updated completions for `git log` to omit branch predictions (they don't exist yet, so `git log` can't use them).
+  * [git] Updated completions for `git merge`, `git rebase`, and `git reset` to support icons when [Icons in File Completions](https://github.com/chrisant996/clink-gizmos#setting-up-icons-in-file-completions) from [clink-gizmos](https://github.com/chrisant966/clink-gizmos) is loaded and enabled.
+  * [git] Changed to sort tag names with numeric awareness; e.g. "1.20" sorts after "1.3".
+
 ## 0.6.9 (Apr 18, 2026)
 
   * Added `docker` and `dockerd` completions (#206).
