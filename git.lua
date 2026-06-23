@@ -512,6 +512,9 @@ local function __common_spec_generator_nosort(token, mode)
 
     if mode:find("tags") then
         local tag_names = filter_refs(refs, 'tags')
+        if string.comparematches then
+            tag_names:sort(string.comparematches)
+        end
 
         local tag_pre = color.get_clink_color('color.doskey')
         table.insert(mapped, tag_names:map(function(tag)

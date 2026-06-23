@@ -47,8 +47,8 @@ exports.wrap = function (tbl)
         end
         return exports.wrap(res)
     end
-    mt.__index.sort = function (arg)
-        table.sort(arg)
+    mt.__index.sort = function (arg, comp)
+        table.sort(arg, comp)
         return arg
     end
     mt.__index.dedupe = function (arg)
