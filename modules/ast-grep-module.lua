@@ -53,48 +53,48 @@ local arg_expected = "Argument expected:  "
 -- luacheck: no max line length
 
 local color_when = clink.argmatcher():_addexarg({
-    { "auto",       "Try to use colors, but don't force the issue (when piped, no console, etc)" },
-    { "always",     "Try very hard to emit colors, potentially using console APIs on Windows (NYI)" },
-    { "ansi",       "Emit ANSI color codes" },
-    { "never",      "Never emit colors" },
+    { "auto",       "尝试使用颜色，但不过度强制（管道输出、无控制台等情况）" },
+    { "always",     "尽力使用颜色，可能在 Windows 上使用控制台 API（NYI）" },
+    { "ansi",       "输出 ANSI 颜色代码" },
+    { "never",      "永不输出颜色" },
 })
 local config_file = clink.argmatcher():addarg(ymlfilematches)
 local dirs = clink.argmatcher():addarg(clink.dirmatches)
 local error_format = clink.argmatcher():_addexarg({
     { "github",     "GitHub Action" },
-    { "sarif",      "SARIF (Static Analysis Results Interchange Format)" },
+    { "sarif",      "SARIF（静态分析结果交换格式）" },
 })
 local file_type = clink.argmatcher():_addexarg({
-    { "hidden",     "Search hidden files and directories" },
-    { "dot",        "Don't respect .ignore files" },
-    { "exclude",    "Don't respect ignore files that are manually configured for the repo" },
-    { "global",     "Don't respect ignore files that come from 'global' sources" },
-    { "parent",     "Don't respect ignore files in parent directories" },
-    { "vcs",        "Don't respect version control ignore files (.gitignore, etc)" },
+    { "hidden",     "搜索隐藏文件和目录" },
+    { "dot",        "不遵守 .ignore 文件" },
+    { "exclude",    "不遵守为仓库手动配置的忽略文件" },
+    { "global",     "不遵守来自 'global' 源的忽略文件" },
+    { "parent",     "不遵守父目录中的忽略文件" },
+    { "vcs",        "不遵守版本控制忽略文件（.gitignore 等）" },
 })
 local filter_regex = clink.argmatcher():addarg({fromhistory=true})
 local fix = clink.argmatcher():addarg({fromhistory=true})
 local format = clink.argmatcher():_addexarg({
-    { "pattern",    "Print the query parsed in Pattern format" },
-    { "ast",        "Print the query in tree-sitter AST format (only named nodes)" },
-    { "cst",        "Print the query in tree-sitter CST format (named and unnamed nodes)" },
-    { "sexp",       "Print the query in S-expression format" },
+    { "pattern",    "以 Pattern 格式打印解析后的查询" },
+    { "ast",        "以 tree-sitter AST 格式打印查询（仅具名节点）" },
+    { "cst",        "以 tree-sitter CST 格式打印查询（具名和未具名节点）" },
+    { "sexp",       "以 S 表达式格式打印查询" },
 })
 local globs = clink.argmatcher():addarg({fromhistory=true})
 local heading_when = clink.argmatcher():_addexarg({
-    { "auto",       "Print heading for terminal tty but not for piped output" },
-    { "always",     "Always print heading regardless of output type" },
-    { "never",      "Never print heading regardless of output type" },
+    { "auto",       "为终端 tty 打印标题，但不为管道输出打印" },
+    { "always",     "始终打印标题，无论输出类型如何" },
+    { "never",      "永不打印标题，无论输出类型如何" },
 })
 local inspect_granularity = clink.argmatcher():_addexarg({
-    { "nothing",    "Do not show any tracing information" },
-    { "summary",    "Show summary about how many files are scanned and skipped" },
-    { "entity",     "Show per-file/per-rule tracing information" },
+    { "nothing",    "不显示任何追踪信息" },
+    { "summary",    "显示扫描和跳过的文件数量的摘要" },
+    { "entity",     "显示每个文件/每条规则的追踪信息" },
 })
 local json_style = clink.argmatcher():_addexarg({
-    { "pretty",     "Prints the matches as a pretty-printed JSON array (not for parsing by programs)" },
-    { "stream",     "Prints each match as a separate JSON object" },
-    { "compact",    "Prints the matches as a single-line JSON array, without any whitespace" },
+    { "pretty",     "以美化格式的 JSON 数组打印匹配（不用于程序解析）" },
+    { "stream",     "将每个匹配打印为单独的 JSON 对象" },
+    { "compact",    "以单行 JSON 数组打印匹配，不含空白字符" },
 })
 local kind = clink.argmatcher():addarg({fromhistory=true, "FIND KINDS: "..kind_playground_url})
 local lang = clink.argmatcher():addarg({fromhistory=true,
@@ -103,63 +103,63 @@ local lang = clink.argmatcher():addarg({fromhistory=true,
 local num = clink.argmatcher():addarg({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"})
 local pattern = clink.argmatcher():addarg({fromhistory=true})
 local report_style = clink.argmatcher():_addexarg({
-    { "rich",       "Output a richly formatted diagnostic, with source code previews" },
-    { "medium",     "Output a condensed diagnostic, with a line number, severity, message and notes (if any)" },
-    { "short",      "Output a short diagnostic, with a line number, severity, and message" },
+    { "rich",       "输出丰富格式的诊断信息，包含源代码预览" },
+    { "medium",     "输出精简的诊断信息，包含行号、严重性、消息和注释（如有）" },
+    { "short",      "输出简短诊断信息，包含行号、严重性和消息" },
 })
 local rule_file = clink.argmatcher():addarg(ymlfilematches)
 local rule_id = clink.argmatcher():addarg({fromhistory=true}) -- TODO: is there a way to get a list of rule IDs?
 local rule_text = clink.argmatcher():addarg({fromhistory=true})
 local strictness = clink.argmatcher():_addexarg({
-    { "cst",        "Match exact all node" },
-    { "smart",      "Match all node except source trivial nodes" },
-    { "ast",        "Match only AST nodes" },
-    { "relaxed",    "Match AST node except comments" },
-    { "signature",  "Match AST node except comments, without text" },
-    { "template",   "Similar to smart but match text only, node kinds are ignored" },
+    { "cst",        "匹配精确所有节点" },
+    { "smart",      "匹配所有节点，源普通节点除外" },
+    { "ast",        "仅匹配 AST 节点" },
+    { "relaxed",    "匹配 AST 节点，注释除外" },
+    { "signature",  "匹配 AST 节点，注释和文本除外" },
+    { "template",   "类似于 smart，但仅匹配文本，忽略节点类型" },
 })
 
 local common_flags = make_exflags({
-    { "-c", "--config", config_file, " <config_file>",  "Path to ast-grep root config" },
-    { "-h", "--help",                                   "Print help" },
-    { "-V", "--version",                                "Print version" },
+    { "-c", "--config", config_file, " <config_file>",  "ast-grep 根配置的路径" },
+    { "-h", "--help",                                   "打印帮助" },
+    { "-V", "--version",                                "打印版本" },
 })
 
 local common_run_scan_flags = make_exflags({
-    { nil, "--follow",                                  "Follow symbolic links" },
-    { nil, "--no-ignore", file_type, " <file_type>",    "Do not respect hidden file system or ignore files" },
-    { nil, "--stdin",                                   "Enable search code from stdin" },
-    { nil, "--globs", globs, " <globs>",                "Include or exclude file paths (prefix with ! to exclude)" },
-    { "-j", "--threads", num, " <num>",                 "Set the approximate number of threads to use" },
-    { "-i", "--interactive",                            "Start interactive edit session" },
-    { "-U", "--update-all",                             "Apply all rewrite without confirmation if true" },
-    { nil, "--files-with-matches",                      "Print only the paths with at least one match and suppress match contents" },
-    { nil, "--json",                                    "Output matches in structured JSON" },
-    { nil, "--json=", json_style, "<style>",            "Output matches in structured JSON" },
-    { nil, "--color", color_when, " <when>",             "Controls output color" },
-    { nil, "--inspect", inspect_granularity, " <granularity>", "Inspect information for file/rule discovery and scanning" },
-    { "-A", "--after", num, " <num>",                   "Show <num> lines after each match" },
-    { "-B", "--before", num, " <num>",                  "Show <num> lines before each match" },
-    { "-C", "--context", num, " <num>",                 "Show <num> lines around each match" },
+    { nil, "--follow",                                  "跟踪符号链接" },
+    { nil, "--no-ignore", file_type, " <file_type>",    "不遵守隐藏文件系统或忽略文件" },
+    { nil, "--stdin",                                   "启用从 stdin 搜索代码" },
+    { nil, "--globs", globs, " <globs>",                "包含或排除文件路径（前缀 ! 表示排除）" },
+    { "-j", "--threads", num, " <num>",                 "设置要使用的近似线程数" },
+    { "-i", "--interactive",                            "启动交互式编辑会话" },
+    { "-U", "--update-all",                             "如果为 true，则无需确认应用所有重写" },
+    { nil, "--files-with-matches",                      "仅打印至少有一个匹配的路径，并抑制匹配内容" },
+    { nil, "--json",                                    "以结构化 JSON 输出匹配" },
+    { nil, "--json=", json_style, "<style>",            "以结构化 JSON 输出匹配" },
+    { nil, "--color", color_when, " <when>",             "控制输出颜色" },
+    { nil, "--inspect", inspect_granularity, " <granularity>", "检查文件/规则发现和扫描的信息" },
+    { "-A", "--after", num, " <num>",                   "显示每个匹配后的 <num> 行" },
+    { "-B", "--before", num, " <num>",                  "显示每个匹配前的 <num> 行" },
+    { "-C", "--context", num, " <num>",                 "显示每个匹配周围的 <num> 行" },
 })
 
 local common_new_flags = make_exflags({
-    { "-l", "--lang", lang, " <lang>",                  "The language of the item to create" },
-    { "-y", "--yes",                                    "Accept all default options without interactive input during creation" },
+    { "-l", "--lang", lang, " <lang>",                  "要创建的项目的语言" },
+    { "-y", "--yes",                                    "创建时接受所有默认选项，无需交互输入" },
 })
 
 local run_parser = clink.argmatcher()
 :_addexflags(common_flags)
 :_addexflags(common_run_scan_flags)
 :_addexflags(make_exflags({
-    { "-p", "--pattern", pattern, " <pattern>",         "AST pattern to match" },
-    { nil, "--selector", kind, " <kind>",               "AST kind to extract sub-part of pattern to match; "..kind_playground_url },
-    { "-r", "--rewrite", fix, " <fix>",                 "String to replace the matched AST node" },
-    { "-l", "--lang", lang, " <lang>",                  "The language of the pattern" },
-    { nil, "--debug-query",                             "Print query pattern's tree-sitter AST" },
-    { nil, "--debug-query=", format, "<format>",        "Print query pattern's tree-sitter AST" },
-    { nil, "--strictness", strictness, " <strictness>", "The strictness of the pattern" },
-    { nil, "--heading", heading_when, " <when>",        "Controls whether to print the file name as heading" },
+    { "-p", "--pattern", pattern, " <pattern>",         "要匹配的 AST 模式" },
+    { nil, "--selector", kind, " <kind>",               "要提取模式子部分以匹配的 AST 类型；"..kind_playground_url },
+    { "-r", "--rewrite", fix, " <fix>",                 "替换匹配的 AST 节点的字符串" },
+    { "-l", "--lang", lang, " <lang>",                  "模式的语言" },
+    { nil, "--debug-query",                             "打印查询模式的 tree-sitter AST" },
+    { nil, "--debug-query=", format, "<format>",        "打印查询模式的 tree-sitter AST" },
+    { nil, "--strictness", strictness, " <strictness>", "模式的严格性" },
+    { nil, "--heading", heading_when, " <when>",        "控制是否将文件名打印为标题" },
 }))
 :addarg({hint=arg_expected.."[paths]", clink.filematches})
 
@@ -167,35 +167,35 @@ local scan_parser = clink.argmatcher()
 :_addexflags(common_flags)
 :_addexflags(common_run_scan_flags)
 :_addexflags(make_exflags({
-    { "-r", "--rule", rule_file, " <rule_file>",        "Scan the codebase with the single rule located at the path <rule_file>" },
-    { nil, "--inline-rules", rule_text, " <rule_text>", "Scan the codebase with a rule defined by the provided <rule_text>" },
-    { nil, "--format", error_format, " <format>",       "Output warning/error messages in different formats" },
-    { nil, "--report-style", report_style, " <report_style>", "Set the output report style" },
-    { nil, "--include-metadata",                        "Include rule metadata in the json output" },
-    { nil, "--filter", filter_regex, " <regex>",        "Scan the codebase with rules with ids matching <regex>" },
-    { nil, "--error",                                   "Set all rules to error" },
-    { nil, "--error=", rule_id, "<rule_id>...",         "Set the specified <rule_id>'s severity to error" },
-    { nil, "--warning",                                 "Set all rules to warning" },
-    { nil, "--warning=", rule_id, "<rule_id>...",       "Set the specified <rule_id>'s severity to warning" },
-    { nil, "--info",                                    "Set all rules to info" },
-    { nil, "--info=", rule_id, "<rule_id>...",          "Set the specified <rule_id>'s severity to info" },
-    { nil, "--hint",                                    "Set all rules to hint" },
-    { nil, "--hint=", rule_id, "<rule_id>...",          "Set the specified <rule_id>'s severity to hint" },
-    { nil, "--off",                                     "Turn off all rules" },
-    { nil, "--off=", rule_id, "<rule_id>...",           "Turn off rule" },
+    { "-r", "--rule", rule_file, " <rule_file>",        "使用位于路径 <rule_file> 的单个规则扫描代码库" },
+    { nil, "--inline-rules", rule_text, " <rule_text>", "使用提供的 <rule_text> 定义的规则扫描代码库" },
+    { nil, "--format", error_format, " <format>",       "以不同格式输出警告/错误消息" },
+    { nil, "--report-style", report_style, " <report_style>", "设置输出报告样式" },
+    { nil, "--include-metadata",                        "在 JSON 输出中包含规则元数据" },
+    { nil, "--filter", filter_regex, " <regex>",        "使用 ID 匹配 <regex> 的规则扫描代码库" },
+    { nil, "--error",                                   "将所有规则设置为 error" },
+    { nil, "--error=", rule_id, "<rule_id>...",         "将指定 <rule_id> 的严重性设置为 error" },
+    { nil, "--warning",                                 "将所有规则设置为 warning" },
+    { nil, "--warning=", rule_id, "<rule_id>...",       "将指定 <rule_id> 的严重性设置为 warning" },
+    { nil, "--info",                                    "将所有规则设置为 info" },
+    { nil, "--info=", rule_id, "<rule_id>...",          "将指定 <rule_id> 的严重性设置为 info" },
+    { nil, "--hint",                                    "将所有规则设置为 hint" },
+    { nil, "--hint=", rule_id, "<rule_id>...",          "将指定 <rule_id> 的严重性设置为 hint" },
+    { nil, "--off",                                     "关闭所有规则" },
+    { nil, "--off=", rule_id, "<rule_id>...",           "关闭规则" },
 }))
 :addarg({hint=arg_expected.."[paths]", clink.filematches})
 
 local test_parser = clink.argmatcher()
 :_addexflags(common_flags)
 :_addexflags(make_exflags({
-    { "-t", "--test-dir", dirs, " <test_dir>",          "The directories to search test YAML files" },
-    { nil, "--snapshot-dir", dirs, " <snapshot_dir>",   "Specify the directory name storing snapshots" },
-    { nil, "--skip-snapshot-tests",                     "Only check if the test code is valid, without checking rule output" },
-    { "-U", "--update-all",                             "Update the content of all snapshots that have changed in test" },
-    { "-i", "--interactive",                            "Start an interactive review to update snapshots selectively" },
-    { "-f", "--filter", filter_regex, " <regex>",       "Only run rule test cases that matches 'regex'" },
-    { nil, "--include-off",                             "Include 'severity:off' rules in test" },
+    { "-t", "--test-dir", dirs, " <test_dir>",          "搜索测试 YAML 文件的目录" },
+    { nil, "--snapshot-dir", dirs, " <snapshot_dir>",   "指定存储快照的目录名称" },
+    { nil, "--skip-snapshot-tests",                     "仅检查测试代码是否有效，不检查规则输出" },
+    { "-U", "--update-all",                             "更新测试中所有已更改的快照内容" },
+    { "-i", "--interactive",                            "启动交互式审查以选择性更新快照" },
+    { "-f", "--filter", filter_regex, " <regex>",       "仅运行匹配 'regex' 的规则测试用例" },
+    { nil, "--include-off",                             "在测试中包含 'severity:off' 规则" },
 }))
 
 local new_subcommand_parser = clink.argmatcher()
@@ -217,17 +217,17 @@ local new_parser = clink.argmatcher()
 :_addexarg({
     hint=arg_expected.."[name|command]",
     onadvance=new_onadvance,
-    { "project"..new_subcommand_parser, " [name]",      "Create an new project by scaffolding" },
-    { "rule"..new_subcommand_parser, " [name]",         "Create a new rule" },
-    { "test"..new_subcommand_parser, " [name]",         "Create a new test case" },
-    { "util"..new_subcommand_parser, " [name]",         "Create a new global utility rule" },
+    { "project"..new_subcommand_parser, " [name]",      "通过脚手架创建新项目" },
+    { "rule"..new_subcommand_parser, " [name]",         "创建新规则" },
+    { "test"..new_subcommand_parser, " [name]",         "创建新测试用例" },
+    { "util"..new_subcommand_parser, " [name]",         "创建新的全局工具规则" },
 })
 :_addexarg({
     hint=arg_expected.."[command]",
-    { "project"..new_subcommand_parser, " [name]",      "Create an new project by scaffolding" },
-    { "rule"..new_subcommand_parser, " [name]",         "Create a new rule" },
-    { "test"..new_subcommand_parser, " [name]",         "Create a new test case" },
-    { "util"..new_subcommand_parser, " [name]",         "Create a new global utility rule" },
+    { "project"..new_subcommand_parser, " [name]",      "通过脚手架创建新项目" },
+    { "rule"..new_subcommand_parser, " [name]",         "创建新规则" },
+    { "test"..new_subcommand_parser, " [name]",         "创建新测试用例" },
+    { "util"..new_subcommand_parser, " [name]",         "创建新的全局工具规则" },
 })
 :nofiles()
 
@@ -254,15 +254,15 @@ local pattern_implicit_run = clink.argmatcher():addarg({fromhistory=true, onlink
 clink.argmatcher("ast-grep", "sg")
 :_addexflags(common_flags)
 :_addexflags(make_exflags({
-    { "-p", "--pattern", pattern_implicit_run, " <pattern>", "AST pattern to match (implies the 'run' subcommand)" },
+    { "-p", "--pattern", pattern_implicit_run, " <pattern>", "AST 模式匹配（隐含 'run' 子命令）" },
 }))
 :_addexarg({
-    { "run"..run_parser, " [paths]",                    "Run one time search or rewrite in command line (default command)" },
-    { "scan"..scan_parser, " [paths]",                  "Scan and rewrite code by configuration" },
-    { "test"..test_parser,                              "Test ast-grep rules" },
-    { "new"..new_parser, " [name] [command]",           "Create new ast-grep project or items like rules/tests" },
-    { "lsp"..lsp_parser,                                "Start language server" },
-    { "completions"..completions_parser, " <shell>",    "Generate shell completion script" },
-    { "help"..help_parser, " [<subcommand>]",           "Print help for given subcommand" },
+    { "run"..run_parser, " [paths]",                    "在命令行运行一次性搜索或重写（默认命令）" },
+    { "scan"..scan_parser, " [paths]",                  "通过配置扫描和重写代码" },
+    { "test"..test_parser,                              "测试 ast-grep 规则" },
+    { "new"..new_parser, " [name] [command]",           "创建新的 ast-grep 项目或项目项（如规则/测试）" },
+    { "lsp"..lsp_parser,                                "启动语言服务器" },
+    { "completions"..completions_parser, " <shell>",    "生成 shell 补全脚本" },
+    { "help"..help_parser, " [<subcommand>]",           "打印指定子命令的帮助信息" },
 })
 :nofiles()

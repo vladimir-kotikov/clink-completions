@@ -42,11 +42,11 @@ end
 -- luacheck: no max line length
 local doskey = clink.argmatcher("doskey")
 :_addexflags({
-    {"/reinstall",  "Installs a new copy of Doskey"},
-    {"/macros",     "Display all Doskey macros for the current executable"},
-    {"/macros:"..clink.argmatcher():addarg(exe_matches_all), "Display all Doskey macros for the named executable ('ALL' for all executables)"},
-    {"/exename="..clink.argmatcher():addarg(exe_matches), "Specifies the executable"},
-    {"/macrofile=", "Specifies a file of macros to install"},
+    {"/reinstall",  "安装 Doskey 的新副本"},
+    {"/macros",     "显示当前可执行文件的所有 Doskey 宏"},
+    {"/macros:"..clink.argmatcher():addarg(exe_matches_all), "显示指定可执行文件的所有 Doskey 宏（'ALL' 表示所有可执行文件）"},
+    {"/exename="..clink.argmatcher():addarg(exe_matches), "指定可执行文件"},
+    {"/macrofile=", "指定要安装的宏文件"},
 })
 :addarg({onlink=chain_if_equal_sign})
 

@@ -70,39 +70,39 @@ local goto_parser = clink.argmatcher()
 
 local list_parser = clink.argmatcher()
 :_addexflags({
-    {"--category"..category_matcher, " category", "Filters installed extensions by provided category"},
-    {"--show-versions", "Show versions of installed extensions"},
+    {"--category"..category_matcher, " category", "按提供的类别筛选已安装的扩展"},
+    {"--show-versions", "显示已安装扩展的版本"},
 })
 
 local install_parser = clink.argmatcher()
 :addarg(vsix_files)
 :_addexflags({
-    {"--force",         "Update extension to latest version"},
-    {"--pre-relese",    "Install the pre-release version of the extension"},
+    {"--force",         "将扩展更新到最新版本"},
+    {"--pre-relese",    "安装扩展的预发布版本"},
 })
 
 -- luacheck: no max line length
 clink.argmatcher("code")
 :_addexflags({
     -- Options
-    {"-d"..diff_parser, " file file",                       "Compare two files with each other"},
+    {"-d"..diff_parser, " file file",                       "比较两个文件"},
     {"--diff"..diff_parser, " file file", ""},
-    {"-m"..merge_parser, " file1 file2 base result",        "Perform a three-way merge"},
+    {"-m"..merge_parser, " file1 file2 base result",        "执行三路合并"},
     {"--merge"..merge_parser, " file1 file2 base result", ""},
-    {"-a"..add_parser, " folder",                           "Add folder(s) to the last active window"},
+    {"-a"..add_parser, " folder",                           "将文件夹添加到上次活动的窗口"},
     {"--add"..add_parser, " folder", ""},
-    {"-g"..goto_parser, " file:line[:char]",                "Open a file and position the cursor"},
+    {"-g"..goto_parser, " file:line[:char]",                "打开文件并定位光标"},
     {"--goto"..goto_parser, " file:line[:char]", ""},
-    {"-n",                                                  "Force to open a new window"},
+    {"-n",                                                  "强制打开新窗口"},
     {"--new-window"},
-    {"-r",                                                  "Force to use an already opened window"},
+    {"-r",                                                  "强制使用已打开的窗口"},
     {"--reuse-window"},
-    {"-w",                                                  "Wait for the files to be closed before returning"},
+    {"-w",                                                  "等待文件关闭后再返回"},
     {"--wait"},
     {"--locale"..locale_matcher, " locale", ""},
     {"--user-data-dir"..dir_matcher, " dir", ""},
     {"--profile"..profile_matcher, " dir", ""},
-    {"-h",                                                  "Print usage"},
+    {"-h",                                                  "打印用法"},
     {"--help"},
 
     -- Extensions Management
@@ -113,11 +113,11 @@ clink.argmatcher("code")
     {"--enable-proposed-api"..enabledproposedapi_matcher, " ext_id", ""},
 
     -- Troubleshooting
-    {"-v",                                                  "Print version"},
+    {"-v",                                                  "打印版本"},
     {"--version"},
     {"--verbose"},
     {"--log"..level_matcher, " level", ""},
-    {"-s",                                                  "Print process usage and diagnostics info"},
+    {"-s",                                                  "打印进程使用情况和诊断信息"},
     {"--status"},
     {"--prof-startup"},
     {"--disable-extensions"},

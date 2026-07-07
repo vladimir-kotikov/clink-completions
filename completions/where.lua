@@ -21,11 +21,11 @@ local dir_matcher = clink.argmatcher():addarg({clink.dirmatches, onarg=onarg_roo
 -- luacheck: push
 -- luacheck: no max line length
 local flag_def_table = {
-    {"/r", dir_matcher, " dir", "Recursively searches and displays the files that match the given pattern starting from the specified directory"},
-    {"/q",          "Returns only the exit code, without displaying the list of matched files. (Quiet mode)"},
-    {"/f",          "Displays the matched filename in double quotes"},
-    {"/t",          "Displays the file size, last modified date and time for all matched files"},
-    {"/?",          "Displays help message"},
+    {"/r", dir_matcher, " dir", "从指定目录开始递归搜索并显示匹配给定模式的文件"},
+    {"/q",          "仅返回退出代码，不显示匹配文件列表（静默模式）"},
+    {"/f",          "用双引号显示匹配的文件名"},
+    {"/t",          "显示所有匹配文件的文件大小、最后修改日期和时间"},
+    {"/?",          "显示帮助消息"},
 }
 -- luacheck: pop
 

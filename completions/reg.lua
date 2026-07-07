@@ -140,12 +140,12 @@ local types = clink.argmatcher():addarg({
 })
 
 local common_flags = {
-    { "/?",                 "Show help" },
-    { "/reg:32",            "Specifies the key should be accessed using the 32-bit registry view" },
-    { "/reg:64",            "Specifies the key should be accessed using the 64-bit registry view" },
+    { "/?",                 "显示帮助" },
+    { "/reg:32",            "指定应使用 32 位注册表视图访问该键" },
+    { "/reg:64",            "指定应使用 64 位注册表视图访问该键" },
     { hide=true, "/reg:"..clink.argmatcher():_addexarg({
-        { "32",                 "Specifies the key should be accessed using the 32-bit registry view" },
-        { "64",                 "Specifies the key should be accessed using the 64-bit registry view" },
+        { "32",                 "指定应使用 32 位注册表视图访问该键" },
+        { "64",                 "指定应使用 64 位注册表视图访问该键" },
     }) },
 }
 
@@ -158,29 +158,29 @@ local query = clink.argmatcher():_addexflags({
 :_addexflags({
     onarg=onarg_keyname,
     common_flags,
-    { "/v"..valuename, " ValueName", "Queries for a specific registry key values" },
-    { "/ve",                "Queries for the default value or empty value name (Default)" },
-    { "/s",                 "Queries all subkeys and values recursively (like dir /s)" },
-    { "/se"..sep, " Sep",   "Specifies the separator (1 char) for REG_MULTI_SZ (Default is \\0)" },
-    { "/f"..find, " Data",  "Specifies the data or pattern to search for (Default is *)" },
-    { "/k",                 "Search in key names only" },
-    { "/d",                 "Search in data only" },
-    { "/c",                 "Use case sensitive search" },
-    { "/e",                 "Only return exact matches from search" },
-    { "/t"..types, " Type", "Specifies registry value data type (Default is all types)" },
-    { "/z",                 "Verbose: Shows the numeric equivalent for the type of the valuename" },
+    { "/v"..valuename, " ValueName", "查询特定的注册表键值" },
+    { "/ve",                "查询默认值或空值名称 (Default)" },
+    { "/s",                 "递归查询所有子键和值（类似 dir /s）" },
+    { "/se"..sep, " Sep",   "指定 REG_MULTI_SZ 的分隔符（1个字符，默认是 \\0）" },
+    { "/f"..find, " Data",  "指定要搜索的数据或模式（默认是 *）" },
+    { "/k",                 "仅在键名中搜索" },
+    { "/d",                 "仅在数据中搜索" },
+    { "/c",                 "使用区分大小写的搜索" },
+    { "/e",                 "仅返回精确匹配的搜索结果" },
+    { "/t"..types, " Type", "指定注册表值的数据类型（默认是所有类型）" },
+    { "/z",                 "详细模式：显示值名称类型的数字等效值" },
 })
 :nofiles()
 
 local add = clink.argmatcher():_addexflags({
     onarg=onarg_keyname,
     common_flags,
-    { "/v"..valuename, " ValueName", "The value name to add under the selected key" },
-    { "/ve",                "Adds an empty value name (Default) for the key" },
-    { "/t"..types, " Type", "Type to add (Default is REG_SZ)" },
-    { "/s"..sep, " Sep",    "Specify one character as the separator for REG_MULTI_SZ (Default is \\0)" },
-    { "/d"..data, " Data",  "The data to assign to the registry ValueName being added" },
-    { "/f",                 "Force overwriting the existing registry entry without prompt" },
+    { "/v"..valuename, " ValueName", "要在所选键下添加的值名称" },
+    { "/ve",                "为该键添加空值名称 (Default)" },
+    { "/t"..types, " Type", "要添加的类型（默认是 REG_SZ）" },
+    { "/s"..sep, " Sep",    "指定 REG_MULTI_SZ 的一个字符作为分隔符（默认是 \\0）" },
+    { "/d"..data, " Data",  "要分配给正在添加的注册表值名称的数据" },
+    { "/f",                 "强制覆盖现有注册表项而不提示" },
 })
 :addarg({
     onarg=onarg_keyname,
@@ -191,10 +191,10 @@ local add = clink.argmatcher():_addexflags({
 local delete = clink.argmatcher():_addexflags({
     onarg=onarg_keyname,
     common_flags,
-    { "/v"..valuename, " ValueName", "Delete value name under the specified key" },
-    { "/ve",                "Delete the value of empty value name (Default)" },
-    { "/va",                "Delete all values under the specified key" },
-    { "/f",                 "Forces deletion without prompt" },
+    { "/v"..valuename, " ValueName", "删除指定键下的值名称" },
+    { "/ve",                "删除空值名称的值 (Default)" },
+    { "/va",                "删除指定键下的所有值" },
+    { "/f",                 "强制删除而不提示" },
 })
 :addarg({
     onarg=onarg_keyname,
@@ -204,8 +204,8 @@ local delete = clink.argmatcher():_addexflags({
 
 local copy = clink.argmatcher():_addexflags({
     common_flags,
-    { "/s",                 "Copies all subkeys and values" },
-    { "/f",                 "Forces the copy without prompt" },
+    { "/s",                 "复制所有子键和值" },
+    { "/f",                 "强制复制而不提示" },
 })
 :addarg(keyname_any)
 :addarg(keyname_any)
@@ -213,7 +213,7 @@ local copy = clink.argmatcher():_addexflags({
 
 local save = clink.argmatcher():_addexflags({
     common_flags,
-    { "/y",                 "Force overwriting the existing file without prompt" },
+    { "/y",                 "强制覆盖现有文件而不提示" },
 })
 :addarg(keyname_any)
 :addarg(filematches_hiv)
@@ -234,7 +234,7 @@ local load = clink.argmatcher():_addexflags({
 :nofiles()
 
 local unload = clink.argmatcher():_addexflags({
-    { "/?",                 "Show help" },
+    { "/?",                 "显示帮助" },
 })
 :addarg(keyname_any)
 :nofiles()
@@ -242,13 +242,13 @@ local unload = clink.argmatcher():_addexflags({
 local compare = clink.argmatcher():_addexflags({
     onarg=onarg_keyname,
     common_flags,
-    { "/v"..valuename, " ValueName", "The value name to compare under the selected key (Default is all)" },
-    { "/ve",                "Compare the value of empty value name (Default)" },
-    { "/s",                 "Compare all subkeys and values" },
-    { "/oa",                "Output all of differences and matches" },
-    { "/od",                "Output only differences (Default)" },
-    { "/os",                "Output only matches" },
-    { "/on",                "No output (exit code 0=identical, 1=failed, 2=different)" },
+    { "/v"..valuename, " ValueName", "要在所选键下比较的值名称（默认是所有）" },
+    { "/ve",                "比较空值名称的值 (Default)" },
+    { "/s",                 "比较所有子键和值" },
+    { "/oa",                "输出所有差异和匹配项" },
+    { "/od",                "仅输出差异（默认）" },
+    { "/os",                "仅输出匹配项" },
+    { "/on",                "无输出（退出码 0=相同, 1=失败, 2=不同）" },
 })
 :addarg({
     onarg=onarg_keyname,
@@ -259,7 +259,7 @@ local compare = clink.argmatcher():_addexflags({
 
 local export = clink.argmatcher():_addexflags({
     common_flags,
-    { "/y",                 "Force overwriting the existing file without prompt" },
+    { "/y",                 "强制覆盖现有文件而不提示" },
 })
 :addarg(keyname_any)
 :addarg(filematches_reg)
@@ -273,13 +273,13 @@ local import = clink.argmatcher():_addexflags({
 
 local flags_query = clink.argmatcher():_addexflags({
     common_flags,
-    { "/s",                 "Queries all subkeys and values recursively (like dir /s)" },
+    { "/s",                 "递归查询所有子键和值（类似 dir /s）" },
 })
 :nofiles()
 
 local flags_set = clink.argmatcher():_addexflags({
     common_flags,
-    { "/s",                 "Sets flags on subkeys recursively" },
+    { "/s",                 "递归设置子键的标志" },
 })
 :addarg("dont_virtualize", "dont_silent_fail", "recurse_flag")
 :loop()
@@ -296,22 +296,22 @@ local flags = clink.argmatcher():_addexflags({
 :nofiles()
 
 local commands = {
-    { "query"   .. query,   " KeyName",             "Query keys or values" },
-    { "add"     .. add,     " KeyName",             "Add a key or value" },
-    { "delete"  .. delete,  " KeyName",             "Delete keys or values" },
-    { "copy"    .. copy,    " KeyName1 KeyName2",   "Copy keys and values" },
-    { "save"    .. save,    " KeyName FileName",    "Save a hive to a file" },
-    { "restore" .. restore, " KeyName FileName",    "Restore a hive from a file" },
-    { "load"    .. load,    " KeyName FileName",    "Load a hive file into a key name" },
-    { "unload"  .. unload,  " KeyName",             "Unload a loaded hive file from a key name" },
-    { "compare" .. compare, " KeyName1 KeyName2",   "Compare keys and values" },
-    { "export"  .. export,  " KeyName FileName",    "Export keys and values to a .reg file" },
-    { "import"  .. import,  " FileName",            "Import keys and values from a .reg file" },
-    { "flags"   .. flags,   " KeyName [query|set]", "Query or set flags for keys" },
+    { "query"   .. query,   " KeyName",             "查询键或值" },
+    { "add"     .. add,     " KeyName",             "添加键或值" },
+    { "delete"  .. delete,  " KeyName",             "删除键或值" },
+    { "copy"    .. copy,    " KeyName1 KeyName2",   "复制键和值" },
+    { "save"    .. save,    " KeyName FileName",    "将配置单元保存到文件" },
+    { "restore" .. restore, " KeyName FileName",    "从文件还原配置单元" },
+    { "load"    .. load,    " KeyName FileName",    "将配置单元文件加载到键名中" },
+    { "unload"  .. unload,  " KeyName",             "从键名中卸载已加载的配置单元文件" },
+    { "compare" .. compare, " KeyName1 KeyName2",   "比较键和值" },
+    { "export"  .. export,  " KeyName FileName",    "将键和值导出到 .reg 文件" },
+    { "import"  .. import,  " FileName",            "从 .reg 文件导入键和值" },
+    { "flags"   .. flags,   " KeyName [query|set]", "查询或设置键的标志" },
 }
 
 clink.argmatcher("reg")
 :_addexflags({
-    { "/?",                 "Show help" },
+    { "/?",                 "显示帮助" },
 })
 :_addexarg(commands)

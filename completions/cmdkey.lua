@@ -5,10 +5,10 @@ local placeholder = clink.argmatcher():addarg()
 local users = clink.argmatcher():addarg({fromhistory=true})
 
 local add_flags = {
-    {"/user:"..users, "username",           "Specify username"},
-    {"/pass:"..placeholder, "password",     "Specify password"},
-    {"/pass",                               "Prompt for password"},
-    {"/smartcard",                          "Retrieve credential from a smart card"},
+    {"/user:"..users, "username",           "指定用户名"},
+    {"/pass:"..placeholder, "password",     "指定密码"},
+    {"/pass",                               "提示输入密码"},
+    {"/smartcard",                          "从智能卡检索凭据"},
 }
 
 local function existing_targets(_, _, _, builder)
@@ -43,13 +43,13 @@ local delete_targets = clink.argmatcher():addarg({existing_targets}):nofiles()
 
 clink.argmatcher("cmdkey")
 :_addexflags({
-    {"/list"..deadend,                      "List available credentials"},
-    {"/list:"..list_targets, "targetname",  "List available credentials for targetname"},
-    {"/add:"..domain_targets, "targetname", "Create domain credentials"},
-    {"/generic:"..generic_targets, "targetname", "Create generic credentials"},
-    {"/delete /ras"..deadend,               "Delete RAS credentials"},
-    {"/delete:"..delete_targets, "targetname", "Delete existing credentials"},
-    {"/?",                                  "Show help"},
+    {"/list"..deadend,                      "列出可用凭据"},
+    {"/list:"..list_targets, "targetname",  "列出 targetname 的可用凭据"},
+    {"/add:"..domain_targets, "targetname", "创建域凭据"},
+    {"/generic:"..generic_targets, "targetname", "创建通用凭据"},
+    {"/delete /ras"..deadend,               "删除 RAS 凭据"},
+    {"/delete:"..delete_targets, "targetname", "删除现有凭据"},
+    {"/?",                                  "显示帮助"},
     {hide=true, "/delete"},
     {hide=true, "/ras"},
     {hide=true, "/user:"..users},

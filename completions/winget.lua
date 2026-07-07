@@ -223,49 +223,49 @@ local version_matches = contextual_matches
 
 local arch_locale_flags = {
     { hide=true,    "-a"                .. arch_matches },
-    {               "--architecture"    .. arch_matches,        " arch",        "Select the architecture to install" },
-    {               "--locale"          .. locale_matches,      " locale",      "Locale to use (BCP47 format)" },
+    {               "--architecture"    .. arch_matches,        " arch",        "选择要安装的架构" },
+    {               "--locale"          .. locale_matches,      " locale",      "要使用的区域设置（BCP47 格式）" },
 }
 
 local common_flags = {
-    {               "--verbose-logs",                                           "Enables verbose logging for WinGet" },
-    {               "--logs",                                                   "Opens the default logs location" },
+    {               "--verbose-logs",                                           "启用 WinGet 详细日志记录" },
+    {               "--logs",                                                   "打开默认日志位置" },
     { hide=true,    "--no-vt" },
     { hide=true,    "--rainbow" },
     { hide=true,    "--retro" },
-    {               "--help",                                                   "Shows help about the selected command" },
+    {               "--help",                                                   "显示所选命令的帮助" },
     { hide=true,    "-?" },
-    { hide=true,    "--wait",                                                   "Prompts the user to press any key before exiting" },
-    { hide=true,    "--disable-interactivity",                                  "Disable interactive prompts" },
-    { hide=true,    "--verbose",                                                "Enables verbose logging for WinGet" },
-    { hide=true,    "--open-logs",                                              "Opens the default logs location" },
+    { hide=true,    "--wait",                                                   "退出前提示用户按任意键" },
+    { hide=true,    "--disable-interactivity",                                  "禁用交互式提示" },
+    { hide=true,    "--verbose",                                                "启用 WinGet 详细日志记录" },
+    { hide=true,    "--open-logs",                                              "打开默认日志位置" },
 }
 
 local source_name_flags = {
     { hide=true,    "-n"                .. source_matches },
-    {               "--name"            .. source_matches,      " name",        "Name of the source" },
+    {               "--name"            .. source_matches,      " name",        "源的名称" },
 }
 
 local query_flags = {
     { hide=true,    "-q"                .. query_matches },
-    {               "--query"           .. query_matches,       " query",       "The query used to search for a package" },
-    {               "--id"              .. id_matches,          " id",          "Filter results by id" },
-    {               "--name"            .. name_matches,        " name",        "Filter results by name" },
-    {               "--moniker"         .. moniker_matches,     " moniker",     "Filter results by moniker" },
+    {               "--query"           .. query_matches,       " query",       "用于搜索软件包的查询" },
+    {               "--id"              .. id_matches,          " id",          "按 ID 筛选结果" },
+    {               "--name"            .. name_matches,        " name",        "按名称筛选结果" },
+    {               "--moniker"         .. moniker_matches,     " moniker",     "按别名筛选结果" },
     { hide=true,    "-e" },
-    {               "--exact",                                                  "Find package using exact match" },
+    {               "--exact",                                                  "使用精确匹配查找软件包" },
 }
 
 local query_flags_more = {
-    {               "--tag"             .. tag_matches,         " tag",         "Filter results by tag" },
-    {               "--command"         .. command_matches,     " command",     "Filter results by command" },
+    {               "--tag"             .. tag_matches,         " tag",         "按标签筛选结果" },
+    {               "--command"         .. command_matches,     " command",     "按命令筛选结果" },
     { hide=true,    "-n"                .. count_matches },
-    {               "--count"           .. count_matches,       " count",       "Show no more than specified number of results (between 1 and 1000)" },
+    {               "--count"           .. count_matches,       " count",       "显示不超过指定数量的结果（范围 1 到 1000）" },
 }
 
 local source_flags = {
     { hide=true,    "-s"                .. source_matches },
-    {               "--source"          .. source_matches,      " source",      "Find package using the specified source" },
+    {               "--source"          .. source_matches,      " source",      "使用指定源查找软件包" },
 }
 
 --------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ local export_parser = clink.argmatcher()
     common_flags,
     source_flags,
     { hide=true,    "-o"                .. file_matches },
-    {               "--output"          .. file_matches,        " file",        "File where the result is to be written" },
+    {               "--output"          .. file_matches,        " file",        "写入结果的文件" },
     { hide=true,    "--include-versions" },
     { hide=true,    "--accept-source-agreements" },
 })
@@ -295,9 +295,9 @@ local hash_parser = clink.argmatcher()
     opteq=true,
     common_flags,
     { hide=true,    "-f"                .. file_matches },
-    {               "--file"            .. file_matches,        " file",        "File to be hashed"},
+    {               "--file"            .. file_matches,        " file",        "要计算哈希的文件"},
     { hide=true,    "-m" },
-    {               "--msix",                                                   "Input file will be treated as msix; signature hash will be provided if signed" },
+    {               "--msix",                                                   "输入文件将被视为 msix；如果已签名，将提供签名哈希" },
 })
 :addarg(clink.filematches)
 :nofiles()
@@ -307,12 +307,12 @@ local import_parser = clink.argmatcher()
     opteq=true,
     common_flags,
     { hide=true,    "-i"                .. file_matches },
-    {               "--import-file"     .. file_matches,        " file",        "File describing the packages to install" },
-    {               "--ignore-unavailable",                                     "Ignore unavailable packages" },
-    {               "--ignore-versions",                                        "Ignore package versions in import file" },
-    {               "--no-upgrade",                                             "Skips upgrade if an installed version already exists" },
-    {               "--accept-package-agreements",                              "Accept all license agreements for packages" },
-    {               "--accept-source-agreements",                               "Accept all source agreements during source operations" },
+    {               "--import-file"     .. file_matches,        " file",        "描述要安装的软件包的文件" },
+    {               "--ignore-unavailable",                                     "忽略不可用的软件包" },
+    {               "--ignore-versions",                                        "忽略导入文件中的软件包版本" },
+    {               "--no-upgrade",                                             "如果已安装的版本已存在，则跳过升级" },
+    {               "--accept-package-agreements",                              "接受所有软件包许可协议" },
+    {               "--accept-source-agreements",                               "在源操作期间接受所有源协议" },
 })
 :addarg(clink.filematches)
 :nofiles()
@@ -325,29 +325,29 @@ local install_parser = clink.argmatcher()
     source_flags,
     arch_locale_flags,
     { hide=true,    "-m"                .. file_matches },
-    {               "--manifest"        .. file_matches,        " file",        "The path to the manifest of the package" },
+    {               "--manifest"        .. file_matches,        " file",        "软件包清单的路径" },
     { hide=true,    "-v"                .. version_matches },
-    {               "--version"         .. version_matches,     " version",     "Use the specified version; default is the latest version" },
-    {               "--scope"           .. scope_matches,       " scope",       "Select install scope (user or machine)" },
+    {               "--version"         .. version_matches,     " version",     "使用指定版本；默认为最新版本" },
+    {               "--scope"           .. scope_matches,       " scope",       "选择安装范围（用户或计算机）" },
     { hide=true,    "-i" },
-    {               "--interactive",                                            "Request interactive installation; user input may be needed" },
+    {               "--interactive",                                            "请求交互式安装；可能需要用户输入" },
     { hide=true,    "-h" },
-    {               "--silent",                                                 "Request silent installation" },
+    {               "--silent",                                                 "请求静默安装" },
     { hide=true,    "-o"                .. file_matches },
-    {               "--log"             .. file_matches,        " file",        "Log location (if supported)" },
-    {               "--override"        .. override_matches,    " string",      "Override arguments to be passed on to the installer" },
+    {               "--log"             .. file_matches,        " file",        "日志位置（如果支持）" },
+    {               "--override"        .. override_matches,    " string",      "覆盖传递给安装程序的参数" },
     { hide=true,    "-l"                .. location_matches },
-    {               "--location"        .. location_matches,    " location",    "Location to install to (if supported)" },
-    {               "--force",                                                  "Override the installer hash check" },
-    {               "--ignore-security-hash",                                   "Ignore the installer hash check failure" },
-    {               "--ignore-local-archive-malware-scan",                      "Ignore the malware scan performed as part of installing an archive type package from local manifest" },
-    {               "--dependency-source" .. dependency_source_matches, " source", "Find package dependencies using the specified source" },
-    {               "--accept-package-agreements",                              "Accept all license agreements for packages" },
-    {               "--accept-source-agreements",                               "Accept all source agreements during source operations" },
-    {               "--no-upgrade",                                             "Skips upgrade if an installed version already exists" },
-    {               "--header"          .. header_matches,      " header",      "Optional Windows-Package-Manager REST source HTTP header" },
+    {               "--location"        .. location_matches,    " location",    "安装位置（如果支持）" },
+    {               "--force",                                                  "覆盖安装程序哈希检查" },
+    {               "--ignore-security-hash",                                   "忽略安装程序哈希检查失败" },
+    {               "--ignore-local-archive-malware-scan",                      "忽略从本地清单安装归档类型软件包时执行的恶意软件扫描" },
+    {               "--dependency-source" .. dependency_source_matches, " source", "使用指定源查找软件包依赖项" },
+    {               "--accept-package-agreements",                              "接受所有软件包许可协议" },
+    {               "--accept-source-agreements",                               "在源操作期间接受所有源协议" },
+    {               "--no-upgrade",                                             "如果已安装的版本已存在，则跳过升级" },
+    {               "--header"          .. header_matches,      " header",      "可选的 Windows-Package-Manager REST 源 HTTP 头" },
     { hide=true,    "-r"                .. file_matches },
-    {               "--rename"          .. file_matches,        " file",        "The value to rename the executable file (portable)" },
+    {               "--rename"          .. file_matches,        " file",        "重命名可执行文件的值（便携版）" },
 })
 :addarg({winget_complete})
 :nofiles()
@@ -357,7 +357,7 @@ local __search_parser_flags = {
     query_flags_more,
     source_flags,
     { hide=true,    "--accept-source-agreements" },
-    {               "--header"          .. header_matches,      " header",      "Optional Windows-Package-Manager REST source HTTP header" },
+    {               "--header"          .. header_matches,      " header",      "可选的 Windows-Package-Manager REST 源 HTTP 头" },
     common_flags,
 }
 
@@ -365,7 +365,7 @@ local list_parser = clink.argmatcher()
 :_addexflags({
     opteq=true,
     __search_parser_flags,
-    {               "--scope"           .. scope_matches,       " scope",       "Select installed package scope filter (user or machine)" },
+    {               "--scope"           .. scope_matches,       " scope",       "选择已安装软件包的范围筛选器（用户或计算机）" },
 })
 :addarg({winget_complete})
 :nofiles()
@@ -387,11 +387,11 @@ local settings_export_parser = clink.argmatcher()
 
 local settings_parser = clink.argmatcher()
 :_addexflags({
-    {               "--enable"          .. setting_name_matches, " setting",    "Enables the specific administrator setting" },
-    {               "--disable"         .. setting_name_matches, " setting",    "Disables the specific administrator setting" },
+    {               "--enable"          .. setting_name_matches, " setting",    "启用特定的管理员设置" },
+    {               "--disable"         .. setting_name_matches, " setting",    "禁用特定的管理员设置" },
 })
 :_addexarg({
-    { "export" .. settings_export_parser, "Export settings as JSON" },
+    { "export" .. settings_export_parser, "以 JSON 格式导出设置" },
 })
 :nofiles()
 
@@ -403,12 +403,12 @@ local show_parser = clink.argmatcher()
     source_flags,
     arch_locale_flags,
     { hide=true,    "-m" .. file_matches },
-    {               "--manifest"        .. file_matches,        " file",        "The path to the manifest of the package" },
+    {               "--manifest"        .. file_matches,        " file",        "软件包清单的路径" },
     { hide=true,    "-v" .. version_matches },
-    {               "--version"         .. version_matches,     " version",     "Use the specified version; default is the latest version" },
-    {               "--versions",                                               "Show available versions of the package" },
-    {               "--header"          .. header_matches,      " header",      "Optional Windows-Package-Manager REST source HTTP header" },
-    {               "--accept-source-agreements",                               "Accept all source agreements during source operations" },
+    {               "--version"         .. version_matches,     " version",     "使用指定版本；默认为最新版本" },
+    {               "--versions",                                               "显示软件包的可用版本" },
+    {               "--header"          .. header_matches,      " header",      "可选的 Windows-Package-Manager REST 源 HTTP 头" },
+    {               "--accept-source-agreements",                               "在源操作期间接受所有源协议" },
 })
 :addarg({winget_complete})
 :nofiles()
@@ -418,13 +418,13 @@ local source_add_parser = clink.argmatcher()
     opteq=true,
     common_flags,
     { hide=true,    "-n"                .. add_source_matches },
-    {               "--name"            .. add_source_matches,  " name",        "Name of the source" },
+    {               "--name"            .. add_source_matches,  " name",        "源的名称" },
     { hide=true,    "-a"                .. url_matches },
-    {               "--arg"             .. url_matches,         " url",         "Argument given to the source" },
+    {               "--arg"             .. url_matches,         " url",         "传递给源的参数" },
     { hide=true,    "-t"                .. type_matches },
-    {               "--type"            .. type_matches,        " type",        "Type of the source" },
-    {               "--header"          .. header_matches,      " header",      "Optional Windows-Package-Manager REST source HTTP header" },
-    {               "--accept-source-agreements",                               "Accept all source agreements during source operations" },
+    {               "--type"            .. type_matches,        " type",        "源的类型" },
+    {               "--header"          .. header_matches,      " header",      "可选的 Windows-Package-Manager REST 源 HTTP 头" },
+    {               "--accept-source-agreements",                               "在源操作期间接受所有源协议" },
 })
 :addarg(add_source_matches)
 :nofiles()
@@ -467,7 +467,7 @@ local source_reset_parser = clink.argmatcher()
     opteq=true,
     common_flags,
     source_name_flags,
-    {               "--force",                                                  "Forces the reset of the sources" },
+    {               "--force",                                                  "强制重置源" },
 })
 :addarg(source_matches)
 :nofiles()
@@ -487,15 +487,15 @@ local source_parser = clink.argmatcher()
     common_flags,
 })
 :_addexarg({
-    { "add"         .. source_add_parser,       " name arg [type]",             "Add a new source" },
-    { "list"        .. source_list_parser,      " [name]",                      "List current sources" },
+    { "add"         .. source_add_parser,       " name arg [type]",             "添加新的源" },
+    { "list"        .. source_list_parser,      " [name]",                      "列出当前源" },
     {   "ls"        .. source_list_parser },
-    { "update"      .. source_update_parser,    " [name]",                      "Update current sources" },
+    { "update"      .. source_update_parser,    " [name]",                      "更新当前源" },
     {   "refresh"   .. source_update_parser },
-    { "remove"      .. source_remove_parser,    "Remove current sources" },
+    { "remove"      .. source_remove_parser,    "移除当前源" },
     {   "rm"        .. source_remove_parser },
-    { "reset"       .. source_reset_parser,     "Reset sources" },
-    { "export"      .. source_export_parser,    "Export current sources" },
+    { "reset"       .. source_reset_parser,     "重置源" },
+    { "export"      .. source_export_parser,    "导出当前源" },
     arghelper.make_arg_hider_func({"ls", "refresh", "rm"}),
 })
 :nofiles()
@@ -508,22 +508,22 @@ local uninstall_parser = clink.argmatcher()
     query_flags_more,
     source_flags,
     { hide=true,    "-m"                .. file_matches },
-    {               "--manifest"        .. file_matches,        " file",        "The path to the manifest of the package" },
-    {               "--product-code"    .. productcode_matches, " code",        "Filters using the product code" },
+    {               "--manifest"        .. file_matches,        " file",        "软件包清单的路径" },
+    {               "--product-code"    .. productcode_matches, " code",        "使用产品代码筛选" },
     { hide=true,    "-v"                .. version_matches },
-    {               "--version"         .. version_matches,     " version",     "Use the specified version; default is the latest version" },
-    {               "--scope"           .. scope_matches,       " scope",       "Select installed package scope filter (user or machine)" },
+    {               "--version"         .. version_matches,     " version",     "使用指定版本；默认为最新版本" },
+    {               "--scope"           .. scope_matches,       " scope",       "选择已安装软件包的范围筛选器（用户或计算机）" },
     { hide=true,    "-i" } ,
-    {               "--interactive",                                            "Request interactive installation; user input may be needed" },
+    {               "--interactive",                                            "请求交互式安装；可能需要用户输入" },
     { hide=true,    "-h" } ,
-    {               "--silent",                                                 "Request silent uninstallation" },
-    {               "--force",                                                  "Direct run the command and continue with non security related issues" },
-    {               "--purge",                                                  "Deletes all files and directories in the package directory (portable)" },
-    {               "--preserve",                                               "Retains all files and directories created by the package (portable)" },
+    {               "--silent",                                                 "请求静默卸载" },
+    {               "--force",                                                  "直接运行命令并继续处理非安全相关问题" },
+    {               "--purge",                                                  "删除软件包目录中的所有文件和目录（便携版）" },
+    {               "--preserve",                                               "保留软件包创建的所有文件和目录（便携版）" },
     { hide=true,    "-o"                .. file_matches },
-    {               "--log"             .. file_matches,        " file",        "Log location (if supported)" },
-    {               "--accept-source-agreements",                               "Accept all source agreements during source operations" },
-    {               "--header"          .. header_matches,      " header",      "Optional Windows-Package-Manager REST source HTTP header" },
+    {               "--log"             .. file_matches,        " file",        "日志位置（如果支持）" },
+    {               "--accept-source-agreements",                               "在源操作期间接受所有源协议" },
+    {               "--header"          .. header_matches,      " header",      "可选的 Windows-Package-Manager REST 源 HTTP 头" },
 })
 :addarg({winget_complete})
 :nofiles()
@@ -536,32 +536,32 @@ local upgrade_parser = clink.argmatcher()
     source_flags,
     arch_locale_flags,
     { hide=true,    "-m"                .. file_matches },
-    {               "--manifest"        .. file_matches,        " file",        "The path to the manifest of the package" },
+    {               "--manifest"        .. file_matches,        " file",        "软件包清单的路径" },
     { hide=true,    "-v"                .. version_matches },
-    {               "--version"         .. version_matches,     " version",     "Use the specified version; default is the latest version" },
+    {               "--version"         .. version_matches,     " version",     "使用指定版本；默认为最新版本" },
     { hide=true,    "-i" },
-    {               "--interactive",                                            "Request interactive installation; user input may be needed" },
+    {               "--interactive",                                            "请求交互式安装；可能需要用户输入" },
     { hide=true,    "-h" },
-    {               "--silent",                                                 "Request silent installation" },
-    {               "--purge",                                                  "Deletes all files and directories in the package directory (portable)" },
+    {               "--silent",                                                 "请求静默安装" },
+    {               "--purge",                                                  "删除软件包目录中的所有文件和目录（便携版）" },
     { hide=true,    "-o"                .. file_matches },
-    {               "--log"             .. file_matches,        " file",        "Log location (if supported)" },
-    {               "--override"        .. override_matches,    " string",      "Override arguments to be passed on to the installer" },
+    {               "--log"             .. file_matches,        " file",        "日志位置（如果支持）" },
+    {               "--override"        .. override_matches,    " string",      "覆盖传递给安装程序的参数" },
     { hide=true,    "-l"                .. location_matches },
-    {               "--location"        .. location_matches,    " location",    "Location to install to (if supported)" },
-    {               "--scope"           .. scope_matches,       " scope",       "Select installed package scope filter (user or machine)" },
-    {               "--ignore-security-hash",                                   "Ignore the installer hash check failure" },
-    {               "--ignore-local-archive-malware-scan",                      "Ignore the malware scan performed as part of installing an archive type package from local manifest" },
-    {               "--force",                                                  "Direct run the command and continue with non security related issues" },
-    {               "--accept-package-agreements",                              "Accept all license agreements for packages" },
-    {               "--accept-source-agreements",                               "Accept all source agreements during source operations" },
-    {               "--header"          .. header_matches,      " header",      "Optional Windows-Package-Manager REST source HTTP header" },
+    {               "--location"        .. location_matches,    " location",    "安装位置（如果支持）" },
+    {               "--scope"           .. scope_matches,       " scope",       "选择已安装软件包的范围筛选器（用户或计算机）" },
+    {               "--ignore-security-hash",                                   "忽略安装程序哈希检查失败" },
+    {               "--ignore-local-archive-malware-scan",                      "忽略从本地清单安装归档类型软件包时执行的恶意软件扫描" },
+    {               "--force",                                                  "直接运行命令并继续处理非安全相关问题" },
+    {               "--accept-package-agreements",                              "接受所有软件包许可协议" },
+    {               "--accept-source-agreements",                               "在源操作期间接受所有源协议" },
+    {               "--header"          .. header_matches,      " header",      "可选的 Windows-Package-Manager REST 源 HTTP 头" },
     { hide=true,    "-r" },
     { hide=true,    "--recurse" },
-    {               "--all",                                                    "Update all installed packages to latest if available" },
+    {               "--all",                                                    "将所有已安装软件包更新到最新版本（如果可用）" },
     { hide=true,    "-u" },
     { hide=true,    "--unknown" },
-    {               "--include-unknown",                                        "Upgrade packages even if their current version cannot be determined" },
+    {               "--include-unknown",                                        "即使无法确定当前版本也升级软件包" },
 })
 :addarg({winget_complete})
 :loop(1)
@@ -570,7 +570,7 @@ local validate_parser = clink.argmatcher()
 :_addexflags({
     opteq=true,
     common_flags,
-    {               "--manifest"        .. file_matches,        " file",        "The path to the manifest to be validated" },
+    {               "--manifest"        .. file_matches,        " file",        "要验证的清单的路径" },
 
 })
 :addarg(clink.filematches)
@@ -579,9 +579,9 @@ local validate_parser = clink.argmatcher()
 local complete_parser = clink.argmatcher()
 :_addexflags({
     nosort=true,
-    {               "--word"            .. empty_arg,           " word",        "The value provided before completion is requested" },
-    {               "--commandline"     .. empty_arg,           " text",        "The full command line for completion" },
-    {               "--position"        .. empty_arg,           " num",         "The position of the cursor within the command line" },
+    {               "--word"            .. empty_arg,           " word",        "请求补全前提供的值" },
+    {               "--commandline"     .. empty_arg,           " text",        "用于补全的完整命令行" },
+    {               "--position"        .. empty_arg,           " num",         "光标在命令行中的位置" },
 })
 :nofiles()
 
@@ -589,19 +589,19 @@ local complete_parser = clink.argmatcher()
 -- Define the winget argmatcher.
 
 local winget_command_data_table = {
-    { "install",    install_parser,     "add",          disp=" [query]",    desc="Installs the given package" },
-    { "show",       show_parser,        "view",         disp=" [query]",    desc="Shows information about a package" },
-    { "source",     source_parser,                      disp=" command",    desc="Manage sources of packages" },
-    { "search",     search_parser,      "find",         disp=" [query]",    desc="Find and show basic info of packages" },
-    { "list",       list_parser,        "ls",           disp=" [query]",    desc="Display installed packages" },
-    { "upgrade",    upgrade_parser,     "update",       disp=" [query]",    desc="Shows and performs available upgrades" },
-    { "uninstall",  uninstall_parser,   "rm", "remove", disp=" [query]",    desc="Uninstalls the given package" },
-    { "hash",       hash_parser,                        disp=" file",       desc="Helper to hash installer files" },
-    { "validate",   validate_parser,                    disp=" manifest",   desc="Validates a manifest file" },
-    { "settings",   settings_parser,    "config",       disp=" [command]",  desc="Open settings or set administrator settings" },
-    { "features",   features_parser,                                        desc="Shows the status of experimental features" },
-    { "export",     export_parser,                      disp=" output",     desc="Exports a list of the installed packages" },
-    { "import",     import_parser,                      disp=" importfile", desc="Installs all the packages in a file" },
+    { "install",    install_parser,     "add",          disp=" [query]",    desc="安装指定的软件包" },
+    { "show",       show_parser,        "view",         disp=" [query]",    desc="显示软件包信息" },
+    { "source",     source_parser,                      disp=" command",    desc="管理软件包源" },
+    { "search",     search_parser,      "find",         disp=" [query]",    desc="查找并显示软件包基本信息" },
+    { "list",       list_parser,        "ls",           disp=" [query]",    desc="显示已安装的软件包" },
+    { "upgrade",    upgrade_parser,     "update",       disp=" [query]",    desc="显示并执行可用更新" },
+    { "uninstall",  uninstall_parser,   "rm", "remove", disp=" [query]",    desc="卸载指定的软件包" },
+    { "hash",       hash_parser,                        disp=" file",       desc="计算安装程序文件的哈希值" },
+    { "validate",   validate_parser,                    disp=" manifest",   desc="验证清单文件" },
+    { "settings",   settings_parser,    "config",       disp=" [command]",  desc="打开设置或配置管理员设置" },
+    { "features",   features_parser,                                        desc="显示实验性功能状态" },
+    { "export",     export_parser,                      disp=" output",     desc="导出已安装软件包列表" },
+    { "import",     import_parser,                      disp=" importfile", desc="安装文件中的所有软件包" },
     { nil,          complete_parser,    "complete" },
 }
 
@@ -637,6 +637,6 @@ clink.argmatcher("winget")
 :_addexflags({
     common_flags,
     { hide=true,    "-v" },
-    {               "--version",    "Display the version of the tool" },
-    {               "--info",       "Display general info of the tool" },
+    {               "--version",    "显示工具版本" },
+    {               "--info",       "显示工具的常规信息" },
 })

@@ -168,7 +168,7 @@ local function dir__delayinit(argmatcher)
     ["/a"]           = { "attributes" },
     ["/b"]           = {},
     ["/c"]           = {},
-    ["/c-"]          = { "Disable display of thousand separator in file sizes" },
+    ["/c-"]          = { "禁用文件大小中的千位分隔符显示" },
     ["/d"]           = {},
     ["/l"]           = {},
     ["/n"]           = {},
@@ -309,10 +309,10 @@ end
 -- luacheck: push
 -- luacheck: no max line length
 local for__option_matches = {
-    { match="/d",                           description="Match (set) against directories" },
-    { match="/r",  arginfo=" [dir]",        description="Walk dir recursively, executing the FOR command in each directory" },
-    { match="/l",                           description="The set is a sequence of numbers (start,step,end)" },
-    { match="/f",  arginfo=' ["options"]',  description="File processing; each file in the set is read and processed" },
+    { match="/d",                           description="与目录匹配（作为集合）" },
+    { match="/r",  arginfo=" [dir]",        description="递归遍历目录，在每个目录中执行 FOR 命令" },
+    { match="/l",                           description="集合是一个数字序列（起始,步长,结束）" },
+    { match="/f",  arginfo=' ["options"]',  description="文件处理；读取并处理集合中的每个文件" },
 }
 -- luacheck: pop
 
@@ -541,11 +541,11 @@ function for__generator:generate(line_state, builder) -- luacheck: no unused
         builder:addmatches({
             -- luacheck: push
             -- luacheck: no max line length
-            { match="eol=", arginfo="c",            description="Specifies an end of line comment character (just one)" },
-            { match="skip=", arginfo="n",           description="Specifies the number of lines to skip at the beginning of the file" },
-            { match="delims=", arginfo="xxx",       description="Specifies a delimiter set (default is space and tab)" },
-            { match="tokens=", arginfo="x,y,m-n",   description="Specifies which tokens from each line go in the %a variables" },
-            { match="usebackq ",                    description="Uses new semantics (back quote executes as a command)" },
+            { match="eol=", arginfo="c",            description="指定行尾注释字符（仅一个）" },
+            { match="skip=", arginfo="n",           description="指定在文件开头跳过的行数" },
+            { match="delims=", arginfo="xxx",       description="指定分隔符集（默认为空格和制表符）" },
+            { match="tokens=", arginfo="x,y,m-n",   description="指定每行中哪些标记放入 %a 变量" },
+            { match="usebackq ",                    description="使用新的语义（反引号作为命令执行）" },
             -- luacheck: pop
         })
         return true
@@ -644,7 +644,7 @@ local function sort__delayinit(argmatcher)
         table.remove(descriptions["/r"], 1)
     end
     if #descriptions["/uniq"] < 1 then
-        table.insert(descriptions["/uniq"], "Discard all but one of identical lines")
+        table.insert(descriptions["/uniq"], "丢弃除一条外的所有相同行")
     end
     for _, flag in ipairs({"/+", "/l", "/m", "/rec", "/t", "/o"}) do
         if #descriptions[flag] < 2 then
@@ -652,7 +652,7 @@ local function sort__delayinit(argmatcher)
         end
     end
 
-    local locale_matches = { { match="C", description="The fastest collating sequence" } }
+    local locale_matches = { { match="C", description="最快的排序序列" } }
 
     local locales_parser = clink.argmatcher():addarg({locale_matches, "C"})
     local memory_parser = clink.argmatcher():addarg({fromhistory=true})
@@ -833,7 +833,7 @@ local function start__delayinit(argmatcher)
     __parse_descriptions(argmatcher, "start", descriptions)
 
     if #descriptions["/d"] < 2 then
-        table.insert(descriptions["/d"], "Starting directory")
+        table.insert(descriptions["/d"], "起始目录")
     end
 
     argmatcher

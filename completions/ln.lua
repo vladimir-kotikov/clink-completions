@@ -1,0 +1,51 @@
+--------------------------------------------------------------------------------
+-- Clink argmatcher for ln (uutils / GNU coreutils)
+--
+
+clink.argmatcher("ln")
+:adddescriptions({
+    ["-s"] = { "创建符号链接" },
+    ["--symbolic"] = { "创建符号链接" },
+    ["-f"] = { "强制创建，覆盖已存在的目标文件" },
+    ["--force"] = { "强制创建，覆盖已存在的目标文件" },
+    ["-i"] = { "覆盖前提示" },
+    ["--interactive"] = { "覆盖前提示" },
+    ["-n"] = { "如果目标已是符号链接则不跟随" },
+    ["--no-dereference"] = { "如果目标已是符号链接则不跟随" },
+    ["-t"] = { " arg", "指定目标目录" },
+    ["--target-directory"] = { " arg", "指定目标目录" },
+    ["-T"] = { "将目标视为普通文件" },
+    ["--no-target-directory"] = { "将目标视为普通文件" },
+    ["-v"] = { "显示正在执行的操作" },
+    ["--verbose"] = { "显示正在执行的操作" },
+    ["-L"] = { "跟随符号链接（默认）" },
+    ["--logical"] = { "跟随符号链接（默认）" },
+    ["-P"] = { "不跟随符号链接" },
+    ["--physical"] = { "不跟随符号链接" },
+    ["-r"] = { "创建相对符号链接" },
+    ["--relative"] = { "创建相对符号链接" },
+    ["--backup"] = { "备份每个现有的目标文件" },
+    ["-b"] = { "备份每个现有的目标文件" },
+    ["-S"] = { " arg", "指定备份后缀" },
+    ["--suffix"] = { " arg", "指定备份后缀" },
+    ["--help"] = { "显示帮助并退出" },
+    ["--version"] = { "输出版本信息并退出" },
+})
+:addflags({
+    "-s", "--symbolic",
+    "-f", "--force",
+    "-i", "--interactive",
+    "-n", "--no-dereference",
+    "-t"..(clink.argmatcher():addarg(clink.dirmatches)),
+    "--target-directory="..(clink.argmatcher():addarg(clink.dirmatches)),
+    "-T", "--no-target-directory",
+    "-v", "--verbose",
+    "-L", "--logical",
+    "-P", "--physical",
+    "-r", "--relative",
+    "--backup",
+    "-b",
+    "-S"..(clink.argmatcher():addarg()),
+    "--suffix="..(clink.argmatcher():addarg()),
+    "--help", "--version",
+})

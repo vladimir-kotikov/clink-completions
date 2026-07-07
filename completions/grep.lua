@@ -1,7 +1,153 @@
-local clink_version = require('clink_version')
-if not clink_version.supports_argmatcher_delayinit then
-    log.info("grep.lua argmatcher requires a newer version of Clink; please upgrade.")
-    return
-end
+--------------------------------------------------------------------------------
+-- Clink argmatcher for grep (uutils / GNU coreutils)
+--
 
-require('help_parser').make('grep', '--help', 'gnu')
+local num_arg = clink.argmatcher():addarg({fromhistory=true})
+
+clink.argmatcher("grep")
+:addarg(clink.filematches)
+:adddescriptions({
+    -- Matching control
+    ["-i"] = { "忽略大小写差异" },
+    ["--ignore-case"] = { "忽略大小写差异" },
+    ["-v"] = { "选择不匹配的行" },
+    ["--invert-match"] = { "选择不匹配的行" },
+    ["-w"] = { "仅匹配整个单词" },
+    ["--word-regexp"] = { "仅匹配整个单词" },
+    ["-x"] = { "仅匹配整行" },
+    ["--line-regexp"] = { "仅匹配整行" },
+    -- General output control
+    ["-c"] = { "仅打印每个文件的匹配行数" },
+    ["--count"] = { "仅打印每个文件的匹配行数" },
+    ["--color"] = { " arg", "使用颜色高亮匹配文本：auto, always, never" },
+    ["-l"] = { "仅打印有匹配的文件名" },
+    ["--files-with-matches"] = { "仅打印有匹配的文件名" },
+    ["-L"] = { "仅打印无匹配的文件名" },
+    ["--files-without-match"] = { "仅打印无匹配的文件名" },
+    ["-m"] = { " num", "每个文件最多匹配 num 次后停止" },
+    ["--max-count"] = { " num", "每个文件最多匹配 num 次后停止" },
+    ["-o"] = { "仅打印匹配的部分" },
+    ["--only-matching"] = { "仅打印匹配的部分" },
+    ["-q"] = { "静默模式；不输出任何内容" },
+    ["--quiet"] = { "静默模式；不输出任何内容" },
+    ["--silent"] = { "静默模式；不输出任何内容" },
+    ["-s"] = { "抑制关于不存在或不可读文件的错误消息" },
+    ["--no-messages"] = { "抑制关于不存在或不可读文件的错误消息" },
+    -- Output line prefix control
+    ["-b"] = { "打印每个匹配行的字节偏移量" },
+    ["--byte-offset"] = { "打印每个匹配行的字节偏移量" },
+    ["-H"] = { "为每个匹配打印文件名" },
+    ["--with-filename"] = { "为每个匹配打印文件名" },
+    ["-h"] = { "禁止在输出中显示文件名前缀" },
+    ["--no-filename"] = { "禁止在输出中显示文件名前缀" },
+    ["-n"] = { "打印每个匹配行的行号" },
+    ["--line-number"] = { "打印每个匹配行的行号" },
+    ["-T"] = { "对齐制表符缩进以对齐输出" },
+    ["--initial-tab"] = { "对齐制表符缩进以对齐输出" },
+    ["-Z"] = { "在文件名后输出 NUL 字节（而非换行符）" },
+    ["--null"] = { "在文件名后输出 NUL 字节（而非换行符）" },
+    -- Context line control
+    ["-A"] = { " num", "打印每个匹配行之后 num 行上下文" },
+    ["--after-context"] = { " num", "打印每个匹配行之后 num 行上下文" },
+    ["-B"] = { " num", "打印每个匹配行之前 num 行上下文" },
+    ["--before-context"] = { " num", "打印每个匹配行之前 num 行上下文" },
+    ["-C"] = { " num", "打印每个匹配行前后各 num 行上下文" },
+    ["--context"] = { " num", "打印每个匹配行前后各 num 行上下文" },
+    ["--group-separator"] = { " sep", "设置组分隔符" },
+    ["--no-group-separator"] = { "不使用组分隔符" },
+    -- File and directory selection
+    ["-a"] = { "将二进制文件视为文本文件处理" },
+    ["--text"] = { "将二进制文件视为文本文件处理" },
+    ["--binary-files"] = { " type", "二进制文件的处理方式：binary, text, without-match" },
+    ["-D"] = { " action", "设备/FIFO/套接字的处理方式：read, skip" },
+    ["--devices"] = { " action", "设备/FIFO/套接字的处理方式：read, skip" },
+    ["-d"] = { " action", "目录的处理方式：read, recurse, skip" },
+    ["--directories"] = { " action", "目录的处理方式：read, recurse, skip" },
+    ["-r"] = { "递归搜索目录" },
+    ["--recursive"] = { "递归搜索目录" },
+    ["-R"] = { "递归搜索目录，跟随所有符号链接" },
+    ["--dereference-recursive"] = { "递归搜索目录，跟随所有符号链接" },
+    ["--include"] = { " glob", "仅搜索匹配 glob 模式的文件" },
+    ["--exclude"] = { " glob", "跳过匹配 glob 模式的文件" },
+    ["--exclude-dir"] = { " glob", "跳过匹配 glob 模式的目录" },
+    ["--include-dir"] = { " glob", "仅搜索匹配 glob 模式的目录" },
+    -- Regex type selection
+    ["-E"] = { "使用扩展正则表达式（ERE）" },
+    ["--extended-regexp"] = { "使用扩展正则表达式（ERE）" },
+    ["-F"] = { "将模式视为固定字符串（非正则）" },
+    ["--fixed-strings"] = { "将模式视为固定字符串（非正则）" },
+    ["-G"] = { "使用基本正则表达式（BRE）" },
+    ["--basic-regexp"] = { "使用基本正则表达式（BRE）" },
+    ["-P"] = { "使用 Perl 兼容正则表达式（PCRE）" },
+    ["--perl-regexp"] = { "使用 Perl 兼容正则表达式（PCRE）" },
+    -- Pattern input
+    ["-e"] = { " pattern", "指定要匹配的模式" },
+    ["--regexp"] = { " pattern", "指定要匹配的模式" },
+    ["-f"] = { " file", "从文件中读取匹配模式" },
+    ["--file"] = { " file", "从文件中读取匹配模式" },
+    -- Misc
+    ["--line-buffered"] = { "输出时使用行缓冲" },
+    ["-I"] = { "将二进制文件视为不匹配" },
+    ["--label"] = { " label", "将标准输入显示为文件 label" },
+    ["-U"] = { "将文件视为二进制文件" },
+    ["--binary"] = { "将文件视为二进制文件" },
+    ["-z"] = { "用 NUL 字节终止行" },
+    ["--null-data"] = { "用 NUL 字节终止行" },
+    ["--help"] = { "显示帮助并退出" },
+    ["--version"] = { "输出版本信息并退出" },
+})
+:addflags({
+    -- Matching control
+    "-i", "--ignore-case",
+    "-v", "--invert-match",
+    "-w", "--word-regexp",
+    "-x", "--line-regexp",
+    -- General output
+    "-c", "--count",
+    "--color"..(clink.argmatcher():addarg({"auto", "always", "never"})),
+    "-l", "--files-with-matches",
+    "-L", "--files-without-match",
+    "-m"..num_arg, "--max-count="..num_arg,
+    "-o", "--only-matching",
+    "-q", "--quiet", "--silent",
+    "-s", "--no-messages",
+    -- Line prefix
+    "-b", "--byte-offset",
+    "-H", "--with-filename",
+    "-h", "--no-filename",
+    "-n", "--line-number",
+    "-T", "--initial-tab",
+    "-Z", "--null",
+    -- Context
+    "-A"..num_arg, "--after-context="..num_arg,
+    "-B"..num_arg, "--before-context="..num_arg,
+    "-C"..num_arg, "--context="..num_arg,
+    "--group-separator=", "--no-group-separator",
+    -- File/directory selection
+    "-a", "--text",
+    "--binary-files=",
+    "-D"..clink.argmatcher():addarg({"read", "skip"}),
+    "--devices="..clink.argmatcher():addarg({"read", "skip"}),
+    "-d"..clink.argmatcher():addarg({"read", "recurse", "skip"}),
+    "--directories="..clink.argmatcher():addarg({"read", "recurse", "skip"}),
+    "-r", "--recursive",
+    "-R", "--dereference-recursive",
+    "--include=", "--exclude=",
+    "--exclude-dir=", "--include-dir=",
+    -- Regex type
+    "-E", "--extended-regexp",
+    "-F", "--fixed-strings",
+    "-G", "--basic-regexp",
+    "-P", "--perl-regexp",
+    -- Pattern input
+    "-e", "--regexp",
+    "-f"..(clink.argmatcher():addarg(clink.filematches)),
+    "--file="..(clink.argmatcher():addarg(clink.filematches)),
+    -- Misc
+    "--line-buffered",
+    "-I",
+    "--label=",
+    "-U", "--binary",
+    "-z", "--null-data",
+    "--help", "--version",
+})

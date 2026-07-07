@@ -1,0 +1,77 @@
+--------------------------------------------------------------------------------
+-- Clink argmatcher for du (uutils / GNU coreutils)
+--
+
+local num_arg = clink.argmatcher():addarg({fromhistory=true})
+local time_matcher = clink.argmatcher():addarg({"atime", "ctime", "mtime", "birth", "access", "status", "modification"})
+local time_style_matcher = clink.argmatcher():addarg({"full-iso", "long-iso", "iso", "locale", "+FORMAT"})
+
+clink.argmatcher("du")
+:addarg(clink.dirmatches)
+:adddescriptions({
+    ["-a"] = { "显示所有文件和目录（不仅是目录）" },
+    ["--all"] = { "显示所有文件和目录（不仅是目录）" },
+    ["--apparent-size"] = { "显示表面大小而非磁盘使用量" },
+    ["-B"] = { " size", "指定块大小（例如 1K, 1M, 1G）" },
+    ["--block-size"] = { " size", "指定块大小（例如 1K, 1M, 1G）" },
+    ["-b"] = { "以字节为单位显示（等价于 --apparent-size --block-size=1）" },
+    ["--bytes"] = { "以字节为单位显示（等价于 --apparent-size --block-size=1）" },
+    ["-c"] = { "在末尾显示总计" },
+    ["--total"] = { "在末尾显示总计" },
+    ["-d"] = { " N", "限制递归深度为 N 层" },
+    ["--max-depth"] = { " N", "限制递归深度为 N 层" },
+    ["--files0-from"] = { " file", "从指定文件中读取以 NUL 分隔的文件列表" },
+    ["-h"] = { "以人类可读的格式打印大小（例如 1K 234M 2G）" },
+    ["--human-readable"] = { "以人类可读的格式打印大小（例如 1K 234M 2G）" },
+    ["--inodes"] = { "显示 inode 使用信息而非块使用情况" },
+    ["-k"] = { "以 1024 字节块显示" },
+    ["-L"] = { "解引用符号链接，跟随到目标" },
+    ["--dereference"] = { "解引用符号链接，跟随到目标" },
+    ["-l"] = { "统计所有文件的链接数，多次计算硬链接" },
+    ["--count-links"] = { "统计所有文件的链接数，多次计算硬链接" },
+    ["-m"] = { "以 1MB 块显示" },
+    ["-P"] = { "不解引用符号链接" },
+    ["--no-dereference"] = { "不解引用符号链接" },
+    ["-S"] = { "仅统计目录本身大小，不包含子目录" },
+    ["--separate-dirs"] = { "仅统计目录本身大小，不包含子目录" },
+    ["--si"] = { "以 SI 单位打印大小（例如 1K=1000）" },
+    ["-s"] = { "仅显示每个参数的总计" },
+    ["--summarize"] = { "仅显示每个参数的总计" },
+    ["-t"] = { " size", "排除小于指定大小的条目" },
+    ["--threshold"] = { " size", "排除小于指定大小的条目" },
+    ["--time"] = { " word", "显示文件时间戳：atime, ctime, mtime, birth" },
+    ["--time-style"] = { " style", "指定时间格式：full-iso, long-iso, iso, locale, +FORMAT" },
+    ["-x"] = { "跳过不同文件系统上的目录" },
+    ["--one-file-system"] = { "跳过不同文件系统上的目录" },
+    ["--exclude"] = { " pattern", "排除匹配指定模式的文件" },
+    ["--help"] = { "显示帮助并退出" },
+    ["--version"] = { "输出版本信息并退出" },
+})
+:addflags({
+    "-a", "--all",
+    "--apparent-size",
+    "-B"..(clink.argmatcher():addarg({fromhistory=true})),
+    "--block-size="..(clink.argmatcher():addarg({fromhistory=true})),
+    "-b", "--bytes",
+    "-c", "--total",
+    "-d"..num_arg,
+    "--max-depth="..num_arg,
+    "--files0-from="..clink.filematches,
+    "-h", "--human-readable",
+    "--inodes",
+    "-k",
+    "-L", "--dereference",
+    "-l", "--count-links",
+    "-m",
+    "-P", "--no-dereference",
+    "-S", "--separate-dirs",
+    "--si",
+    "-s", "--summarize",
+    "-t"..(clink.argmatcher():addarg({fromhistory=true})),
+    "--threshold="..(clink.argmatcher():addarg({fromhistory=true})),
+    "--time="..time_matcher,
+    "--time-style="..time_style_matcher,
+    "-x", "--one-file-system",
+    "--exclude="..(clink.argmatcher():addarg({fromhistory=true})),
+    "--help", "--version",
+})
