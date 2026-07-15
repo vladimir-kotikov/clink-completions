@@ -46,6 +46,12 @@
 --
 --          -- Allow "-xARG" meaning "-x ARG".
 --          adjacent_one_letter_flags=true,
+--
+--          -- Add optcolon=true to support coloring for "-x:ARG" and "-xARG",
+--          -- as long as "-x" is already defined.
+--          -- Note that both completion and accurate coloring of ARG only
+            -- work for "-x:ARG" not "-xARG" (the "ARG" just uses color.input).
+--          { "-x:"..argmatcher, optcolon=true },   -- Adds only "-x:"..argmatcher, but colors "-xARG" as well.
 --      })
 --
 -- The arghelper script also fills in compatibility methods for any of the
@@ -156,17 +162,29 @@
 --          }))
 --
 --      All of the fields like opteq=, hide=, hide_unless=, nosort=,
---      concat_one_letter_flags=, adjacent_one_letter_flags=, etc are also
---      supported here in the same ways as usual.
+--      concat_one_letter_flags=, adjacent_one_letter_flags=, optcolon= etc are
+--      also supported here in the same ways as usual.
 --
 --------------------------------------------------------------------------------
 -- Changes:
+--
+--  2026/07/01
+--      - Fixed incomplete support for `concat_one_letter_flags` with linked
+--        one-letter flags, such as `dirx -sba:+h` vs `dirx -a:+h`.
+--      - Added `optcolon=true` to let the colon be omitted, e.g. `dirx -a:+h`
+--        and `dirx -a+h`.
 --
 --  2026/02/14
 --      - `arghelper.make_exflags()` makes a table for _addexflags() from a
 --        table using a new format that can specify both short and long flags
 --        together, and automatically links the same argument argmatcher, if
 --        provided.
+--
+--  2026/06/23
+--      - Fixed some edge cases for `concat_one_letter_flags`.
+--
+--  2024/10/28
+--      - Fixed support for `git status -uno`.
 --
 --  2024/09/16
 --      - Support for `hint="text"` and `hint=func` in _addexarg() and
@@ -256,6 +274,12 @@ local function is_one_letter_flag(flag)
     if not flag:find("^%-%-") then
         local letter,plusminus = flag:match("^([-/][^-/])([-+:=]?)$")
         if letter then
+            if plusminus == ":" or plusminus == "=" then
+                letter = letter..plusminus
+                plusminus = nil
+            elseif plusminus == "" then
+                plusminus = nil
+            end
             return letter, plusminus
         end
     end
@@ -334,6 +358,12 @@ local function make_one_letter_concat_classifier_func(list, parser)
                         end
                         local olf = one_letter_flags[letter]
                         if olf then
+                            if olf.optcolon then
+                                local olfcolon = one_letter_flags[letter..":"]
+                                if olfcolon and olfcolon.linked then
+                                    olf = olfcolon
+                                end
+                            end
                             i = i + #letter - 1
                             apply_len = i - 1
                             if not olf.linked and olf.plusminus and word:find("^[-+]", i) then
@@ -342,6 +372,14 @@ local function make_one_letter_concat_classifier_func(list, parser)
                             end
                             if olf.arginfo then
                                 arginfo = i - 1
+                                break
+                            end
+                            if olf.linked then
+                                -- FUTURE:  Somehow do classify for the linked arg substring?
+                                -- For now it just uses color.input because there's no clear
+                                -- way to get an arbitrary classifier to apply coloring to the
+                                -- correct substring of a word (each classifier has its own
+                                -- parsing implementation).
                                 break
                             end
                         else
@@ -379,15 +417,18 @@ local function make_one_letter_concat_classifier_func(list, parser)
                     olf = {}
                     one_letter_flags[letter] = olf
                 end
-                if plusminus and plusminus:find("^[-+]") then
+                if plusminus then
                     olf.plusminus = true
                 end
                 if type(list[flag]) == "table" then
                     if list[flag].one_letter_arginfo then
-                        olf.arginfo = true
+                        olf.arginfo = list[flag].one_letter_arginfo
                     end
                     if list[flag].one_letter_linked then
-                        olf.linked = true
+                        olf.linked = list[flag].one_letter_linked
+                    end
+                    if list[flag].optcolon then
+                        olf.optcolon = list[flag].optcolon
                     end
                 end
             end
@@ -409,35 +450,83 @@ local function make_one_letter_concat_onalias_func(parser)
     local function func(arg_index, word, word_index, line_state) -- luacheck: no unused
         if arg_index == 0 then
             if #word > 2 and word:sub(2, 2) ~= "-" then
-                local split_pos = 0
                 local i = 2
                 local len = #word
                 local pre = word:sub(1, 1)
                 local one_letter_flags = parser.one_letter_flags
                 while i <= len do
                     local letter = pre..word:sub(i, i)
+                    local next_symbol = word:sub(i + 1, i + 1)
+                    if next_symbol == ":" or next_symbol == "=" then
+                        letter = letter..next_symbol
+                    end
                     local olf = one_letter_flags[letter]
                     if not olf then
                         return
                     elseif olf.linked then
-                        split_pos = i
-                        break
+                        local split_pos = i + #letter - 1 - 1
+                        if split_pos > 2 and split_pos < len then
+                            local info = line_state:getwordinfo(word_index)
+                            local line = line_state:getline()
+                            local quote = info.quoted and line:sub(info.offset - 1, info.offset - 1) or ""
+                            local text = word:sub(1, split_pos - 1)..quote.." "..quote..pre..word:sub(split_pos)
+                            return text
+                        end
+                        return
                     elseif olf.plusminus and word:find("^[-+]", i + 1) then
                         i = i + 1
                     end
-                    i = i + 1
-                end
-                if split_pos > 2 and split_pos < len then
-                    local info = line_state:getwordinfo(word_index)
-                    local quote = info.quoted and line_state:getline():sub(info.offset - 1, info.offset - 1) or ""
-                    local text = word:sub(1, split_pos - 1)..quote.." "..quote..word:sub(1, 1)..word:sub(split_pos)
-                    return text
+                    i = i + #letter - 1
                 end
             end
         end
     end
 
     parser.has_one_letter_concat_onalias_func = true
+    return func
+end
+
+local function make_one_letter_concat_onlink_func(parser)
+    if not parser or parser.has_one_letter_concat_onlink_func then
+        return
+    end
+
+    if not parser.one_letter_flags then
+        parser.one_letter_flags = {}
+    end
+
+    local function func(link, arg_index, word, word_index, line_state) -- luacheck: no unused
+        if arg_index == 0 and not link then
+            if #word > 2 and word:sub(2, 2) ~= "-" then
+                local i = 2
+                local len = #word
+                local pre = word:sub(1, 1)
+                local one_letter_flags = parser.one_letter_flags
+                while i <= len do
+                    local letter = pre..word:sub(i, i)
+                    local next_symbol = word:sub(i + 1, i + 1)
+                    if next_symbol == ":" or next_symbol == "=" then
+                        letter = letter..next_symbol
+                    end
+                    local olf = one_letter_flags[letter]
+                    if not olf then
+                        return
+                    elseif olf.linked then
+                        local split_pos = i + #letter - 1 - 1
+                        if split_pos > 2 and split_pos == len then
+                            return olf.linked
+                        end
+                        return
+                    elseif olf.plusminus and word:find("^[-+]", i + 1) then
+                        i = i + 1
+                    end
+                    i = i + #letter - 1
+                end
+            end
+        end
+    end
+
+    parser.has_one_letter_concat_onlink_func = true
     return func
 end
 
@@ -457,6 +546,7 @@ local function apply_element_field_names(dst, src)
     dst.hide = src.hide
     dst.hide_unless = src.hide_unless
     dst.opteq = src.opteq
+    dst.optcolon = src.optcolon
 end
 
 local flagdesc = (tonumber(os.getenv("CLINK_COMPLETIONS_FLAGDESC") or "2") or 2)
@@ -586,7 +676,7 @@ if not tmp._addexflags or not tmp._addexarg then
         return ret
     end
 
-    local function maybe_one_letter_flag(concat_flags, invalid_flags, flag, arginfo, linked)
+    local function maybe_one_letter_flag(concat_flags, invalid_flags, flag, arginfo, linked, optcolon)
         local letter,plusminus = is_one_letter_flag(flag)
         if letter then
             table.insert(concat_flags, flag)
@@ -599,7 +689,15 @@ if not tmp._addexflags or not tmp._addexarg then
                 tbl.one_letter_arginfo = true
             end
             if linked then
-                tbl.one_letter_linked = true
+                tbl.one_letter_linked = linked
+            end
+            if optcolon and flag:find(":$") then
+                local flag_minus_colon = flag:gsub(":+$", "")
+                if #flag_minus_colon >= 2 then
+                    maybe_one_letter_flag(concat_flags, invalid_flags, flag_minus_colon, arginfo, linked)
+                    tbl.optcolon = true
+                    concat_flags[flag_minus_colon].optcolon = true
+                end
             end
             if #flag > 2 and not plusminus then
                 local flag2 = flag:sub(1, 2)
@@ -659,9 +757,9 @@ if not tmp._addexflags or not tmp._addexarg then
         if arglinked then
             -- Flags like "-p port" accept "-pport" as well.
             if concat_flags then
-                maybe_one_letter_flag(concat_flags, invalid_flags, arg._key, true, true)
+                maybe_one_letter_flag(concat_flags, invalid_flags, arg._key, true, arg._matcher, elm.optcolon)
             elseif adjacent_flags then
-                maybe_one_letter_flag(adjacent_flags, invalid_flags, arg._key, true, true)
+                maybe_one_letter_flag(adjacent_flags, invalid_flags, arg._key, true, arg._matcher, elm.optcolon)
             end
         end
         if t == "string" or t == "number" or t == "matcher" then
@@ -800,7 +898,10 @@ if not tmp._addexflags or not tmp._addexarg then
             end
             if concat_flags and parser.setclassifier then
                 parser:setclassifier(make_one_letter_concat_classifier_func(concat_flags, parser))
-                parser:addflags({ onalias=make_one_letter_concat_onalias_func(parser) })
+                parser:addflags({
+                    onalias=make_one_letter_concat_onalias_func(parser),
+                    onlink=make_one_letter_concat_onlink_func(parser),
+                })
             end
             return parser
         end
@@ -842,6 +943,7 @@ local exports = {
     make_arg_hider_func = make_arg_hider_func,
     make_one_letter_concat_classifier_func = make_one_letter_concat_classifier_func,
     make_one_letter_concat_onalias_func = make_one_letter_concat_onalias_func,
+    make_one_letter_concat_onlink_func = make_one_letter_concat_onlink_func,
     make_exflags = make_exflags,
 }
 

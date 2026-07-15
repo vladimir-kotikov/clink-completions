@@ -106,6 +106,9 @@ end
 
 local bat = clink.argmatcher('bat')
 
+-- Using addarg() lets even just TAB by itself list these.
+local cache_parser = clink.argmatcher():addarg("--build", "--clear"):nofiles()
+
 local dir_completions = clink.argmatcher():addarg(clink.dirmatches)
 local file_completions = clink.argmatcher():addarg(clink.filematches)
 local when_always_auto_never = clink.argmatcher():addarg({'always', 'auto', 'never'})
@@ -150,8 +153,33 @@ local bat_themedark = clink.argmatcher():addarg({list_themes})
 local bat_themelight = clink.argmatcher():addarg({list_themes})
 local bat_wrap = clink.argmatcher():addarg({'auto', 'never', 'character'})
 
+local function compare_matches(a, b)
+    return string.comparematches(a.match, a.type, b.match, b.type)
+end
+
+local function files_and_subcommands(word, _, _, builder, _)
+    local function ondisplay(matches)
+        local m = matches[1]
+        if m.match == "cache" then
+            m.display = "\x1b["..(settings.get("color.doskey") or "").."m"..m.match
+            m.type = "alias"
+        end
+        return matches
+    end
+
+    local files = clink.filematches(word)
+    table.sort(files, compare_matches)
+    builder:addmatches(files)
+
+    if clink.ondisplaymatches then
+        clink.ondisplaymatches(ondisplay)
+    end
+    return {}
+end
+
 if bat.adddescriptions then
     bat:adddescriptions({
+        ["cache"] = { "Manage bat's cache" },
         ["--acknowledgements"] = { "Build acknowledgements.bin" },
         ["--binary"] = { " <behavior>", "How to treat binary content" },
         ["--blank"] = { "Create new data instead of appending" },
@@ -300,6 +328,10 @@ bat:addflags({
   "-h",
   "--help",
 })
+
+bat:addarg({ nosort=true, "cache"..cache_parser, files_and_subcommands })
+bat:addarg(clink.filematches)
+bat:loop(2)
 
 --------------------------------------------------------------------------------
 if clink.onbeginedit then

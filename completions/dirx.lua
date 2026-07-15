@@ -176,7 +176,7 @@ local list_of_flags = {
     { "-n",                     "Use normal list format" },
     { "-p",                     "Paginate output" },
     { "-Q",                     "Reset quashed output types" },
-    { "-Q:", quash, "types",    "Quash output types" },
+    { optcolon=true, "-Q:", quash, "types", "Quash output types" },
     { opteq=true, "--quash=", quash, "types", "" },
     { "-R",                     "Synonym for --recurse" },
     { "-s",                     "Subdirectories; recursively list files" },
@@ -199,7 +199,7 @@ local list_of_flags = {
     { hide_unless="--tree", "--no-tree" },
 
     -- Filtering and sorting options.
-    { "-a:", attrs, "attrs",    "Filter files by attributes" },
+    { optcolon=true, "-a:", attrs, "attrs", "Filter files by attributes" },
     { "-A",                     "Display all files, except hide . and .." },
     { "--almost-all" },
     { "-h",                     "Hide . and .. directories" },
@@ -209,9 +209,9 @@ local list_of_flags = {
     { opteq=true, "--levels=", levels, "depth", "" },
     { hide=true, opteq=true, "--level=", levels, "depth", "" },
     { hide=true, "-o",          "" },
-    { "-o:", sorts, "options",  "List files in sorted order" },
+    { optcolon=true, "-o:", sorts, "options", "List files in sorted order" },
     { "-X",                     "Reset skipped types" },
-    { "-X:", skips, "types",    "Skip types during -s" },
+    { optcolon=true, "-X:", skips, "types", "Skip types during -s" },
     { opteq=true, "--skip=", skips, "types", "" },
     { "--digit-sort" },
     { "--git-ignore" },
@@ -349,6 +349,7 @@ local function copy_vars(entry, tbl)
     tbl.hide = entry.hide
     tbl.hide_unless = entry.hide_unless
     tbl.opteq = entry.opteq
+    tbl.optcolon = entry.optcolon
     return tbl
 end
 
