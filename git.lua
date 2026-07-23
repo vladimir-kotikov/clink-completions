@@ -12,8 +12,6 @@ local parser = function (...)
     return p
 end
 
--- luacheck: globals matchicons
-
 local argexpected = "Argument expected:  "
 local argoptional = "Optional argument:  "
 local function hintpfx(optional)
@@ -40,189 +38,11 @@ local dirs_parser = parser({dir_matches})
 
 local looping_files_parser = clink.argmatcher and clink.argmatcher():addarg(file_matches):loop()
 
-local function extract_sgr(c)
-    return c and c:match("^\x1b%[(.*)m$") or c
-end
-
-local color_git = "38;2;217;93;59" -- the git orange
-
-local function addicon(m, icon, c)
-    if matchicons and matchicons.addicontomatch then
-        if not c and m.type and m.type:find("file") then
-            if rl.getmatchcolor then
-                c = extract_sgr(rl.getmatchcolor(m.match, m.type))
-            end
-        end
-        return matchicons.addicontomatch(m, icon, c)
-    else
-        return m
-    end
-end
-
-local function addicons(matches)
-    if matchicons and matchicons.addicontomatch then
-        for _, m in ipairs(matches) do
-            local old_type = m.type
-            m.type = "file"
-            addicon(m)
-            m.type = old_type
-        end
-    end
-    return matches
-end
-
-local map_file
-if rl and rl.getmatchcolor then
-    map_file = function (file)
-        if type(file) == "table" then
-            return file
-        else
-            return { match=file, display='\x1b[m'..rl.getmatchcolor(file, 'file')..file, type='arg' }
-        end
-    end
-else
-    map_file = function (file)
-        if type(file) == "table" then
-            return file
-        else
-            return { match=file, display='\x1b[m'..file, type='arg' }
-        end
-    end
-end
-
-local function has_dot_dirs(token)
-    for _, t in ipairs(string.explode(token, '/\\')) do
-        if t == '.' or t == '..' then
-            return true
-        end
-    end
-end
-
-local function get_relative_prefix(git_dir)
-    local cwd = clink.lower(path.join(os.getcwd(), ''))
-    git_dir = clink.lower(path.join(path.toparent(git_dir), ''))
-    return cwd:sub(#git_dir + 1)
-end
-
-local function adjust_relative_prefix(dir, rel)
-    local len = string.matchlen(dir, rel)
-    if len < 0 then
-        return ''
-    end
-    return dir:sub(len + 1)
-end
-
-local function make_indexed_table(input)
-    local output = {}
-    for _, value in ipairs(input) do
-        output[value] = true
-    end
-    return output
-end
-
-local function filter_refs(refs, kind, dummy)
-    assert(not dummy) -- Unsupported usage.
-
-    local result = w()
-    for _, r in ipairs(refs) do
-        local m = r:match('refs/'..kind..'/(.*)')
-        if m then
-            table.insert(result, m)
-        end
-    end
-    return result
-end
-
----
- -- Lists all refs, optionally filtered by kind
- -- @param string [dir]  Directory where to search file for
- -- @param string [kind [,kind [,...]]]  Filter by kinds
- -- @return table  List of filtered refs
-local function list_refs(dir, kind, kind2, dummy)
-    assert(not dummy) -- Unsupported usage.
-
-    local result = w()
-    local git_dir = dir or git.get_git_common_dir()
-    if not git_dir then return result end
-
-    local filter
-    if kind2 then
-        filter = function (text)
-            return text:match('refs/'..kind..'/(.*)') or
-                    text:match('refs/'..kind2..'/(.*)')
-        end
-    elseif kind then
-        filter = function (text)
-            return text:match('refs/'..kind..'/(.*)')
-        end
-    else
-        filter = function (text)
-            return text
-        end
-    end
-
-    local refs = io.popen(git.make_command('show-ref'))
-    if refs == nil then return {} end
-
-    for line in refs:lines() do
-        -- SHA is 40 char length + 1 char for space
-        if #line > 41 then
-            local match = filter(line:sub(41))
-            if match then table.insert(result, match) end
-        end
-    end
-
-    refs:close()
-    return result
-end
-
-local function list_git_status_files(token, flags) -- luacheck: no unused args
-    local result = w()
-    local git_dir = git.get_git_common_dir()
-    if git_dir then
-        local rel_pfx = get_relative_prefix(git_dir)
-        local f = io.popen(git.make_command("status --porcelain "..(flags or "").." **"))
-        if f then
-            if string.matchlen then -- luacheck: no global
-                --[[
-                token = path.normalise(token)
-                --]]
-                for line in f:lines() do
-                    line = line:match("^.[^ ] (.+)$")
-                    if line then
-                        line = path.normalise(line)
-                        --[[
-                        -- TODO: Maybe use match display filtering to show the number of files in each dir?
-                        local mlen = string.matchlen(line, token) -- luacheck: no global
-                        if mlen < 0 then
-                            table.insert(result, { match = line, type = "file" })
-                        else
-                            local dir = path.getdirectory(line:sub(1, mlen))
-                            local child = line:sub(mlen + 1):match("^([^/\\]*[/\\]?)")
-                            local m = dir and path.join(dir, child) or child
-                            local isdir = m:sub(-1):find("[/\\]")
-                            table.insert(result, { match = m, type = (isdir and "dir" or "file") })
-                        end
-                        --]]
-                        table.insert(result, adjust_relative_prefix(line, rel_pfx))
-                    end
-                end
-            else
-                for line in f:lines() do
-                    table.insert(result, adjust_relative_prefix(line:sub(4), rel_pfx))
-                end
-            end
-            f:close()
-        end
-    end
-    return result
-end
-
 local function branches()
     local git_dir = git.get_git_common_dir()
     if not git_dir then return w() end
 
-    return list_refs(git_dir, 'heads')
+    return git.list_refs(git_dir, 'heads')
 end
 
 -- Function to get the list of git aliases.
@@ -328,246 +148,30 @@ local function remotes(token)  -- luacheck: no unused args
 end
 
 local function add_spec_generator(token)
-    if has_dot_dirs(token) then
-        return addicons(file_matches(token))
-    end
-    return addicons(list_git_status_files(token, "-uall"):map(map_file))
-end
-
-local function __common_spec_generator_049(token, mode)
-    local function is_token_match(value)
-        return clink.is_match(token, value)
-    end
-
-    local git_dir = git.get_git_common_dir()
-
-    local files = mode:find("checkout") and list_git_status_files(token, "-uno"):filter(is_token_match) or w()
-    local refs = list_refs(git_dir)
-    local local_branches = filter_refs(refs, 'heads'):filter(is_token_match)
-    local local_branches_idx = make_indexed_table(local_branches)
-    local remote_branches = filter_refs(refs, 'remotes'):filter(is_token_match)
-
-    local predicted_branches = filter_refs(refs, 'remotes')
-        :map(function (remote_branch)
-            return remote_branch:match('.-/(.+)')
-        end)
-        :filter(function(branch)
-            return branch
-                and clink.is_match(token, branch)
-                -- Filter out those predictions which are already exists as local branches
-                and not local_branches_idx[branch]
-        end)
-
-    if (#local_branches + #remote_branches + #predicted_branches) == 0 then return files end
-
-    -- if there is any refspec that matches token then:
-    --   * disable readline's filename completion, otherwise we'll get a list of these specs
-    --     treated as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
-    --   * create display filter for completion table to append path separator to each directory entry
-    --     since it is not added automatically by readline (see previous point)
-    clink.matches_are_files(0)
-    clink.match_display_filter = function ()
-        local star = '*'
-        if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
-            star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
-        end
-        return files:map(function(file)
-            return clink.is_dir(file) and file..'\\' or file
-        end)
-        :concat(local_branches)
-        :concat(predicted_branches:map(function(branch) return star..branch end))
-        :concat(remote_branches)
-    end
-
-    return files
-        :concat(local_branches)
-        :concat(predicted_branches)
-        :concat(remote_branches)
-end
-
-local function __common_spec_generator_usedisplay(token, mode)
-    -- NOTE:  The only reason this needs to use clink.is_match() is because the
-    -- match_display_filter function defined here ignores the list of matches it
-    -- receives, which is already filtered correctly and has had duplicates
-    -- removed.
-    local function is_token_match(value)
-        return clink.is_match(token, value)
-    end
-
-    local git_dir = git.get_git_common_dir()
-
-    local files = mode:find("checkout") and list_git_status_files(token, "-uno"):filter(is_token_match) or w()
-    local refs = list_refs(git_dir)
-    local local_branches = filter_refs(refs, 'heads'):filter(is_token_match)
-    local local_branches_idx = make_indexed_table(local_branches)
-    local remote_branches = filter_refs(refs, 'remotes'):filter(is_token_match)
-
-    local predicted_branches = filter_refs(refs, 'remotes')
-        :map(function (remote_branch)
-            return remote_branch:match('.-/(.+)')
-        end)
-        :filter(function(branch)
-            return branch
-                and clink.is_match(token, branch)
-                -- Filter out those predictions which are already exists as local branches
-                and not local_branches_idx[branch]
-        end)
-
-    -- if there is any refspec that matches token then:
-    --   * disable readline's filename completion, otherwise we'll get a list of these specs
-    --     treated as list of files (without 'path' part), ie. 'some_branch' instead of 'my_remote/some_branch'
-    --   * create display filter for completion table to append path separator to each directory entry
-    --     since it is not added automatically by readline (see previous point)
-    clink.match_display_filter = function ()
-        local star = '*'
-        if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
-            star = color.get_clink_color('color.git.star')..star..color.get_clink_color('color.filtered')
-        end
-        local matches
-        if clink_version.supports_display_filter_description then
-            matches = files:map(function(file)
-                return addicon({ match=file, display='\x1b[m'..file }, "", color_git)
-            end)
-        else
-            matches = files:map(function(file) return '\x1b[m'..file end)
-        end
-        return matches
-            :concat(local_branches:map(function(branch)
-                return addicon({ match=branch }, "", color_git)
-            end))
-            :concat(predicted_branches:map(function(branch)
-                return addicon({ match=branch, display=star..branch }, "", color_git)
-            end))
-            :concat(remote_branches:map(function(branch)
-                return addicon({ match=branch }, "", color_git)
-            end))
-    end
-
-    return files
-        :concat(local_branches)
-        :concat(predicted_branches)
-        :concat(remote_branches)
-end
-
--- This generator can simply return matches and rely on nosort, instead of
--- needing to use match display filtering to prevent sorting.
-local function __common_spec_generator_nosort(token, mode)
-    local git_dir = git.get_git_common_dir()
-
-    -- Get branch names.
-
-    local refs = list_refs(git_dir)
-    local local_branches = filter_refs(refs, 'heads')
-    local local_branches_idx = make_indexed_table(local_branches)
-    local remote_branches = filter_refs(refs, 'remotes')
-    local remote_branches_idx = make_indexed_table(remote_branches)
-
-    local predicted_branches = filter_refs(refs, 'remotes')
-        :map(function (remote_branch)
-            return remote_branch:match('.-/(.+)')
-        end)
-        :filter(function(name)
-            -- Filter out predictions that already exist as local branches.
-            return not local_branches_idx[name]
-        end)
-    local predicted_branches_idx = make_indexed_table(predicted_branches)
-
-    -- Collect the matches.
-
-    local filtered_color = color.get_clink_color('color.filtered')
-    local local_pre = filtered_color
-    local remote_pre = filtered_color
-
-    local mapped = {}
-
-    if mode:find("status") then
-        local function files_filter(name)
-            name = path.normalise(name, '/')
-            return not predicted_branches_idx[name] and not remote_branches_idx[name] and not local_branches_idx[name]
-        end
-
-        local files = list_git_status_files(token, "-uno"):filter(files_filter)
-        table.insert(mapped, files:map(map_file):map(function (match)
-            return addicon(match, "", color_git)
-        end))
-    end
-
-    table.insert(mapped, local_branches:map(function(branch)
-        return addicon({ match=branch, display=local_pre..branch, type='arg' }, "", color_git)
-    end))
-
-    if mode:find("predicted") then
-        local predicted_pre = '*'
-        if clink_version.supports_query_rl_var and rl.isvariabletrue('colored-stats') then
-            predicted_pre = color.get_clink_color('color.git.star')..predicted_pre..filtered_color
-        end
-        table.insert(mapped, predicted_branches:map(function(branch)
-            return addicon({ match=branch, display=predicted_pre..branch, type='arg' }, "", color_git)
-        end))
-    end
-
-    table.insert(mapped, remote_branches:map(function(branch)
-        return addicon({ match=branch, display=remote_pre..branch, type='arg' }, "", color_git)
-    end))
-
-    if mode:find("tags") then
-        local tag_names = filter_refs(refs, 'tags')
-        if string.comparematches then
-            tag_names:sort(string.comparematches)
-        end
-
-        local tag_pre = color.get_clink_color('color.doskey')
-        table.insert(mapped, tag_names:map(function(tag)
-            return addicon({ match=tag, display=tag_pre..tag, type='arg' }, "", extract_sgr(tag_pre))
-        end))
-    end
-
-    return w():concat(mapped)
-end
-
-local function __common_spec_generator(token, mode)
-    local result
-    mode = mode or ""
-    if not has_dot_dirs(token) then
-        if clink_version.supports_argmatcher_nosort then
-            result = __common_spec_generator_nosort(token, mode)
-        elseif clink_version.supports_display_filter_description then
-            result = __common_spec_generator_usedisplay(token, mode)
-        else
-            result = __common_spec_generator_049(token, mode)
-        end
-    end
-    result = result or w()
-    if mode:find("files") then
-        result = result:concat(file_matches(token))
-    end
-    if clink_version.supports_argmatcher_nosort then
-        result.nosort = true
-    end
-    return result
+    return git.common_spec_generator(token, "add")
 end
 
 local function checkout_spec_generator(token)
-    return __common_spec_generator(token, "status predicted tags files")
+    return git.common_spec_generator(token, "status predicted tags files")
 end
 
 local function log_spec_generator(token)
-    return __common_spec_generator(token, "tags files")
+    return git.common_spec_generator(token, "tags files")
 end
 
 local function switch_spec_generator(token)
-    return __common_spec_generator(token, "predicted")
+    return git.common_spec_generator(token, "predicted")
 end
 
 local function local_or_remote_branches(token)
     if clink_version.supports_argmatcher_nosort then
-        return __common_spec_generator(token)
+        return git.common_spec_generator(token)
     else
         -- Try to resolve .git directory location
         local git_dir = git.get_git_common_dir()
         if not git_dir then return w() end
 
-        return list_refs(git_dir, 'heads', 'remotes')
+        return git.list_refs(git_dir, 'heads', 'remotes')
         :filter(function(branch)
             return clink.is_match(token, branch)
         end)
@@ -579,11 +183,11 @@ local function checkout_dashdash(token, _, _, _, user_data)
         return file_matches(token)
     end
 
-    if has_dot_dirs(token) then
+    if git.has_dot_dirs(token) then
         return file_matches(token)
     end
 
-    local status_files = list_git_status_files(token, "-uno")
+    local status_files = git.list_git_status_files(token, "-uno")
     if clink_version.supports_display_filter_description then
         return status_files:map(function(file) return { match=file, display='\x1b[m'..file, type='arg' } end)
     else
@@ -606,9 +210,9 @@ local function push_branch_spec(token)
     -- * if there is no branch separator complete word with local branches
     if not s then
         -- setup display filter to prevent display '+' symbol in completion list
-        local refs = list_refs(git_dir)
+        local refs = git.list_refs(git_dir)
         if clink_version.supports_display_filter_description then
-            local b = filter_refs(refs, 'heads'):map(function(branch)
+            local b = git.filter_refs(refs, 'heads'):map(function(branch)
                 -- append '+' to results if it was specified
                 return { match=plus_prefix and '+'..branch or branch, display=branch }
             end)
@@ -617,7 +221,7 @@ local function push_branch_spec(token)
             end)
             return b
         else
-            local b = filter_refs(refs, 'heads')
+            local b = git.filter_refs(refs, 'heads')
             clink.match_display_filter = function ()
                 return b
             end
@@ -735,7 +339,7 @@ local stashes = function(token, _, _, builder)  -- luacheck: no unused args
 end
 
 local function tags()
-    local tag_names = list_refs(nil, 'tags')
+    local tag_names = git.list_refs(nil, 'tags')
     local tag_pre = color.get_clink_color('color.doskey')
     return tag_names:map(function(tag) return { match=tag, display=tag_pre..tag, type='arg' } end)
 end
