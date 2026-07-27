@@ -120,7 +120,18 @@ local function delayinit(argmatcher)
 
     r:close()
 
-    argmatcher:addarg(actions or {})
+    actions = actions or {}
+    actions.onarg = function()
+        -- Force delayinit ourselves whenever the cwd changes while parsing.
+        -- This lets premake5 completions work properly with the i.lua script
+        -- from clink-gizmos.
+        local onarg_cwd = os.getcwd()
+        if onarg_cwd ~= prev_cwd then
+            delayinit(argmatcher)
+        end
+    end
+
+    argmatcher:addarg(actions)
     argmatcher:addflags(flags)
     argmatcher:adddescriptions(descriptions)
 end
