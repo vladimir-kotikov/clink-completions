@@ -1,6 +1,8 @@
 require('arghelper')
 local mcf = require('multicharflags')
 
+-- luacheck: no max line length
+
 local convmode = clink.argmatcher():addarg({"ascii", "7bit", "iso", "mac"})
 local encoding = clink.argmatcher():addarg({"ansi", "unicode", "utf8"})
 local info_flags = mcf.addcharflagsarg(clink.argmatcher(), {
