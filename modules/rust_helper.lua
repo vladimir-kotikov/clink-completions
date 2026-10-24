@@ -594,7 +594,22 @@ forwards.run = function(argmatcher, help_command, config)
         -- SIGH, rustup prints help text to stderr, not stdout.
         local nostderr = "2>&1 " -- "2>nul "
 
-        local c = nostderr..context.pgm.." "..help_command
+        -- SIGH, uutils-coreutils more.exe prompts for pagination no matter
+        -- what, and if neither man.exe nor less.exe are present but more.exe is
+        -- present then cargo.exe will spawn more.exe.  Cargo 0.95.0 and newer
+        -- have an undocumented __CARGO_TEST_FORCE_HELP_TXT test variable that
+        -- disables pagination.  But a more reliable approach is to search the
+        -- PATH for the program (context.pgm) and then set the PATH to _only_
+        -- that directory and then launch the program.
+        local more_workaround = "@set __CARGO_TEST_FORCE_HELP_TXT=1& "
+        for _, dir in ipairs(string.explode(os.getenv("PATH") or ".", ';')) do
+            if os.isfile(path.join(dir, context.pgm)) then
+                more_workaround = '@set "PATH='..dir..'"& '
+                break
+            end
+        end
+
+        local c = more_workaround..nostderr..context.pgm.." "..help_command
         context.dbgformat("RUN '%s'", c)
         local r = io.popen(c)
         if not r then
