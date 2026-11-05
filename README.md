@@ -65,6 +65,28 @@ Get updates by following the steps again, but skip step 4.
 Repo structure
 ==============
 
+### Arduino CLI
+
+`arduino-cli.lua` queries the installed CLI's Cobra `__complete` protocol for
+commands, flags and dynamic values such as board IDs. No generated command tree
+needs updating when the CLI changes. Results are cached for the current input
+line and refreshed at the next prompt. Requires Clink 1.3.3 or newer.
+
+The adapter honors completion descriptions, no-space/no-file directives, file
+extension and directory filters, and candidate ordering. Active Help messages are
+not inserted as completions. File completion remains available when the CLI
+requests it. Requests containing literal quotes, percent signs or exclamation
+marks are declined to avoid expansion by `cmd.exe`; no edited command line is
+executed. Completion callbacks supplied by the CLI itself may query devices or
+indexes and can take time on their first request.
+
+For example, try `arduino-cli core <Tab>`, `arduino-cli compile --<Tab>` or
+`arduino-cli compile --fqbn arduino:avr:<Tab>`.
+
+Protocol tests are in `spec/cobra_spec.lua` (run with `busted`). With Clink and
+Arduino CLI installed, run `clink lua tests/arduino-cli.lua` from the repository
+root for integration checks using the real Clink line parser and CLI responses.
+
 Script files in the root directory are loaded when Clink starts.
 
 Scripts in the `completions\` directory are not loaded until the associated command is actually used.  Most completion scripts could be located in the completions directory, except that older versions of Clink don't load scripts from the completions directory.
