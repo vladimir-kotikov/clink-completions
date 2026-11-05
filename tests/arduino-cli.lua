@@ -9,8 +9,13 @@ clink = setmetatable({
 local cobra = require('modules/cobra')
 local generator = cobra.register('arduino-cli')
 local calls = 0
+local last_command
 local native_popen = io.popen
-io.popen = function(command) calls=calls+1; return native_popen(command) end -- luacheck: ignore 122
+io.popen = function(command) -- luacheck: ignore 122
+    calls=calls+1
+    last_command=command
+    return native_popen(command)
+end
 local function complete(line, expected)
     -- parseline excludes the synthetic empty word supplied to live generators.
     local parsed = native_clink.parseline(line)
@@ -43,6 +48,8 @@ complete('arduino-cli core ', 'install')
 complete('arduino-cli compile --', '--fqbn')
 complete('arduino-cli compile --fqbn arduino:avr:u', 'arduino:avr:uno')
 complete('arduino-cli compile --fqbn=arduino:avr:u', 'arduino:avr:uno')
+complete('arduino-cli compile --board-options cpu=atmega328,clock=16MHz --fqbn arduino:avr:u', 'arduino:avr:uno')
+assert(last_command:find('"cpu=atmega328,clock=16MHz"', 1, true))
 complete('echo ignored & arduino-cli core ', 'install')
 complete('"C:\\Program Files\\Arduino\\arduino-cli.exe" core ', 'install')
 local previous=calls

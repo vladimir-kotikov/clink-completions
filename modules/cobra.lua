@@ -105,8 +105,11 @@ function cobra.register(name)
             if not info.redir then
                 local word = line_state:getword(i)
                 local start = info.offset - (info.quoted and 1 or 0)
-                if previous and previous == start then
-                    words[#words] = words[#words] .. word
+                local gap = previous and line_state:getline():sub(previous, start - 1)
+                -- cmd word breaking also splits unquoted key=value,comma lists.
+                -- They remain one argv entry unless separated by whitespace.
+                if gap and gap:match('^[=,;]*$') then
+                    words[#words] = words[#words] .. gap .. word
                 else
                     words[#words + 1] = word
                 end
